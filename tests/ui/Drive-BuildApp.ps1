@@ -55,11 +55,14 @@ $start = Get-Date
 # Done when the "Build complete" box appears (or an error lands in the log).
 do {
     Start-Sleep 3
-    $box = [W]::FindWindow($null, 'Build complete')
-    if ($box -eq [IntPtr]::Zero) { $box = $null }
+    # The box is owned by the tool's window, so look for it among the window's children.
+    $box = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'Build complete')))
 } until ($box -or ((Get-Date) - $start).TotalSeconds -gt $TimeoutSec)
 $elapsed = ((Get-Date) - $start).TotalSeconds
-if ($box) { [W]::PostMessage($box, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null }
+if ($box) {
+    $ok = $box.FindFirst([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'OK')))
+    [W]::PostMessage([IntPtr]$ok.Current.NativeWindowHandle, 0xF5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+}
 # After a successful build the tool closes itself once the box is dismissed.
 $closedItself = $p.WaitForExit(10000)
 if (-not $closedItself) { [W]::PostMessage($p.MainWindowHandle, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null }
