@@ -3,6 +3,7 @@
     x:Class="WinMuse.Views.FetchPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:WinMuse.Helpers"
     xmlns:controls="using:WinMuse.Controls"
     xmlns:local="using:WinMuse.Views">
 
@@ -17,7 +18,7 @@
     </Page.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*">
-        <Grid x:Name="Header" Padding="36,28,36,8">
+        <Grid x:Name="Header" helpers:HeaderWrap.IsEnabled="True" Padding="36,28,36,8">
             <StackPanel Spacing="2">
                 <TextBlock Text="Fetch" Style="{StaticResource PageTitleStyle}" />
                 <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />

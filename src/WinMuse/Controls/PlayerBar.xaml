@@ -20,7 +20,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="180" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" MinWidth="200" />
+                <ColumnDefinition Width="*" MinWidth="50" />
             </Grid.ColumnDefinitions>
 
             <!-- Now playing info -->
@@ -81,7 +81,7 @@
             </Grid>
 
             <!-- Transport + seek -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2" Width="460">
+            <StackPanel x:Name="Transport" Grid.Column="1" VerticalAlignment="Center" Spacing="2" Width="460">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
                     <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Content="&#xE8B1;" IsChecked="{x:Bind Player.Shuffle, Mode=TwoWay}" ToolTipService.ToolTip="Shuffle (Ctrl+S)" AutomationProperties.Name="Shuffle (Ctrl+S)" />
                     <Button Style="{StaticResource IconButtonStyle}" Content="&#xE892;" Click="OnPrevious" ToolTipService.ToolTip="Previous (Ctrl+Left)" AutomationProperties.Name="Previous (Ctrl+Left)" />

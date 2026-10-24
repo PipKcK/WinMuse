@@ -3,10 +3,11 @@
     x:Class="WinMuse.Views.AlbumsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:WinMuse.Helpers"
     NavigationCacheMode="Enabled">
 
     <Grid RowDefinitions="Auto,*">
-        <Grid x:Name="Header" Padding="36,28,36,12">
+        <Grid x:Name="Header" helpers:HeaderWrap.IsEnabled="True" Padding="36,28,36,12">
             <StackPanel Spacing="2">
                 <TextBlock Text="Albums" Style="{StaticResource PageTitleStyle}" />
                 <TextBlock x:Name="CountText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />

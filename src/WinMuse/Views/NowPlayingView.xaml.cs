@@ -56,16 +56,23 @@ public sealed partial class NowPlayingView : UserControl
         QueueList.PlayRequested = i => _ = Player.PlayIndexAsync(i);
         QueueList.DeleteRequested += idx => Player.RemoveFromQueue(idx);
 
-        Seek.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => _dragging = true), true);
-        Seek.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag()), true);
-        Seek.AddHandler(PointerCaptureLostEvent, new PointerEventHandler((_, _) => EndDrag()), true);
-        Seek.ValueChanged += (_, e) => { if (!_updating && !_dragging && Math.Abs(e.NewValue - Player.Position) > 1) Player.Seek(e.NewValue); };
+        foreach (var slider in new[] { Seek, MiniSeek })
+        {
+            var s = slider;
+            s.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => _dragging = true), true);
+            s.AddHandler(PointerReleasedEvent, new PointerEventHandler((_, _) => EndDrag(s)), true);
+            s.AddHandler(PointerCaptureLostEvent, new PointerEventHandler((_, _) => EndDrag(s)), true);
+            s.ValueChanged += (_, e) => { if (!_updating && !_dragging && Math.Abs(e.NewValue - Player.Position) > 1) Player.Seek(e.NewValue); };
+        }
 
         Player.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(PlaybackService.Position) && !_dragging)
             {
-                _updating = true; Seek.Value = Player.Position; _updating = false;
+                _updating = true;
+                Seek.Value = Player.Position;
+                if (MiniBar.Visibility == Visibility.Visible) MiniSeek.Value = Player.Position;
+                _updating = false;
             }
             else if (e.PropertyName == nameof(PlaybackService.IsPlaying) && Visibility == Visibility.Visible)
             {
@@ -89,12 +96,14 @@ public sealed partial class NowPlayingView : UserControl
         Tabs.SelectedItem = TabLyrics;
     }
 
-    private void EndDrag()
+    private void EndDrag(Slider s)
     {
         if (!_dragging) return;
         _dragging = false;
-        Player.Seek(Seek.Value);
+        Player.Seek(s.Value);
     }
+
+    private void OnMiniArtTapped(object sender, TappedRoutedEventArgs e) => Tabs.SelectedItem = TabArt;
 
     // ---------------- Open / close ----------------
 
@@ -461,6 +470,10 @@ public sealed partial class NowPlayingView : UserControl
         LeftPanel.Visibility = showLeft ? Visibility.Visible : Visibility.Collapsed;
         RightPanel.Visibility = showRight ? Visibility.Visible : Visibility.Collapsed;
         Columns.ColumnSpacing = showLeft && showRight ? 56 : 0;
+        // Narrow window on another tab: the artwork column is hidden, so keep the song and its controls in a strip.
+        bool mini = _narrow && !art;
+        MiniBar.Visibility = mini ? Visibility.Visible : Visibility.Collapsed;
+        if (mini) { _updating = true; MiniSeek.Value = Player.Position; _updating = false; }
     }
 
     // ---------------- Commands ----------------

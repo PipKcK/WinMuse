@@ -62,9 +62,11 @@ foreach ($theme in $Themes) {
         }
         if (Ui 'nav' 'Albums') { Start-Sleep 1; if (Ui 'open-item' 0) { Shot 'album-detail' } }
         if (Ui 'nav' 'Artists') { Start-Sleep 1; if (Ui 'open-item' 0) { Shot 'artist-detail' 2500 } }
-        if (Ui 'search' 'love') { Shot 'search' }
+        # Search results aren't captured: the search box's button isn't exposed to UI Automation, and submitting needs Enter.
         if (Ui 'invoke' 'Open Now Playing') { Shot 'nowplaying' 2500; Ui 'invoke' 'Close (Esc)' | Out-Null; Start-Sleep 1 }
     }
+    $w, $h = $Sizes[0] -split 'x'; Ui 'size' $w $h | Out-Null   # the mini player button is hidden in narrow windows
+    Start-Sleep 1
     if (Ui 'invoke' 'Mini player (Ctrl+M)') { Start-Sleep 2; $proc.Refresh(); $size = 'mini'; Shot 'mini' }
 
     $proc.Refresh()

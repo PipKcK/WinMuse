@@ -118,6 +118,7 @@ public sealed partial class MainWindow : Window
         Ambient.SetPalette(Svc.Theme.Palette, false);
         UpdateQueueBadge();
         UpdateQueuePanel(animate: false);
+        RootGrid.SizeChanged += (_, e) => OnWindowWidth(e.NewSize.Width);
         Svc.Player.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(PlaybackService.HasTrack)) { UpdateQueuePanel(); UpdateBarVisualizer(); } };
         UpdateBarVisualizer();
         Navigate(typeof(HomePage));
@@ -331,11 +332,26 @@ public sealed partial class MainWindow : Window
     private void OnSelectionAll(object sender, RoutedEventArgs e) => SelectionService.SelectAll();
     private void OnSelectionCancel(object sender, RoutedEventArgs e) => SelectionService.End();
 
+    // ---------------- Narrow windows ----------------
+
+    private bool _roomForQueue = true;
+    private bool _queueAsked;   // turned on from the player bar while the window is narrow: show it anyway
+
+    /// <summary>Below 1000 px the navigation shrinks to icons (the menu button still opens it over the page), and below
+    /// 1200 px the floating Up next panel steps aside unless asked for; both come back when the window is wider again.</summary>
+    private void OnWindowWidth(double width)
+    {
+        var mode = width < 1000 ? NavigationViewPaneDisplayMode.LeftCompact : NavigationViewPaneDisplayMode.Left;
+        if (Nav.PaneDisplayMode != mode) Nav.PaneDisplayMode = mode;
+        var room = width >= 1200;
+        if (room != _roomForQueue) { _roomForQueue = room; _queueAsked = false; UpdateQueuePanel(); }
+    }
+
     // ---------------- Queue panel ----------------
 
     private void UpdateQueuePanel(bool animate = true)
     {
-        var show = Svc.Settings.Current.ShowQueuePanel && Svc.Player.HasTrack;
+        var show = Svc.Settings.Current.ShowQueuePanel && Svc.Player.HasTrack && (_roomForQueue || _queueAsked);
         var visible = QueueCard.Visibility == Visibility.Visible;
         if (show == visible) return;
         if (show)
@@ -365,7 +381,7 @@ public sealed partial class MainWindow : Window
         switch (name)
         {
             case nameof(AppSettings.Theme): Svc.Theme.ApplyTheme(); ApplyBackground(); break;
-            case nameof(AppSettings.ShowQueuePanel): UpdateQueuePanel(); break;
+            case nameof(AppSettings.ShowQueuePanel): _queueAsked = Svc.Settings.Current.ShowQueuePanel; UpdateQueuePanel(); break;
             case nameof(AppSettings.ShowVisualizer):
             case nameof(AppSettings.ShowBarVisualizer): UpdateBarVisualizer(); break;
             case nameof(AppSettings.AccentSource):

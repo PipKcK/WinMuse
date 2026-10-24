@@ -60,7 +60,7 @@ public sealed class Track : ObservableObject
 
     // ---- Display helpers ----
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? System.IO.Path.GetFileNameWithoutExtension(Path) : Title!;
-    public string DisplayArtist => string.IsNullOrWhiteSpace(Artist) ? "Unknown Artist" : Artist!;
+    public string DisplayArtist => IsName(Artist) ? Artist! : "Unknown Artist";
     public string DisplayAlbum => string.IsNullOrWhiteSpace(Album) ? "Unknown Album" : Album!;
     /// <summary>Album as shown in song lists: "-" when unknown.</summary>
     public string AlbumText => string.IsNullOrWhiteSpace(Album) ? "-" : Album!;
@@ -69,7 +69,8 @@ public sealed class Track : ObservableObject
 
     /// <summary>
     /// Every artist the song credits, from its artist and album artist ("A & B", "A feat. B" and "A; B" are split).
-    /// Various Artists is left out; a song with no artist at all belongs to Unknown Artist.
+    /// Various Artists and unreadable names (no letter or digit, e.g. "_" or "�" from a damaged tag) are left out; a song
+    /// with no artist at all belongs to Unknown Artist.
     /// </summary>
     public IReadOnlyList<string> ArtistNames
     {
@@ -78,7 +79,7 @@ public sealed class Track : ObservableObject
             var names = Helpers.ArtistCredit.Split(Artist);
             foreach (var n in Helpers.ArtistCredit.Split(AlbumArtist))
                 if (!names.Contains(n, StringComparer.OrdinalIgnoreCase)) names.Add(n);
-            names.RemoveAll(n => n.Equals("Various Artists", StringComparison.OrdinalIgnoreCase));
+            names.RemoveAll(n => n.Equals("Various Artists", StringComparison.OrdinalIgnoreCase) || !IsName(n));
             if (names.Count == 0) names.Add("Unknown Artist");
             return names;
         }
@@ -86,7 +87,10 @@ public sealed class Track : ObservableObject
 
     /// <summary>The main artist (the first album artist, else the first artist).</summary>
     public string PrimaryArtist =>
-        Helpers.ArtistCredit.Split(AlbumArtist).FirstOrDefault(n => !n.Equals("Various Artists", StringComparison.OrdinalIgnoreCase)) ?? ArtistNames[0];
+        Helpers.ArtistCredit.Split(AlbumArtist).FirstOrDefault(n => !n.Equals("Various Artists", StringComparison.OrdinalIgnoreCase) && IsName(n)) ?? ArtistNames[0];
+
+    /// <summary>A usable artist name: has at least one letter or digit.</summary>
+    private static bool IsName(string? n) => !string.IsNullOrWhiteSpace(n) && n.Any(char.IsLetterOrDigit);
     public TimeSpan Duration => TimeSpan.FromMilliseconds(DurationMs);
     public string DurationText => Helpers.Format.Time(Duration);
     public string YearText => Year > 0 ? Year.ToString() : "";

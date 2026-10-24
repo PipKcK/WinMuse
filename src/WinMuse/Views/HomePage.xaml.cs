@@ -27,8 +27,13 @@ public sealed partial class HomePage : Page
         _loadingSort = true;
         PlaylistSortBox.SelectedIndex = (int)Svc.Settings.Current.HomePlaylistSort;
         _loadingSort = false;
-        // The fanned covers need room; hide them rather than letting them crowd the buttons.
-        Hero.SizeChanged += (_, e) => ArtFan.Opacity = e.NewSize.Width >= 760 ? 1 : 0;
+        // The fanned covers need room; hide them (and give back their column) rather than letting them crowd the greeting.
+        Hero.SizeChanged += (_, e) =>
+        {
+            var room = e.NewSize.Width >= 760;
+            ArtFan.Opacity = room ? 1 : 0;
+            Hero.ColumnDefinitions[1].Width = room ? GridLength.Auto : new GridLength(0);
+        };
         // Home scrolls smoothly with the wheel (rows hand their wheel to the page too, see ShelfRow).
         // On the page's content, so it runs before the page's scroll viewer handles the wheel itself.
         ((UIElement)Scroller.Content).AddHandler(PointerWheelChangedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler(OnPageWheel), false);
@@ -150,8 +155,11 @@ public sealed partial class HomePage : Page
 
         Greeting.Text = Format.Greeting();
         GreetingIcon.Glyph = DateTime.Now.Hour is >= 6 and < 18 ? "\uE706" : "\uE708"; // sun / moon
+        // Each part keeps its words together (no-break spaces), so a narrow card breaks the line only between parts.
+        static string Keep(string s) => s.Replace(' ', ' ');
         Stats.Text = hasMusic
-            ? $"{tracks.Count:N0} songs · {lib.Albums.Count:N0} albums · {lib.Artists.Count:N0} artists · {Format.LongTime(TimeSpan.FromMilliseconds(tracks.Sum(t => t.DurationMs)))} of music"
+            ? string.Join(" · ", Keep($"{tracks.Count:N0} songs"), Keep($"{lib.Albums.Count:N0} albums"), Keep($"{lib.Artists.Count:N0} artists"),
+                Keep($"{Format.LongTime(TimeSpan.FromMilliseconds(tracks.Sum(t => t.DurationMs)))} of music"))
             : hasFolders && lib.IsScanning ? "Scanning library…" : "Your library is empty";
         ShuffleAllButton.IsEnabled = hasMusic;
         Welcome.Visibility = !hasMusic && !lib.IsScanning ? Visibility.Visible : Visibility.Collapsed;

@@ -18,7 +18,7 @@
                     <controls:ArtImage x:Name="Portrait" Width="196" Height="196" CornerRadius="98" DecodeSize="240" Glyph="&#xE77B;" />
                     <StackPanel x:Name="Info" Grid.Column="1" VerticalAlignment="Bottom" Spacing="6">
                         <TextBlock Text="ARTIST" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" CharacterSpacing="120" />
-                        <TextBlock x:Name="NameText" Style="{StaticResource DisplayTextBlockStyle}" FontSize="52" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="NameText" Style="{StaticResource DisplayTextBlockStyle}" FontSize="52" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="WrapWholeWords" MaxLines="2" />
                         <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
                             <Button Style="{StaticResource PillButtonStyle}" Click="OnPlay">

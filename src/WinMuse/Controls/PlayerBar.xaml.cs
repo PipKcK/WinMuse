@@ -72,10 +72,13 @@ public sealed partial class PlayerBar : UserControl
         SizeChanged += (_, e) => ApplyResponsiveLayout(e.NewSize.Width);
     }
 
-    /// <summary>Shows as many secondary buttons as fit beside the centred transport, in priority order.</summary>
+    /// <summary>Shows as many secondary buttons as fit beside the centred transport, in priority order. In a narrow
+    /// window the transport (and its seek bar) gives up width first, down to 280 px, so nothing is pushed off the edge.</summary>
     private void ApplyResponsiveLayout(double width)
     {
-        var available = (width - 32 - 460 - 32) / 2 - 8;
+        var transport = Math.Clamp(width - 32 - 32 - 180 - 90, 280, 460);
+        if (Transport.Width != transport) Transport.Width = transport;
+        var available = (width - 32 - transport - 32) / 2 - 8;
         var items = new (FrameworkElement el, double w)[]
         {
             (EqButton, 42), (QueueButton, 42), (ExpandButton, 42), (LyricsButton, 42), (VolumeSlider, 94), (MiniButton, 48),
