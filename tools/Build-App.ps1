@@ -415,6 +415,9 @@ $btnBuild.Add_Click({
 
         $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
         if (-not $dotnet) { throw 'The .NET SDK (dotnet) was not found. Install the .NET 10 SDK.' }
+        # FFmpeg for this CPU first (fetched during the build it would miss the copy to the output on the first build).
+        Write-Log 'Checking FFmpeg…'; [System.Windows.Forms.Application]::DoEvents()
+        & (Join-Path $PSScriptRoot 'Get-FFmpeg.ps1') -Arch $arch.ToLower() | Out-Null
         $buildLog = Join-Path $Work 'build.log'; Set-Content $buildLog ''
         $target = if ($chkClean.Checked) { '-t:Rebuild' } else { '' }
         $quoted = '"' + ($name -replace '"', '') + '"'
@@ -464,7 +467,9 @@ $timer.Add_Tick({
             }
             if ($chkInstaller.Checked) {
                 # Second step, in the background like the build: publish self-contained, zip, wrap in the installer.
-                $state.Setup = Join-Path $txtShare.Text.Trim() "$($state.Name) Setup.exe"
+                # Built for the architecture chosen above; ARM64 installers say so in their name (they don't run on Intel/AMD PCs).
+                $suffix = if ($state.Arch -eq 'ARM64') { ' (ARM64)' } else { '' }
+                $state.Setup = Join-Path $txtShare.Text.Trim() "$($state.Name) Setup$suffix.exe"
                 $setupLog = Join-Path $Work 'installer.log'; Set-Content $setupLog ''
                 $script = Join-Path $PSScriptRoot 'Make-Installer.ps1'
                 $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Name `"$($state.Name -replace '"', '')`" -Arch $($state.Arch) -Out `"$($state.Setup)`" > `"$setupLog`" 2>&1"

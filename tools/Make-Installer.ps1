@@ -25,6 +25,9 @@ function Step([string]$text) { Write-Output $text }
 if (Test-Path $publish) { Remove-Item -Recurse -Force $publish }
 New-Item -ItemType Directory -Force $Work | Out-Null
 
+# FFmpeg for this CPU first: fetched during the build itself, it would arrive after the files to ship were listed.
+& (Join-Path $PSScriptRoot 'Get-FFmpeg.ps1') -Arch $Arch.ToLower()
+
 Step "Publishing a self-contained copy for $Arch (includes the .NET runtime)…"
 & dotnet publish (Join-Path $Root 'src\WinMuse\WinMuse.csproj') -c Release -p:Platform=$Arch -r $rid --self-contained true `
     -p:WindowsAppSDKSelfContained=true "-p:Product=$quoted" "-p:AssemblyTitle=$quoted" "-p:Description=$quoted" -o $publish -nologo -v:minimal

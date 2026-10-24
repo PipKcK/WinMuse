@@ -46,8 +46,13 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <!-- FFmpeg for the CPU being built for (an ARM64 app can't load x64 DLLs): external\ffmpeg (x64) or external\ffmpeg-arm64. -->
+    <FFmpegArch Condition="'$(Platform)' == 'ARM64'">arm64</FFmpegArch>
+    <FFmpegArch Condition="'$(FFmpegArch)' == ''">x64</FFmpegArch>
+    <FFmpegDir Condition="'$(FFmpegArch)' == 'arm64'">..\..\external\ffmpeg-arm64</FFmpegDir>
+    <FFmpegDir Condition="'$(FFmpegDir)' == ''">..\..\external\ffmpeg</FFmpegDir>
     <!-- Only the libraries the player uses (decode, demux, resample); avfilter/avdevice/swscale are not shipped. -->
-    <FFmpegFiles>..\..\external\ffmpeg\avcodec-*.dll;..\..\external\ffmpeg\avformat-*.dll;..\..\external\ffmpeg\avutil-*.dll;..\..\external\ffmpeg\swresample-*.dll;..\..\external\ffmpeg\LICENSE.txt</FFmpegFiles>
+    <FFmpegFiles>$(FFmpegDir)\avcodec-*.dll;$(FFmpegDir)\avformat-*.dll;$(FFmpegDir)\avutil-*.dll;$(FFmpegDir)\swresample-*.dll;$(FFmpegDir)\LICENSE.txt</FFmpegFiles>
   </PropertyGroup>
 
   <ItemGroup>
@@ -70,8 +75,8 @@
   </Target>
 
   <!-- Fetch FFmpeg automatically on first build if it is missing. -->
-  <Target Name="EnsureFFmpeg" BeforeTargets="BeforeBuild" Condition="!Exists('$(MSBuildThisFileDirectory)..\..\external\ffmpeg\avcodec-62.dll')">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\tools\Get-FFmpeg.ps1&quot;" />
+  <Target Name="EnsureFFmpeg" BeforeTargets="BeforeBuild" Condition="!Exists('$(MSBuildThisFileDirectory)$(FFmpegDir)\avcodec-62.dll')">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\tools\Get-FFmpeg.ps1&quot; -Arch $(FFmpegArch)" />
     <ItemGroup>
       <None Include="$(FFmpegFiles)" Link="ffmpeg\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>

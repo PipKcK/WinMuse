@@ -3,6 +3,7 @@ obj/
 .vs/
 *.user
 external/ffmpeg/
+external/ffmpeg-arm64/
 
 # The downloader (199 MB) is over GitHub's 100 MB file limit; kept out until it goes through Git LFS
 src/WinMuse/Tools/mdown.exe
