@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Internal tests for Music (WinMuse). The app is a WinUI exe, so instead of referencing it this project compiles the
+    app's UI-free source files directly (logic, models, database, audio decoding) and tests them in isolation.
+    Run:  dotnet test tests\WinMuse.Tests   (MUSIC_TEST_DIR = a folder of real songs for the decoder tests; optional)
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1416;CS8618;CS8602;CS8604;MVVMTK0045</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- App sources under test (no UI). -->
+    <Compile Include="..\..\src\WinMuse\Helpers\ArtistCredit.cs" Link="App\ArtistCredit.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\Format.cs" Link="App\Format.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\CollectionSync.cs" Link="App\CollectionSync.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\LrcParser.cs" Link="App\LrcParser.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\AppPaths.cs" Link="App\AppPaths.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\UiLock.cs" Link="App\UiLock.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Matching.cs" Link="App\Matching.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\LibraryDatabase.cs" Link="App\LibraryDatabase.cs" />
+    <Compile Include="..\..\src\WinMuse\Models\Track.cs" Link="App\Track.cs" />
+    <Compile Include="..\..\src\WinMuse\Models\Playlist.cs" Link="App\Playlist.cs" />
+    <Compile Include="..\..\src\WinMuse\Models\Metadata.cs" Link="App\Metadata.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Audio\FFmpegDecoder.cs" Link="App\FFmpegDecoder.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Audio\AudioThread.cs" Link="App\AudioThread.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Audio\Equalizer.cs" Link="App\Equalizer.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Audio\SpectrumAnalyzer.cs" Link="App\SpectrumAnalyzer.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Audio\PlaybackPipeline.cs" Link="App\PlaybackPipeline.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\external\ffmpeg\avcodec-*.dll;..\..\external\ffmpeg\avformat-*.dll;..\..\external\ffmpeg\avutil-*.dll;..\..\external\ffmpeg\swresample-*.dll"
+          Link="ffmpeg\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+{
+  "_comment": "Stress pass marks. CPU is % of the whole machine (all cores), as Task Manager shows it. 'expected' = the average we aim for; 'upper' = fail above (avg for cpu, p95 for spiky phases). Memory in MB (private bytes).",
+  "cpu": {
+    "idle":            { "expected": 0.5, "upper": 1.5 },
+    "play-minimized":  { "expected": 1.0, "upper": 3.0 },
+    "play-home":       { "expected": 2.5, "upper": 6.0 },
+    "play-nowplaying": { "expected": 4.0, "upper": 10.0 },
+    "tab-switching":   { "expected": 6.0, "upper": 15.0, "p95Upper": 25.0 },
+    "search":          { "expected": 4.0, "upper": 12.0, "p95Upper": 25.0 },
+    "settle":          { "expected": 2.5, "upper": 6.0 }
+  },
+  "memoryPrivateMb": { "expected": 400, "upper": 700 },
+  "memoryGrowthMb":  { "expected": 60,  "upper": 150, "_comment": "settle phase max minus idle phase max" },
+  "scanSongsPerSecond": { "expected": 50, "lower": 15 },
+  "renderGaps": { "upper": 0 },
+  "unhandledErrors": { "upper": 0 }
+}

@@ -1,0 +1,46 @@
+[
+ [
+  "High",
+  "Build tool: \"Open with\" is shared by every install",
+  "All installs register the same key (Applications\\WinMuse.exe). Installing a second copy (e.g. 'Music Test') points your existing install's 'Open with' at the new copy, and uninstalling either copy deletes it for both. Reproduced: installing Music Test redirected MavenMuse's 'Open with'; running Music Test's uninstaller removed it entirely (restored by hand after the test)."
+ ],
+ [
+  "Medium",
+  "Memory roughly doubles after visiting every page and stays high",
+  "Both sessions: about 215 MB while playing, rising to 375-445 MB during rapid page switching, then level (no further climb over 6+ rounds). Looks like cached pages and cover images rather than a runaway leak, but it is over the +150 MB growth limit. The 1-hour Full test should confirm it stays flat.",
+  [
+   "memory"
+  ]
+ ],
+ [
+  "Medium",
+  "Idle CPU above the expected level",
+  "With nothing playing, the app uses about 1.0% of the whole machine (about a quarter of one CPU core on this 24-core PC), mostly the animated album-art background. Within the 1.5% limit, above the 0.5% target.",
+  [
+   "cpu-idle"
+  ]
+ ],
+ [
+  "Low",
+  "Large one-off allocations cause short audio-thread pauses during fetch",
+  "Session B logged 4 audio-thread delays of 55-67 ms, all during automatic fetch, caused by blocking garbage collections after about 880 MB of large allocations (cover images and audio buffers). The 200 ms output buffer absorbed them (no audible gap, decode-ahead never ran dry), but the margin shrinks on slower PCs.",
+  [
+   "audio"
+  ]
+ ],
+ [
+  "Low",
+  "Build tool edits tracked source files",
+  "Every custom build rewrites src/WinMuse/Assets/AppIcon.ico, AppIcon.png and Branding.json, so the git tree shows changes after any build with a different name or icon."
+ ],
+ [
+  "Low",
+  "Build tool controls are invisible to accessibility tools",
+  "The Build-App window's buttons, boxes and checkboxes are exposed only as unnamed panes to UI Automation, so screen readers can't identify them."
+ ],
+ [
+  "Low",
+  "One page change was ignored right after closing Now Playing",
+  "In session A, selecting Songs immediately after closing Now Playing found no Songs entry for a moment (the overlay was still closing). Scripted timing; a person clicking normally is unlikely to notice."
+ ]
+]
