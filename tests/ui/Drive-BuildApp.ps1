@@ -60,6 +60,7 @@ do {
 } until ($box -or ((Get-Date) - $start).TotalSeconds -gt $TimeoutSec)
 $elapsed = ((Get-Date) - $start).TotalSeconds
 if ($box) { [W]::PostMessage($box, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null }
-Start-Sleep 1
-[W]::PostMessage($p.MainWindowHandle, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
-[pscustomobject]@{ Completed = [bool]$box; Seconds = [int]$elapsed; BuildLogTail = (Get-Content $log -Tail 3 -ErrorAction SilentlyContinue) -join ' | ' }
+# After a successful build the tool closes itself once the box is dismissed.
+$closedItself = $p.WaitForExit(10000)
+if (-not $closedItself) { [W]::PostMessage($p.MainWindowHandle, 0x10, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null }
+[pscustomobject]@{ Completed = [bool]$box; Seconds = [int]$elapsed; ClosedItself = $closedItself; BuildLogTail = (Get-Content $log -Tail 3 -ErrorAction SilentlyContinue) -join ' | ' }

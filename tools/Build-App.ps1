@@ -419,6 +419,7 @@ $timer.Add_Tick({
     } catch {}
     if (-not $state.Process.HasExited) { return }
     $timer.Stop()
+    $done = $false
     try {
         $out = Join-Path $Root "src\WinMuse\bin\$($state.Arch)\Release\net10.0-windows10.0.22621.0\win-$($state.Arch.ToLower())"
         if ($state.Process.ExitCode -ne 0 -or -not (Test-Path (Join-Path $out 'WinMuse.exe'))) { throw 'The build failed. See the messages above.' }
@@ -442,8 +443,11 @@ $timer.Add_Tick({
         Write-Log 'Done.'
         if ($chkLaunch.Checked) { Start-Process $exe }
         [System.Windows.Forms.MessageBox]::Show("$($state.Name) is ready.`n`n$exe", 'Build complete', 'OK', 'Information') | Out-Null
+        $done = $true
     } catch { Write-Log ('Error: ' + $_.Exception.Message) }
     finally { Set-Busy $false }
+    # A finished build closes the tool; after a failure it stays open so the messages can be read.
+    if ($done) { $form.Close() }
 })
 
 $form.Add_Shown({ Update-Preview })
