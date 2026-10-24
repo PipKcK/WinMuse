@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinMuse.Controls">
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <!-- Icon badge beside Home section titles. -->
+            <SolidColorBrush x:Key="SectionBadgeBrush" Color="#1A000000" />
+            <SolidColorBrush x:Key="SectionBadgeStrokeBrush" Color="#14000000" />
+            <!-- Text links (HyperlinkButton) underline on hover instead of showing a box. -->
+            <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="PressGlowFillBrush" Color="#0F000000" />
+            <SolidColorBrush x:Key="PressGlowStrokeBrush" Color="#40000000" />
+            <SolidColorBrush x:Key="ShelfArrowBrush" Color="#F7FFFFFF" />
+            <SolidColorBrush x:Key="ShelfArrowHoverBrush" Color="#FFF3F3F6" />
+            <SolidColorBrush x:Key="ShelfArrowStrokeBrush" Color="#1F000000" />
+            <SolidColorBrush x:Key="QuickTileBrush" Color="#8CFFFFFF" />
+            <LinearGradientBrush x:Key="QuickTileStrokeBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Offset="0" Color="#B3FFFFFF" />
+                <GradientStop Offset="0.5" Color="#17000000" />
+                <GradientStop Offset="1" Color="#0F000000" />
+            </LinearGradientBrush>
+            <!-- Accent brushes owned by the app (ThemeService recolors them in place). -->
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FF005FB8" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FF005FB8" Opacity="0.9" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FF005FB8" Opacity="0.8" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FF003E92" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FF001A68" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FF005FB8" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FF0078D4" />
+            <AcrylicBrush x:Key="PlayerBarBrush" TintColor="#FFF7F7FA" TintOpacity="0.5" TintLuminosityOpacity="0.6" FallbackColor="#FFF3F3F3" />
+            <AcrylicBrush x:Key="GlassBrush" TintColor="#FFFFFFFF" TintOpacity="0.4" TintLuminosityOpacity="0.6" FallbackColor="#F2FFFFFF" />
+            <SolidColorBrush x:Key="CardHoverBrush" Color="#0A000000" />
+            <SolidColorBrush x:Key="RowAltBrush" Color="#06000000" />
+            <SolidColorBrush x:Key="NowPlayingScrimBrush" Color="#66FFFFFF" />
+            <SolidColorBrush x:Key="NowPlayingTextBrush" Color="#FF111111" />
+            <SolidColorBrush x:Key="NowPlayingSubtleTextBrush" Color="#99111111" />
+            <SolidColorBrush x:Key="HairlineBrush" Color="#14000000" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <!-- Icon badge beside Home section titles. -->
+            <SolidColorBrush x:Key="SectionBadgeBrush" Color="#1FFFFFFF" />
+            <SolidColorBrush x:Key="SectionBadgeStrokeBrush" Color="#14FFFFFF" />
+            <!-- Text links (HyperlinkButton) underline on hover instead of showing a box. -->
+            <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="Transparent" />
+            <SolidColorBrush x:Key="PressGlowFillBrush" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="PressGlowStrokeBrush" Color="#59FFFFFF" />
+            <!-- Row arrows on Home -->
+            <SolidColorBrush x:Key="ShelfArrowBrush" Color="#F02A2A30" />
+            <SolidColorBrush x:Key="ShelfArrowHoverBrush" Color="#FF3A3A42" />
+            <SolidColorBrush x:Key="ShelfArrowStrokeBrush" Color="#26FFFFFF" />
+            <!-- Quick access tiles: clear glass. The color behind (greeting glow, background) shows through, and the
+                 edge catches light at the top-left like real glass. -->
+            <!-- Plain translucent fill, not acrylic: acrylic needs a moment to start blurring after a page slides in
+                 and draws a flat grey until then, which flashed every time Home was opened. -->
+            <SolidColorBrush x:Key="QuickTileBrush" Color="#0DFFFFFF" />
+            <LinearGradientBrush x:Key="QuickTileStrokeBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Offset="0" Color="#30FFFFFF" />
+                <GradientStop Offset="0.45" Color="#12FFFFFF" />
+                <GradientStop Offset="1" Color="#08FFFFFF" />
+            </LinearGradientBrush>
+            <!-- Accent brushes owned by the app (ThemeService recolors them in place). -->
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FF60CDFF" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FF60CDFF" Opacity="0.9" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FF60CDFF" Opacity="0.8" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FF99EBFF" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FF99EBFF" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FF60CDFF" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FF0078D4" />
+            <AcrylicBrush x:Key="PlayerBarBrush" TintColor="#FF141418" TintOpacity="0.5" TintLuminosityOpacity="0.62" FallbackColor="#FF1C1C1C" />
+            <AcrylicBrush x:Key="GlassBrush" TintColor="#FF202024" TintOpacity="0.45" TintLuminosityOpacity="0.7" FallbackColor="#F2202020" />
+            <SolidColorBrush x:Key="CardHoverBrush" Color="#0FFFFFFF" />
+            <SolidColorBrush x:Key="RowAltBrush" Color="#06FFFFFF" />
+            <SolidColorBrush x:Key="NowPlayingScrimBrush" Color="#59000000" />
+            <SolidColorBrush x:Key="NowPlayingTextBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="NowPlayingSubtleTextBrush" Color="#B3FFFFFF" />
+            <SolidColorBrush x:Key="HairlineBrush" Color="#18FFFFFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="SectionBadgeBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="SectionBadgeStrokeBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="PressGlowFillBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="PressGlowStrokeBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="ShelfArrowBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+            <SolidColorBrush x:Key="ShelfArrowHoverBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="ShelfArrowStrokeBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+            <SolidColorBrush x:Key="QuickTileBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="QuickTileStrokeBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="PlayerBarBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="GlassBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="CardHoverBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="RowAltBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="NowPlayingScrimBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="NowPlayingTextBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="NowPlayingSubtleTextBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="HairlineBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons,Segoe MDL2 Assets</FontFamily>
+
+    <!-- Mutated at runtime by ThemeService so every user follows the accent. -->
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#FF7C5CFF" />
+        <GradientStop Offset="1" Color="#FFE0569B" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AccentGlowBrush" Color="#5A8B5CF6" />
+    <!-- Animated border around the playing song in song lists; colored and moved by Helpers/PlayingBorder. -->
+    <LinearGradientBrush x:Key="NowPlayingBorderBrush" StartPoint="0,0.5" EndPoint="2,0.5" />
+    <!-- Home row cards; colored by Helpers/ShelfCardColors (Settings > Debug > Card color). -->
+    <SolidColorBrush x:Key="ShelfCardBrush" Color="#EB28282E" />
+    <SolidColorBrush x:Key="ShelfCardStrokeBrush" Color="#1AFFFFFF" />
+    <!-- 1.5: stays visible when a card is scaled (hover, end-of-row fade); a 1 px edge smears and fades. -->
+    <Thickness x:Key="ShelfCardStrokeThickness">1.5</Thickness>
+
+    <!-- Round, borderless icon button used across the player. -->
+    <Style x:Key="IconButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter x:Name="Presenter"
+                                          Padding="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Edit dialogs: fields grouped into soft cards with a small section title. -->
+    <Style x:Key="EditorCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="18,14,18,18" />
+    </Style>
+    <Style x:Key="EditorSectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- A choice row in a menu-like flyout (icon, title, description): full width, soft fill on hover. -->
+    <Style x:Key="NewChoiceButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter x:Name="Presenter" Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}" Foreground="{TemplateBinding Foreground}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters><Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" /></VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters><Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" /></VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Every text link: underlined on hover (it already shows the hand cursor), no box. -->
+    <Style TargetType="HyperlinkButton" BasedOn="{StaticResource DefaultHyperlinkButtonStyle}">
+        <Setter Property="controls:Effects.HoverUnderline" Value="True" />
+    </Style>
+
+    <!-- A heading that opens something: no box on hover; its title underlines and the hand cursor shows (controls:Effects.HoverUnderline). -->
+    <Style x:Key="TextLinkButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <ContentPresenter x:Name="Presenter" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                      Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Foreground="{TemplateBinding Foreground}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver" />
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Presenter.Opacity" Value="0.7" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </ContentPresenter>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Toggle variant: accent-colored glyph with a small indicator dot when on. -->
+    <Style x:Key="IconToggleButtonStyle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter x:Name="Presenter"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                        <Ellipse x:Name="Dot" Width="4" Height="4" Margin="0,0,0,5" VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                                 Fill="{ThemeResource AccentFillColorDefaultBrush}" Opacity="0" />
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Checked">
+                                    <Storyboard><DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" /></Storyboard>
+                                    <VisualState.Setters>
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="CheckedPointerOver">
+                                    <Storyboard><DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" /></Storyboard>
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="CheckedPressed">
+                                    <Storyboard><DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" /></Storyboard>
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource AccentTextFillColorSecondaryBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="CheckedDisabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Presenter.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The big gradient play button. -->
+    <Style x:Key="PlayButtonStyle" TargetType="Button">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{StaticResource AccentGradientBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Width" Value="48" />
+        <Setter Property="Height" Value="48" />
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1" />
+                        </Grid.RenderTransform>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" />
+                        <Border x:Name="Sheen" CornerRadius="{TemplateBinding CornerRadius}" Background="White" Opacity="0" />
+                        <ContentPresenter x:Name="Presenter" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"
+                                          Content="{TemplateBinding Content}"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          FontWeight="{TemplateBinding FontWeight}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="Sheen" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1.06" Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1.06" Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="Sheen" Storyboard.TargetProperty="Opacity" To="0.12" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.94" Duration="0:0:0.1" />
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.94" Duration="0:0:0.1" />
+                                        <DoubleAnimation Storyboard.TargetName="Sheen" Storyboard.TargetProperty="Opacity" To="0.05" Duration="0:0:0.1" />
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Gradient pill button used for primary page actions ("Play", "Shuffle all"). -->
+    <Style x:Key="PillButtonStyle" TargetType="Button" BasedOn="{StaticResource PlayButtonStyle}">
+        <Setter Property="Width" Value="NaN" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="Padding" Value="20,0" />
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text,Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="GhostPillButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="Padding" Value="18,0" />
+    </Style>
+
+    <Style x:Key="PageTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource TitleLargeTextBlockStyle}">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <Style x:Key="CardTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="MaxLines" Value="1" />
+    </Style>
+
+    <Style x:Key="CardSubtitleStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="MaxLines" Value="1" />
+    </Style>
+
+    <!-- GridView item container without the default selection chrome; cards draw their own hover state. -->
+    <Style x:Key="CardGridViewItemStyle" TargetType="GridViewItem" BasedOn="{StaticResource DefaultGridViewItemStyle}">
+        <Setter Property="Margin" Value="0,0,12,16" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    </Style>
+</ResourceDictionary>

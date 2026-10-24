@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="WinMuse.Controls.QueuePanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border x:Name="Card" Width="320" CornerRadius="12" Padding="14,12,14,14"
+            Background="{ThemeResource GlassBrush}" BorderBrush="{ThemeResource HairlineBrush}" BorderThickness="1">
+        <StackPanel Spacing="10">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="Up next" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock x:Name="SummaryText" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Spacing="2">
+                    <HyperlinkButton Content="View all" Click="OnViewAll" Padding="6,2" FontSize="12" />
+                    <Button Style="{StaticResource IconButtonStyle}" Width="28" Height="28" CornerRadius="6" FontSize="11" Content="&#xE70D;"
+                            Click="OnCollapse" ToolTipService.ToolTip="Hide queue panel" AutomationProperties.Name="Hide queue panel" />
+                </StackPanel>
+            </Grid>
+            <StackPanel x:Name="Rows" Spacing="4">
+                <StackPanel.ChildrenTransitions>
+                    <TransitionCollection>
+                        <RepositionThemeTransition />
+                    </TransitionCollection>
+                </StackPanel.ChildrenTransitions>
+            </StackPanel>
+            <TextBlock x:Name="EmptyText" Text="No upcoming songs." Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" Margin="0,4" />
+        </StackPanel>
+    </Border>
+</UserControl>

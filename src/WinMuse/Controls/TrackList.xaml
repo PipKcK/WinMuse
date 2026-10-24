@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="WinMuse.Controls.TrackList"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinMuse.Controls"
+    xmlns:models="using:WinMuse.Models"
+    xmlns:helpers="using:WinMuse.Helpers">
+
+    <UserControl.Resources>
+        <!-- Selection checkboxes are muted so they never compete with the song titles. -->
+        <Style x:Key="RowCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource DefaultCheckBoxStyle}">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Column header. Columns: check | art | title+duration | favorite (no name) | artist | year | album | genre | more -->
+        <Grid x:Name="Header" Height="36" Padding="20,0,20,0" ColumnSpacing="12" BorderBrush="{ThemeResource HairlineBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="36" />
+                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="1.4*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="40" />
+            </Grid.ColumnDefinitions>
+            <CheckBox x:Name="SelectAllBox" Style="{StaticResource RowCheckBoxStyle}" Visibility="Collapsed" Click="OnSelectAllClick"
+                      ToolTipService.ToolTip="Select all" AutomationProperties.Name="Select all" />
+            <HyperlinkButton Grid.Column="1" Grid.ColumnSpan="2" Tag="Title" Click="OnSortClick" Padding="4,2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">Title</HyperlinkButton>
+            <HyperlinkButton Grid.Column="4" Tag="Artist" Click="OnSortClick" Padding="4,2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">Artist</HyperlinkButton>
+            <HyperlinkButton Grid.Column="5" Tag="Year" Click="OnSortClick" Padding="4,2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">Year</HyperlinkButton>
+            <HyperlinkButton Grid.Column="6" Tag="Album" Click="OnSortClick" Padding="4,2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">Album</HyperlinkButton>
+            <HyperlinkButton Grid.Column="7" Tag="Genre" Click="OnSortClick" Padding="4,2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12">Genre</HyperlinkButton>
+        </Grid>
+
+        <ListView x:Name="List" Grid.Row="1" AutomationProperties.AutomationId="TrackList" AutomationProperties.Name="Songs list"
+                  SelectionMode="Single"
+                  IsItemClickEnabled="True"
+                  ItemClick="OnItemClick"
+                  Padding="8,4,8,24"
+                  RightTapped="OnRightTapped"
+                  KeyDown="OnKeyDown"
+                  ContainerContentChanging="OnContainerContentChanging"
+                  DragItemsCompleted="OnDragItemsCompleted">
+            <ListView.Resources>
+                <!-- The row draws its own selection marker (SelMark), underneath the playing-song border. -->
+                <x:Boolean x:Key="ListViewItemSelectionIndicatorVisualEnabled">False</x:Boolean>
+            </ListView.Resources>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                    <Setter Property="Padding" Value="12,0" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemContainerTransitions>
+                <TransitionCollection>
+                    <AddDeleteThemeTransition />
+                    <ContentThemeTransition />
+                    <ReorderThemeTransition />
+                </TransitionCollection>
+            </ListView.ItemContainerTransitions>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:Track">
+                    <Grid Height="56" ColumnSpacing="12" Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0" />
+                            <ColumnDefinition Width="44" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="36" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="56" />
+                            <ColumnDefinition Width="1.4*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="40" />
+                        </Grid.ColumnDefinitions>
+
+
+                        <CheckBox Style="{StaticResource RowCheckBoxStyle}" Visibility="Collapsed" IsChecked="{x:Bind IsChecked, Mode=TwoWay}"
+                                  AutomationProperties.Name="{x:Bind DisplayTitle}" />
+
+                        <Grid Grid.Column="1" Width="44" Height="44" VerticalAlignment="Center">
+                            <local:ArtImage Source="{x:Bind ArtPath, Mode=OneWay}" Seed="{x:Bind AlbumKey, Mode=OneWay}" DecodeSize="48" CornerRadius="6" Glyph="&#xEC4F;" />
+                            <TextBlock Text="{x:Bind TrackNumberText, Mode=OneWay}" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{StaticResource BodyTextBlockStyle}" />
+                            <Border Visibility="{x:Bind IsPlaying, Mode=OneWay}" CornerRadius="6" Background="#99000000">
+                                <FontIcon Glyph="&#xE995;" FontSize="16" Foreground="White" />
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="1">
+                            <Grid>
+                                <TextBlock Text="{x:Bind DisplayTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                           Visibility="{x:Bind helpers:Conv.Hide(IsPlaying), Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind DisplayTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                           Foreground="{StaticResource AccentGradientBrush}" Visibility="{x:Bind IsPlaying, Mode=OneWay}" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind DurationText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        </StackPanel>
+
+                        <!-- Favorite: an outline heart to click, filled in the accent color once the song is a favorite. -->
+                        <Grid Grid.Column="3" Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEB51;" FontSize="14" Click="OnStarClick"
+                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                    Visibility="{x:Bind helpers:Conv.Hide(IsFavorite), Mode=OneWay}" ToolTipService.ToolTip="Add to Favorite" AutomationProperties.Name="Add to Favorite" />
+                            <Button Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEB52;" FontSize="14" Click="OnStarClick"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Visibility="{x:Bind IsFavorite, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Remove from Favorite" AutomationProperties.Name="Remove from Favorite" />
+                        </Grid>
+
+                        <TextBlock Grid.Column="4" Text="{x:Bind DisplayArtist, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <TextBlock Grid.Column="5" Text="{x:Bind YearText, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Grid.Column="6" Text="{x:Bind AlbumText, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <TextBlock Grid.Column="7" Text="{x:Bind DisplayGenre, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <StackPanel Grid.Column="8" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xE712;" FontSize="14" Click="OnMoreClick" ToolTipService.ToolTip="More options" AutomationProperties.Name="More options" />
+                        </StackPanel>
+
+                        <!-- Zebra stripe and selection marker: part of the row, so they show on the first frame (see TrackList.Decorate). -->
+                        <Border Tag="Stripe" Grid.ColumnSpan="9" Margin="-12,0" CornerRadius="4" IsHitTestVisible="False"
+                                Background="{ThemeResource RowAltBrush}" Visibility="Collapsed" Canvas.ZIndex="-1" />
+                        <Rectangle Tag="SelMark" Grid.ColumnSpan="9" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5" Margin="-10,0,0,0"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"
+                                   Fill="{ThemeResource AccentFillColorDefaultBrush}" Visibility="Collapsed" />
+
+                        <!-- Animated border while this song plays (Settings > Appearance > Playing song highlight).
+                             Last child so the column logic in TrackList.ApplyColumns, which works by child index and column, is unaffected. -->
+                        <Border Tag="PlayingBorder" Grid.ColumnSpan="9" Margin="-8,3" CornerRadius="8" BorderThickness="1.5" IsHitTestVisible="False"
+                                BorderBrush="{StaticResource NowPlayingBorderBrush}" Visibility="{x:Bind IsPlaying, Mode=OneWay}" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel x:Name="EmptyState" Grid.Row="1" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+            <FontIcon Glyph="&#xEC4F;" FontSize="40" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            <TextBlock x:Name="EmptyText" Text="No items" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

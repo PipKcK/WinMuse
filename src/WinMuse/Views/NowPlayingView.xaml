@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="WinMuse.Views.NowPlayingView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinMuse.Controls"
+    xmlns:helpers="using:WinMuse.Helpers">
+
+    <UserControl.Resources>
+        <helpers:TimeTooltipConverter x:Key="TimeTip" />
+    </UserControl.Resources>
+
+    <Grid x:Name="Root" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+        <controls:AmbientBackground x:Name="Aurora" BaseDarkness="0.6" />
+        <Rectangle Fill="{ThemeResource NowPlayingScrimBrush}" />
+
+        <controls:Visualizer x:Name="Viz" Height="140" VerticalAlignment="Bottom" BarCount="64" BarOpacity="0.5" Margin="0,0,0,0" />
+
+        <Grid x:Name="ContentRoot" Padding="40,16,40,28" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Top bar -->
+            <Grid>
+                <Button Style="{StaticResource IconButtonStyle}" Content="&#xE70D;" Click="OnClose" ToolTipService.ToolTip="Close (Esc)" AutomationProperties.Name="Close (Esc)" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="4">
+                <!-- Lyrics timing: shown on the Lyrics tab for synced lyrics; saved per song. -->
+                <Button x:Name="LyricsTimingButton" Visibility="Collapsed" VerticalAlignment="Center" Height="36" Padding="12,0" CornerRadius="6" BorderThickness="0"
+                        Background="Transparent" Foreground="{ThemeResource NowPlayingTextBrush}" AutomationProperties.Name="Lyrics timing"
+                        ToolTipService.ToolTip="Lyrics timing for this song">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE916;" FontSize="14" />
+                        <TextBlock x:Name="LyricsTimingText" Text="Timing" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Width="300" Spacing="12">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Lyrics timing" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock Text="Positive values show the lyrics later, negative values earlier. Saved for this song." TextWrapping="Wrap"
+                                               Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                                <Slider x:Name="LyricsTimingSlider" Minimum="-5" Maximum="5" StepFrequency="0.05" SmallChange="0.1" TickFrequency="1" TickPlacement="Outside"
+                                        ValueChanged="OnLyricsTimingSlider" AutomationProperties.Name="Lyrics timing in seconds" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Width="36" Padding="0" Content="&#xE738;" FontFamily="{ThemeResource SymbolThemeFontFamily}" Click="OnLyricsEarlier"
+                                            ToolTipService.ToolTip="0.1 s earlier" AutomationProperties.Name="Earlier" />
+                                    <NumberBox x:Name="LyricsTimingBox" Grid.Column="1" Minimum="-5" Maximum="5" SmallChange="0.1" LargeChange="0.5"
+                                               SpinButtonPlacementMode="Hidden" ValueChanged="OnLyricsTimingTyped" PlaceholderText="0.00"
+                                               ToolTipService.ToolTip="Type the offset in seconds, for example 0.35 or -1.2" AutomationProperties.Name="Offset in seconds" />
+                                    <Button Grid.Column="2" Width="36" Padding="0" Content="&#xE710;" FontFamily="{ThemeResource SymbolThemeFontFamily}" Click="OnLyricsLater"
+                                            ToolTipService.ToolTip="0.1 s later" AutomationProperties.Name="Later" />
+                                    <Button Grid.Column="3" Content="Reset" Click="OnLyricsOffsetReset" />
+                                </Grid>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <SelectorBar x:Name="Tabs" SelectionChanged="OnTabChanged">
+                    <SelectorBarItem x:Name="TabArt" Text="Artwork" Tag="art">
+                        <SelectorBarItem.Icon><FontIcon Glyph="&#xE93C;" /></SelectorBarItem.Icon>
+                    </SelectorBarItem>
+                    <SelectorBarItem x:Name="TabLyrics" Text="Lyrics" Tag="lyrics">
+                        <SelectorBarItem.Icon><FontIcon Glyph="&#xE8BD;" /></SelectorBarItem.Icon>
+                    </SelectorBarItem>
+                    <SelectorBarItem x:Name="TabQueue" Text="Up next" Tag="queue">
+                        <SelectorBarItem.Icon><FontIcon Glyph="&#xE8FD;" /></SelectorBarItem.Icon>
+                    </SelectorBarItem>
+                    <SelectorBarItem x:Name="TabDetails" Text="Details" Tag="details">
+                        <SelectorBarItem.Icon><FontIcon Glyph="&#xE946;" /></SelectorBarItem.Icon>
+                    </SelectorBarItem>
+                </SelectorBar>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="Columns" Grid.Row="1" ColumnSpacing="56">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="LeftCol" Width="*" />
+                    <ColumnDefinition x:Name="RightCol" Width="1.1*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: artwork and transport -->
+                <Grid x:Name="LeftPanel" VerticalAlignment="Center" MaxWidth="520" RowSpacing="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Viewbox MaxWidth="440" MaxHeight="440" Stretch="Uniform">
+                        <Grid x:Name="ArtHost" Width="440" Height="440">
+                            <Border x:Name="ArtShadowHost" CornerRadius="16" />
+                            <controls:ArtImage x:Name="BigArt" CornerRadius="16" DecodeSize="600"
+                                               Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
+                                               Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}" />
+                        </Grid>
+                    </Viewbox>
+
+                    <StackPanel x:Name="TitleBlock" Grid.Row="1" Spacing="4">
+                        <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" FontWeight="Bold"
+                                   Foreground="{ThemeResource NowPlayingTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <HyperlinkButton Padding="0" Click="OnArtist" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
+                                <HyperlinkButton.Resources>
+                                    <ResourceDictionary>
+                                        <ResourceDictionary.ThemeDictionaries>
+                                            <ResourceDictionary x:Key="Light">
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPointerOver" ResourceKey="NowPlayingTextBrush" />
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPressed" ResourceKey="NowPlayingSubtleTextBrush" />
+                                            </ResourceDictionary>
+                                            <ResourceDictionary x:Key="Dark">
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPointerOver" ResourceKey="NowPlayingTextBrush" />
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPressed" ResourceKey="NowPlayingSubtleTextBrush" />
+                                            </ResourceDictionary>
+                                        </ResourceDictionary.ThemeDictionaries>
+                                    </ResourceDictionary>
+                                </HyperlinkButton.Resources>
+                                <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </HyperlinkButton>
+                            <TextBlock Text="·" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
+                            <HyperlinkButton Padding="0" Click="OnAlbum" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
+                                <HyperlinkButton.Resources>
+                                    <ResourceDictionary>
+                                        <ResourceDictionary.ThemeDictionaries>
+                                            <ResourceDictionary x:Key="Light">
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPointerOver" ResourceKey="NowPlayingTextBrush" />
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPressed" ResourceKey="NowPlayingSubtleTextBrush" />
+                                            </ResourceDictionary>
+                                            <ResourceDictionary x:Key="Dark">
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPointerOver" ResourceKey="NowPlayingTextBrush" />
+                                                <StaticResource x:Key="HyperlinkButtonForegroundPressed" ResourceKey="NowPlayingSubtleTextBrush" />
+                                            </ResourceDictionary>
+                                        </ResourceDictionary.ThemeDictionaries>
+                                    </ResourceDictionary>
+                                </HyperlinkButton.Resources>
+                                <TextBlock x:Name="AlbumText" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                            </HyperlinkButton>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                            <Border Visibility="{x:Bind helpers:Conv.HiRes(Player.CurrentTrack), Mode=OneWay}" Background="{StaticResource AccentGradientBrush}" CornerRadius="4" Padding="6,1">
+                                <TextBlock Text="Hi-Res Lossless" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+                            </Border>
+                            <TextBlock Text="{x:Bind helpers:Conv.FormatOf(Player.CurrentTrack), Mode=OneWay}" FontSize="12" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2" ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind helpers:Conv.Time(Player.Position), Mode=OneWay}" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
+                        <Slider x:Name="Seek" Grid.Column="1" Minimum="0" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" StepFrequency="0.1"
+                                ThumbToolTipValueConverter="{StaticResource TimeTip}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind helpers:Conv.Remaining(Player.Position, Player.Duration), Mode=OneWay}" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
+                    </Grid>
+
+                    <Grid Grid.Row="3">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                            <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Content="&#xE8B1;" IsChecked="{x:Bind Player.Shuffle, Mode=TwoWay}" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
+                            <Button Style="{StaticResource IconButtonStyle}" Content="&#xE892;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnPrevious" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <Button Style="{StaticResource PlayButtonStyle}" Width="68" Height="68" CornerRadius="34" Click="OnPlayPause">
+                                <FontIcon x:Name="PlayGlyph" Glyph="{x:Bind helpers:Conv.PlayGlyph(Player.IsPlaying), Mode=OneWay}" FontSize="26" />
+                            </Button>
+                            <Button Style="{StaticResource IconButtonStyle}" Content="&#xE893;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnNext" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Click="OnRepeat" Foreground="{ThemeResource NowPlayingSubtleTextBrush}"
+                                          Content="{x:Bind helpers:Conv.RepeatGlyph(Player.Repeat), Mode=OneWay}"
+                                          IsChecked="{x:Bind helpers:Conv.RepeatOn(Player.Repeat), Mode=OneWay}" />
+                        </StackPanel>
+                        <Button Style="{StaticResource IconButtonStyle}" Content="&#xE712;" HorizontalAlignment="Right" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" Click="OnMore" ToolTipService.ToolTip="More" AutomationProperties.Name="More" />
+                    </Grid>
+                </Grid>
+
+                <!-- Right: lyrics / queue / details -->
+                <Grid x:Name="RightPanel" Grid.Column="1">
+                    <Grid x:Name="LyricsPanel">
+                        <ScrollViewer x:Name="LyricsScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled" ViewChanged="OnLyricsScrolled">
+                            <StackPanel x:Name="LyricsLines" Spacing="18" Padding="0,180,24,260" />
+                        </ScrollViewer>
+                        <StackPanel x:Name="LyricsEmpty" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14" Visibility="Collapsed">
+                            <FontIcon Glyph="&#xE8BD;" FontSize="40" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
+                            <TextBlock x:Name="LyricsEmptyText" Text="Lyrics unavailable" HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <Button x:Name="FetchLyricsButton" Style="{StaticResource PillButtonStyle}" Click="OnFetchLyrics">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xEBD3;" FontSize="14" />
+                                        <TextBlock Text="Fetch lyrics" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource GhostPillButtonStyle}" Content="Add lyrics" Click="OnEditLyrics" />
+                            </StackPanel>
+                            <ProgressRing x:Name="LyricsProgress" IsActive="False" Width="24" Height="24" />
+                        </StackPanel>
+                        <TextBlock x:Name="LyricsSource" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="11" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" Margin="0,0,24,0" />
+                    </Grid>
+
+                    <Grid x:Name="QueuePanel" Visibility="Collapsed">
+                        <controls:TrackList x:Name="QueueList" />
+                    </Grid>
+
+                    <ScrollViewer x:Name="DetailsPanel" Visibility="Collapsed" VerticalAlignment="Center">
+                        <StackPanel Spacing="16" MaxWidth="560">
+                            <TextBlock Text="Track details" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <RatingControl x:Name="Rating" HorizontalAlignment="Left" IsClearEnabled="True" ValueChanged="OnRatingChanged" />
+                            <Grid x:Name="DetailsGrid" ColumnSpacing="24" RowSpacing="10" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnEditInfo">
+                                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE70F;" FontSize="14" /><TextBlock Text="Edit metadata" /></StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnFixInfo">
+                                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock Text="Fetch" /></StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

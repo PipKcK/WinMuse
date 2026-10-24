@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinMuse.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:tk="using:CommunityToolkit.WinUI.Controls"
+    xmlns:controls="using:WinMuse.Controls">
+
+    <Page.Resources>
+        <Style x:Key="GroupHeader" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+            <Setter Property="Margin" Value="2,28,0,6" />
+        </Style>
+        <!-- Secondary options that belong to the card above them. -->
+        <Style x:Key="SubCard" TargetType="tk:SettingsCard">
+            <Setter Property="Margin" Value="40,0,0,0" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel x:Name="Root" Padding="36,28,36,48" MaxWidth="1000" HorizontalAlignment="Stretch" Spacing="4">
+            <TextBlock Text="Settings" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,8" />
+
+            <!-- ================= Library ================= -->
+            <TextBlock Text="Library" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsExpander Header="Library folders" Description="Folders included in your library. Changes are detected automatically." IsExpanded="True">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8B7;" /></tk:SettingsExpander.HeaderIcon>
+                <Button Style="{StaticResource AccentButtonStyle}" Click="OnAddFolder">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="13" /><TextBlock Text="Add folder" /></StackPanel>
+                </Button>
+                <tk:SettingsExpander.ItemsHeader>
+                    <StackPanel x:Name="FoldersPanel" />
+                </tk:SettingsExpander.ItemsHeader>
+            </tk:SettingsExpander>
+            <tk:SettingsCard Header="Scan library" Description="Check library folders for new, changed and removed files.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE72C;" /></tk:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="ScanStatus" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button Content="Scan" Click="OnRescan" />
+                </StackPanel>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Removed songs" Description="Songs removed from the library are hidden but stay on your PC. Restore brings them back.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE738;" /></tk:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="RemovedText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button x:Name="RestoreButton" Content="Restore" Click="OnRestoreRemoved" />
+                </StackPanel>
+            </tk:SettingsCard>
+
+            <!-- ================= Appearance ================= -->
+            <TextBlock Text="Appearance" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsCard Header="App icon" Description="The logo at the top left. Rings and Simple take on the accent color; App icon shows the app's own icon as it is.">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ToggleButton x:Name="LogoRings" Click="OnLogoStyle" Tag="Rings" Padding="10,6" AutomationProperties.Name="Rings">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Rings" /><TextBlock Text="Rings" VerticalAlignment="Center" /></StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="LogoSimple" Click="OnLogoStyle" Tag="Simple" Padding="10,6" AutomationProperties.Name="Simple">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Simple" /><TextBlock Text="Simple" VerticalAlignment="Center" /></StackPanel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="LogoImage" Click="OnLogoStyle" Tag="Image" Padding="10,6" AutomationProperties.Name="App icon">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Image" /><TextBlock Text="App icon" VerticalAlignment="Center" /></StackPanel>
+                    </ToggleButton>
+                </StackPanel>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Theme" Description="Light or dark appearance. System default follows Windows. OLED uses true black, which saves power on OLED screens.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="ThemeBox" SelectionChanged="OnThemeChanged" MinWidth="180">
+                    <x:String>System default</x:String>
+                    <x:String>Light</x:String>
+                    <x:String>Dark</x:String>
+                    <x:String>OLED</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Accent color" Description="Color used for controls and highlights.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE771;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="AccentBox" SelectionChanged="OnAccentSourceChanged" MinWidth="180">
+                    <x:String>Windows</x:String>
+                    <x:String>Custom</x:String>
+                    <x:String>Album art</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard x:Name="CustomAccentCard" Style="{StaticResource SubCard}" Header="Custom color" HorizontalContentAlignment="Left" ContentAlignment="Vertical">
+                <StackPanel Spacing="12">
+                    <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" Spacing="8" />
+                    <ColorPicker x:Name="AccentPicker" ColorSpectrumShape="Ring" IsAlphaEnabled="False" IsMoreButtonVisible="True" ColorChanged="OnAccentPicked" />
+                </StackPanel>
+            </tk:SettingsCard>
+
+            <tk:SettingsExpander x:Name="BackgroundCard" Header="Background" Description="Content displayed behind the app.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8B9;" /></tk:SettingsExpander.HeaderIcon>
+                <ComboBox x:Name="BackgroundBox" SelectionChanged="OnBackgroundModeChanged" MinWidth="180">
+                    <x:String>None</x:String>
+                    <x:String>Album art</x:String>
+                    <x:String>Gradient</x:String>
+                    <x:String>Image</x:String>
+                </ComboBox>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard x:Name="IntensityCard" Header="Intensity">
+                        <Slider x:Name="IntensitySlider" Minimum="10" Maximum="100" Width="220" ValueChanged="OnIntensityChanged" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="AnimateCard" Header="Animation">
+                        <ToggleSwitch x:Name="AnimateToggle" Toggled="OnAnimateToggled" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="GradientCard" Header="Gradient colors">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="Grad1" Width="44" Height="32" Tag="1" Click="OnGradientColor" AutomationProperties.Name="Gradient color 1" />
+                            <Button x:Name="Grad2" Width="44" Height="32" Tag="2" Click="OnGradientColor" AutomationProperties.Name="Gradient color 2" />
+                            <Button x:Name="Grad3" Width="44" Height="32" Tag="3" Click="OnGradientColor" AutomationProperties.Name="Gradient color 3" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="WallpaperCard" Header="Image">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Border Width="80" Height="45" CornerRadius="4" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                <Image x:Name="WallpaperPreview" Stretch="UniformToFill" />
+                            </Border>
+                            <Button Content="Browse…" Click="OnPickWallpaper" />
+                        </StackPanel>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="BlurCard" Header="Blur">
+                        <Slider x:Name="BlurSlider" Minimum="0" Maximum="100" Width="220" ValueChanged="OnBlurChanged" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="DimCard" Header="Dim">
+                        <Slider x:Name="DimSlider" Minimum="0" Maximum="90" Width="220" ValueChanged="OnDimChanged" />
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsExpander x:Name="VizCard" Header="Visualizer" Description="Audio spectrum that moves with the music, on the Now Playing screen and behind the player bar.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE9D9;" /></tk:SettingsExpander.HeaderIcon>
+                <ToggleSwitch x:Name="VizToggle" Toggled="OnVizToggled" />
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard x:Name="VizBarCard" Header="Behind the player bar" Description="Show the spectrum underneath the player bar at the bottom of the window.">
+                        <ToggleSwitch x:Name="VizBarToggle" Toggled="OnVizBarToggled" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard x:Name="VizStyleCard" Header="Style" Description="Shape of the spectrum on the Now Playing screen.">
+                        <ComboBox x:Name="VizStyleBox" SelectionChanged="OnVizStyleChanged" MinWidth="160">
+                            <x:String>Bars</x:String>
+                            <x:String>Mirrored</x:String>
+                            <x:String>Lines</x:String>
+                        </ComboBox>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsCard Header="Card style" Description="Look of the album and song cards in the rows on Home. Glass: frosted and see-through. Smoke: deep, half-transparent black. Slate: cool blue-gray. Elevated: lighter, so cards seem to float. Outline: no fill, just an edge.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="CardColorBox" SelectionChanged="OnCardColorChanged" MinWidth="180">
+                    <x:String>Neutral gray</x:String>
+                    <x:String>Glass</x:String>
+                    <x:String>Smoke</x:String>
+                    <x:String>Slate</x:String>
+                    <x:String>Elevated</x:String>
+                    <x:String>Outline</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Playing song highlight" Description="Animated border around the song that is playing, in every song list.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7B3;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="HighlightBox" SelectionChanged="OnHighlightChanged" MinWidth="180">
+                    <x:String>Off</x:String>
+                    <x:String>Accent color</x:String>
+                    <x:String>Rainbow</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Queue panel" Description="Show the upcoming songs panel above the player.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8FD;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="QueuePanelToggle" Toggled="OnQueuePanelToggled" />
+            </tk:SettingsCard>
+
+            <!-- ================= Playback ================= -->
+            <TextBlock Text="Playback" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsCard Header="Output device" x:Name="DeviceCard">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7F5;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="DeviceBox" SelectionChanged="OnDeviceChanged" MinWidth="240" DisplayMemberPath="Name" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Match equalizer to genre" Description="Use the preset that suits each song's genre (Rock, Pop, Electronic, Jazz and more). Songs with an equalizer saved for them keep theirs.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE9E9;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="EqGenreToggle" Toggled="OnEqGenreToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Gapless playback" Description="Preload the next track to remove silence between tracks.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8EE;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="GaplessToggle" Toggled="OnGaplessToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Crossfade" Description="Overlap the end of each track with the start of the next.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8AB;" /></tk:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="CrossfadeText" VerticalAlignment="Center" MinWidth="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Slider x:Name="CrossfadeSlider" Minimum="0" Maximum="12" StepFrequency="0.5" Width="200" ValueChanged="OnCrossfadeChanged" />
+                </StackPanel>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Output format" x:Name="PipelineCard">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE9E9;" /></tk:SettingsCard.HeaderIcon>
+                <TextBlock x:Name="PipelineText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360" />
+            </tk:SettingsCard>
+
+            <!-- ================= Metadata ================= -->
+            <TextBlock Text="Metadata" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsCard Header="Automatic metadata" Description="Identify new songs and update their tags when they are added to the library. Your later edits are preserved.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE945;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="AutoFixToggle" Toggled="OnAutoFixToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB and save them as .lrc files.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8BD;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Automatic album art" Description="Download missing album art from Cover Art Archive.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8B9;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="AutoArtToggle" Toggled="OnAutoArtToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Embed album art" Description="Store downloaded album art in file tags instead of the app cache.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7C3;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="EmbedArtToggle" Toggled="OnEmbedArtToggled" />
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Metadata storage" Description="Write edits to file tags so they appear in other apps, or store them in the library only.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE70F;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="WriteModeBox" SelectionChanged="OnWriteModeChanged" MinWidth="180">
+                    <x:String>File tags</x:String>
+                    <x:String>Library only</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Fetch" Description="Download metadata, album art, artist images and lyrics for every song that is incomplete or was edited by you. Complete songs are skipped. Edits you made are replaced.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBD3;" /></tk:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="FixAllText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button x:Name="FixAllButton" Content="Fetch" Click="OnFixAll" />
+                </StackPanel>
+            </tk:SettingsCard>
+            <!-- ================= API keys ================= -->
+            <TextBlock Text="API keys" Style="{StaticResource GroupHeader}" />
+            <TextBlock Text="Optional free keys that improve song identification. Each key is verified automatically after you paste it."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="2,0,0,8" />
+
+            <tk:SettingsExpander Header="AcoustID" Description="Identifies songs by audio fingerprint, including files with incorrect tags.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8D7;" /></tk:SettingsExpander.HeaderIcon>
+                <controls:ApiKeyField x:Name="AcoustIdKey" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="How to get a free key" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <StackPanel Spacing="6">
+                                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    1. Open the AcoustID application page and sign in (a free account).<LineBreak />
+                                    2. Enter an application name, for example "Music", and version "1.0", then select Register.<LineBreak />
+                                    3. Copy the API key that is shown and paste it above.
+                                </TextBlock>
+                                <HyperlinkButton Content="Open acoustid.org/new-application" NavigateUri="https://acoustid.org/new-application" Padding="0" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsExpander Header="YouTube Data API" Description="Last-resort source for artist, title, artist images and album art. Free quota: 10,000 units per day.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE714;" /></tk:SettingsExpander.HeaderIcon>
+                <controls:ApiKeyField x:Name="YouTubeKey" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="How to get a free key" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <StackPanel Spacing="6">
+                                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    1. Open the Google Cloud Console and sign in with a Google account.<LineBreak />
+                                    2. Create a project, for example "Music".<LineBreak />
+                                    3. Go to APIs and Services &gt; Library, search for "YouTube Data API v3" and select Enable.<LineBreak />
+                                    4. Go to APIs and Services &gt; Credentials and select Create credentials &gt; API key.<LineBreak />
+                                    5. Copy the key and paste it above. No billing account is required.
+                                </TextBlock>
+                                <HyperlinkButton Content="Open console.cloud.google.com" NavigateUri="https://console.cloud.google.com/apis/library/youtube.googleapis.com" Padding="0" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsExpander Header="Last.fm" Description="Detailed genres such as Tropical House, EDM or Metal.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8EC;" /></tk:SettingsExpander.HeaderIcon>
+                <controls:ApiKeyField x:Name="LastFmKey" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="How to get a free key" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <StackPanel Spacing="6">
+                                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    1. Open the Last.fm API account page and sign in (or create a free Last.fm account).<LineBreak />
+                                    2. Enter an application name, for example "Music", and a short description. The callback URL can be left empty.<LineBreak />
+                                    3. Select Submit, then copy the API key (not the shared secret) and paste it above.
+                                </TextBlock>
+                                <HyperlinkButton Content="Open last.fm/api/account/create" NavigateUri="https://www.last.fm/api/account/create" Padding="0" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsExpander Header="Fanart.tv" Description="High-quality artist photos, matched exactly by MusicBrainz artist ID.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE91B;" /></tk:SettingsExpander.HeaderIcon>
+                <controls:ApiKeyField x:Name="FanartKey" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="How to get a free key" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <StackPanel Spacing="6">
+                                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    1. Create a free account on fanart.tv and sign in.<LineBreak />
+                                    2. Open the "Get an API key" page and request a personal API key.<LineBreak />
+                                    3. Copy the key and paste it above.
+                                </TextBlock>
+                                <HyperlinkButton Content="Open fanart.tv/get-an-api-key" NavigateUri="https://fanart.tv/get-an-api-key/" Padding="0" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <tk:SettingsExpander Header="Spotify" Description="Artist photos for artists that other sources don't cover, including smaller and independent artists.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE93C;" /></tk:SettingsExpander.HeaderIcon>
+                <controls:ApiKeyField x:Name="SpotifyKey" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="How to get a free client ID and secret" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <StackPanel Spacing="6">
+                                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    1. Open the Spotify Developer Dashboard and sign in with a free Spotify account.<LineBreak />
+                                    2. Select Create app. Enter a name, for example "Music", and a short description.<LineBreak />
+                                    3. For Redirect URI enter http://127.0.0.1:8888/callback (required by the form, not used by Music), tick Web API, accept the terms and select Save.<LineBreak />
+                                    4. Open the app's Settings, copy the Client ID, select View client secret and copy it.<LineBreak />
+                                    5. Paste both above. No Spotify Premium is needed.
+                                </TextBlock>
+                                <HyperlinkButton Content="Open developer.spotify.com/dashboard" NavigateUri="https://developer.spotify.com/dashboard" Padding="0" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+
+            <!-- ================= Debug (temporary; to be removed) ================= -->
+            <TextBlock Text="Debug" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsCard Header="Greeting" Description="Banner: the greeting on a gradient card. Gradient: no card; an accent glow runs from the top of Home to the middle of Quick access and fades into the background.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE706;" /></tk:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="GreetingStyleBox" SelectionChanged="OnGreetingStyleChanged" MinWidth="180">
+                    <x:String>Banner</x:String>
+                    <x:String>Gradient</x:String>
+                </ComboBox>
+            </tk:SettingsCard>
+            <tk:SettingsCard Header="Create test playlists" Description="Creates 10 playlists named &quot;Test playlist 1&quot; to &quot;Test playlist 10&quot;, each with 20 random songs from your library.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBE8;" /></tk:SettingsCard.HeaderIcon>
+                <Button Content="Create" Click="OnCreateTestPlaylists" />
+            </tk:SettingsCard>
+
+            <!-- ================= About ================= -->
+            <TextBlock Text="About" Style="{StaticResource GroupHeader}" />
+            <tk:SettingsExpander Header="Music" x:Name="AboutCard">
+                <tk:SettingsExpander.HeaderIcon>
+                    <BitmapIcon UriSource="ms-appx:///Assets/AppIcon.png" ShowAsMonochrome="False" />
+                </tk:SettingsExpander.HeaderIcon>
+                <Button Content="Open data folder" Click="OnOpenData" />
+                <tk:SettingsExpander.Items>
+                        <tk:SettingsCard Header="Supported formats" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, WMA, APE, WavPack, Musepack, TTA, TAK, DSD, AC-3, E-AC-3, DTS, TrueHD, MKA, WebM, AMR, CAF and other formats supported by FFmpeg." />
+                        </tk:SettingsCard>
+                        <tk:SettingsCard Header="Keyboard shortcuts" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="Space or Ctrl+P: Play/Pause · Ctrl+Right: Next · Ctrl+Left: Previous · Ctrl+Up/Down: Volume · Ctrl+S: Shuffle · Ctrl+R: Repeat · Ctrl+F: Search · Ctrl+M: Mini player · F11: Now Playing · Esc: Close" />
+                        </tk:SettingsCard>
+                        <tk:SettingsCard Header="Third-party components" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="FFmpeg (LGPL), NAudio, TagLib#, MusicBrainz, Cover Art Archive, AcoustID and Chromaprint, LRCLIB." />
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

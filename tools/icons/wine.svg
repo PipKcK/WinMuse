@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs><linearGradient id="r0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efa4ac"/><stop offset="1" stop-color="#db929a"/></linearGradient><linearGradient id="r1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d1737f"/><stop offset="1" stop-color="#bd616e"/></linearGradient><linearGradient id="r2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b0485a"/><stop offset="1" stop-color="#9c3649"/></linearGradient><linearGradient id="r3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#952840"/><stop offset="1" stop-color="#811230"/></linearGradient><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a5324a"/><stop offset="1" stop-color="#59001c"/></linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#230006" flood-opacity="0.35"/></filter></defs>
+  <g transform="matrix(1.148 0 0 1.148 -23.55 -18.94)">
+  <circle cx="148" cy="128" r="92" fill="url(#r0)"/>
+  <circle cx="148" cy="128" r="70" fill="url(#r1)"/>
+  <circle cx="148" cy="128" r="48" fill="url(#r2)"/>
+  <circle cx="148" cy="128" r="26" fill="url(#r3)"/>
+  <rect x="24" y="72" width="112" height="112" rx="14" fill="url(#t)" filter="url(#s)"/>
+  <path d="M61 100 L61 156 L109 128 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+</svg>

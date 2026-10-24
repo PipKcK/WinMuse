@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+*.user
+external/ffmpeg/
+
+# The downloader binary is supplied by the user
+src/WinMuse/Tools/mdown.exe
+
+# Local logs and editor state
+*.log

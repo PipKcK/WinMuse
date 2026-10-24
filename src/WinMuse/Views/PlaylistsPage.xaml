@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinMuse.Views.PlaylistsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid RowDefinitions="Auto,*">
+        <Grid x:Name="Header" Padding="36,28,36,12">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Playlists" Style="{StaticResource PageTitleStyle}" />
+                <TextBlock x:Name="CountText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnImport">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B5;" FontSize="14" /><TextBlock Text="Import" /></StackPanel>
+                </Button>
+                <!-- One "New" button: a regular playlist or a smart one. -->
+                <Button x:Name="NewButton" Style="{StaticResource PillButtonStyle}" AutomationProperties.Name="New playlist">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE710;" FontSize="14" />
+                        <TextBlock Text="New" />
+                        <FontIcon Glyph="&#xE70D;" FontSize="10" Margin="2,2,0,0" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout x:Name="NewFlyout" Placement="BottomEdgeAlignedRight">
+                            <Flyout.FlyoutPresenterStyle>
+                                <Style TargetType="FlyoutPresenter" BasedOn="{StaticResource DefaultFlyoutPresenterStyle}">
+                                    <Setter Property="Padding" Value="6" />
+                                    <Setter Property="CornerRadius" Value="12" />
+                                </Style>
+                            </Flyout.FlyoutPresenterStyle>
+                            <StackPanel Width="300" Spacing="2">
+                                <Button Style="{StaticResource NewChoiceButtonStyle}" Click="OnNew" AutomationProperties.Name="Playlist">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentGradientBrush}">
+                                            <FontIcon Glyph="&#xE90B;" FontSize="16" Foreground="White" />
+                                        </Grid>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Playlist" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock Text="Pick the songs yourself." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                                <Button Style="{StaticResource NewChoiceButtonStyle}" Click="OnNewSmart" AutomationProperties.Name="Smart playlist">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <Grid Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentGradientBrush}">
+                                            <FontIcon Glyph="&#xE945;" FontSize="16" Foreground="White" />
+                                        </Grid>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Smart playlist" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock Text="Fills itself from rules, like genre or year." Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <GridView x:Name="Grid" Grid.Row="1" Padding="32,4,24,24"
+                  SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnItemClick"
+                  ItemTemplate="{StaticResource PlaylistCardTemplate}"
+                  ItemContainerStyle="{StaticResource CardGridViewItemStyle}" />
+
+        <StackPanel x:Name="Empty" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Visibility="Collapsed">
+            <FontIcon Glyph="&#xE90B;" FontSize="48" Foreground="{StaticResource AccentGradientBrush}" />
+            <TextBlock Text="No playlists" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
+            <TextBlock Text="Create a playlist, or a smart playlist that updates automatically based on rules." Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</Page>

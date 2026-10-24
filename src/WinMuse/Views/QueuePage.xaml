@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="WinMuse.Views.QueuePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinMuse.Controls"
+    NavigationCacheMode="Required">
+
+    <Grid RowDefinitions="Auto,*">
+        <Grid x:Name="Header" Padding="36,28,36,16">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Queue" Style="{StaticResource PageTitleStyle}" />
+                <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnJump">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE81C;" FontSize="14" /><TextBlock Text="Go to current" /></StackPanel>
+                </Button>
+                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnSave">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE74E;" FontSize="14" /><TextBlock Text="Save as playlist" /></StackPanel>
+                </Button>
+                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnClear">
+                    <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE74D;" FontSize="14" /><TextBlock Text="Clear" /></StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+        <controls:TrackList x:Name="Tracks" Grid.Row="1" EmptyMessage="The queue is empty." />
+    </Grid>
+</Page>
