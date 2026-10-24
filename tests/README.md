@@ -19,6 +19,9 @@ decode-ahead is bit-identical, seeking, thread safety, gapless joins, prefetch C
 1. `ui\Drive-BuildApp.ps1 -Name "Music Test" -Color "#1DB954" -InstallDir "$env:LOCALAPPDATA\WinMuseTests\Install\MusicTest" -Register`
    builds and installs a copy through `tools\Build-App.ps1`. Afterwards, run its uninstaller, check that the real
    install's "Open with" entry is intact, and `git checkout` the assets the build rewrites.
+   Add `-InstallerDir <folder>` to also tick "Create installer"; then `ui\Drive-Installer.ps1 -Setup "<Name> Setup.exe" -InstallDir <folder>`
+   installs through the installer's window (with screenshots), and `<folder>\Uninstall.exe /silent` removes it.
+   Back up `HKCU\Software\Classes\Applications\WinMuse.exe` first: every copy shares the "Open with" entry.
 2. `ui\Stress-App.ps1 -Exe <WinMuse.exe> -MusicFolders "a;b" -Label <name> -Scale <s> [-Fetch -KeysFile keys.json]`
    runs the scripted session (scan, idle, play, minimized, Now Playing, page switching, search, settle) and samples
    CPU and memory every second. Keys stay outside the repo.

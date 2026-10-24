@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The shareable installer (tools\Make-Installer.ps1 appends the app to it). .NET Framework 4.8 ships with every
+       Windows 10/11 PC, so the installer itself needs nothing installed first. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>Setup</AssemblyName>
+    <RootNamespace>WinMuseSetup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="'$(SetupIcon)' != ''">$(SetupIcon)</ApplicationIcon>
+    <Product Condition="'$(SetupName)' != ''">$(SetupName) Setup</Product>
+    <AssemblyTitle Condition="'$(SetupName)' != ''">$(SetupName) Setup</AssemblyTitle>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+</Project>

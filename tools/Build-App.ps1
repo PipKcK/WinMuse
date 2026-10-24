@@ -10,6 +10,8 @@
 #   Architecture  Auto (this PC), x64 or ARM64.
 #   Register      copies the app to an install folder and adds a Start menu shortcut, optionally a desktop shortcut,
 #                 an entry in Settings > Apps (with an uninstaller) and "Open with" for audio files.
+#   Installer     also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one file to share that installs the app on
+#                 another PC, with everything it needs included.
 #
 # The exe stays WinMuse.exe and your library/settings stay in %LocalAppData%\WinMuse whatever the name.
 # SVG icons are drawn with Microsoft Edge (installed with Windows 11) in headless mode.
@@ -135,7 +137,7 @@ function Test-Name([string]$n) { return ($n.Trim().Length -gt 0) -and ($n.IndexO
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Build Music'
-$form.Size = New-Object System.Drawing.Size(760, 820)
+$form.Size = New-Object System.Drawing.Size(760, 924)
 $form.StartPosition = 'CenterScreen'
 $form.Font = New-Object System.Drawing.Font('Segoe UI', 9.5)
 $form.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 252)
@@ -220,17 +222,27 @@ $chkApps = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkApps.Text = 
 $chkOpenWith = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkOpenWith.Text = '"Open with" for audio files'; $chkOpenWith.Location = New-Object System.Drawing.Point(480, 100); $chkOpenWith.AutoSize = $true; $chkOpenWith.Checked = $true
 $gReg.Controls.AddRange(@($chkRegister, $txtInstall, $btnInstall, $chkDesktop, $chkApps, $chkOpenWith))
 
+# ---- Installer to share
+$gShare = Add-Group 'Share' 620 96
+$chkInstaller = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkInstaller.Text = 'Create installer (.exe to share)'; $chkInstaller.Location = New-Object System.Drawing.Point(16, 30); $chkInstaller.AutoSize = $true
+Set-Font (Add-Label $gShare 'Save to' 260 32 60) | Out-Null
+$txtShare = Set-Font (New-Object System.Windows.Forms.TextBox); $txtShare.Location = New-Object System.Drawing.Point(320, 29); $txtShare.Size = New-Object System.Drawing.Size(290, 26)
+$txtShare.Text = [Environment]::GetFolderPath('Desktop')
+$btnShare = Set-Font (New-Object System.Windows.Forms.Button); $btnShare.Text = 'Browse…'; $btnShare.Location = New-Object System.Drawing.Point(616, 28); $btnShare.Size = New-Object System.Drawing.Size(80, 28)
+Set-Font (Add-Label $gShare 'One file with everything included: other PCs need nothing installed first. It isn''t signed, so Windows may warn; choose More info > Run anyway.' 36 58 660 -Dim) | Out-Null
+$gShare.Controls.AddRange(@($chkInstaller, $txtShare, $btnShare))
+
 # ---- Log + buttons
 $log = New-Object System.Windows.Forms.TextBox
 $log.Multiline = $true; $log.ScrollBars = 'Vertical'; $log.ReadOnly = $true; $log.WordWrap = $false
-$log.Location = New-Object System.Drawing.Point(16, 622); $log.Size = New-Object System.Drawing.Size(712, 104)
+$log.Location = New-Object System.Drawing.Point(16, 726); $log.Size = New-Object System.Drawing.Size(712, 104)
 $log.Font = New-Object System.Drawing.Font('Cascadia Mono, Consolas', 8.5); $log.BackColor = [System.Drawing.Color]::White
-$progress = New-Object System.Windows.Forms.ProgressBar; $progress.Location = New-Object System.Drawing.Point(16, 738); $progress.Size = New-Object System.Drawing.Size(420, 10); $progress.Style = 'Marquee'; $progress.Visible = $false
-$btnBuild = New-Object System.Windows.Forms.Button; $btnBuild.Text = 'Build'; $btnBuild.Location = New-Object System.Drawing.Point(536, 732); $btnBuild.Size = New-Object System.Drawing.Size(92, 34)
+$progress = New-Object System.Windows.Forms.ProgressBar; $progress.Location = New-Object System.Drawing.Point(16, 842); $progress.Size = New-Object System.Drawing.Size(420, 10); $progress.Style = 'Marquee'; $progress.Visible = $false
+$btnBuild = New-Object System.Windows.Forms.Button; $btnBuild.Text = 'Build'; $btnBuild.Location = New-Object System.Drawing.Point(536, 836); $btnBuild.Size = New-Object System.Drawing.Size(92, 34)
 $btnBuild.BackColor = [System.Drawing.Color]::FromArgb(124, 77, 226); $btnBuild.ForeColor = [System.Drawing.Color]::White; $btnBuild.FlatStyle = 'Flat'; $btnBuild.FlatAppearance.BorderSize = 0
 $btnBuild.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 10)
-$btnClose = Set-Font (New-Object System.Windows.Forms.Button); $btnClose.Text = 'Close'; $btnClose.Location = New-Object System.Drawing.Point(636, 732); $btnClose.Size = New-Object System.Drawing.Size(92, 34)
-$btnUninstall = Set-Font (New-Object System.Windows.Forms.Button); $btnUninstall.Text = 'Uninstall…'; $btnUninstall.Location = New-Object System.Drawing.Point(444, 732); $btnUninstall.Size = New-Object System.Drawing.Size(84, 34)
+$btnClose = Set-Font (New-Object System.Windows.Forms.Button); $btnClose.Text = 'Close'; $btnClose.Location = New-Object System.Drawing.Point(636, 836); $btnClose.Size = New-Object System.Drawing.Size(92, 34)
+$btnUninstall = Set-Font (New-Object System.Windows.Forms.Button); $btnUninstall.Text = 'Uninstall…'; $btnUninstall.Location = New-Object System.Drawing.Point(444, 836); $btnUninstall.Size = New-Object System.Drawing.Size(84, 34)
 $form.Controls.AddRange(@($log, $progress, $btnBuild, $btnClose, $btnUninstall))
 $form.AcceptButton = $btnBuild; $form.CancelButton = $btnClose
 
@@ -246,6 +258,8 @@ Update-InstallDefault
 
 function Update-RegisterEnabled { foreach ($c in $txtInstall, $btnInstall, $chkDesktop, $chkApps, $chkOpenWith) { $c.Enabled = $chkRegister.Checked } }
 $chkRegister.Add_CheckedChanged({ Update-RegisterEnabled }); Update-RegisterEnabled
+function Update-ShareEnabled { foreach ($c in $txtShare, $btnShare) { $c.Enabled = $chkInstaller.Checked } }
+$chkInstaller.Add_CheckedChanged({ Update-ShareEnabled }); Update-ShareEnabled
 
 function Get-ColorOrNull { try { return [System.Drawing.ColorTranslator]::FromHtml($txtColor.Text.Trim()) } catch { return $null } }
 
@@ -300,6 +314,10 @@ $btnFile.Add_Click({
 $btnInstall.Add_Click({
     $dlg = New-Object System.Windows.Forms.FolderBrowserDialog; $dlg.SelectedPath = $txtInstall.Text
     if ($dlg.ShowDialog() -eq 'OK') { $txtInstall.Text = $dlg.SelectedPath; $txtInstall.Tag = 'edited' }
+})
+$btnShare.Add_Click({
+    $dlg = New-Object System.Windows.Forms.FolderBrowserDialog; $dlg.SelectedPath = $txtShare.Text
+    if ($dlg.ShowDialog() -eq 'OK') { $txtShare.Text = $dlg.SelectedPath }
 })
 $btnClose.Add_Click({ $form.Close() })
 
@@ -375,7 +393,7 @@ $state = @{}
 $timer = New-Object System.Windows.Forms.Timer; $timer.Interval = 300
 
 function Set-Busy([bool]$busy) {
-    foreach ($c in $gApp, $gIcon, $gBuild, $gReg, $btnBuild, $btnUninstall) { $c.Enabled = -not $busy }
+    foreach ($c in $gApp, $gIcon, $gBuild, $gReg, $gShare, $btnBuild, $btnUninstall) { $c.Enabled = -not $busy }
     $progress.Visible = $busy
 }
 
@@ -403,7 +421,7 @@ $btnBuild.Add_Click({
         $cmd = "dotnet build `"$Project`" -c Release -p:Platform=$arch $target -p:Product=$quoted -p:AssemblyTitle=$quoted -p:Description=$quoted -nologo -v:minimal > `"$buildLog`" 2>&1"
         Write-Log 'Building (the first build takes a few minutes)…'
         $state.Process = Start-Process cmd.exe -ArgumentList '/c', $cmd -PassThru -WindowStyle Hidden
-        $state.Log = $buildLog; $state.Read = 0; $state.Name = $name; $state.Arch = $arch
+        $state.Log = $buildLog; $state.Read = 0; $state.Name = $name; $state.Arch = $arch; $state.Phase = 'build'; $state.Setup = $null
         $timer.Start()
     } catch {
         Write-Log ('Error: ' + $_.Exception.Message); Set-Busy $false
@@ -421,33 +439,51 @@ $timer.Add_Tick({
     $timer.Stop()
     $done = $false
     try {
-        $out = Join-Path $Root "src\WinMuse\bin\$($state.Arch)\Release\net10.0-windows10.0.22621.0\win-$($state.Arch.ToLower())"
-        if ($state.Process.ExitCode -ne 0 -or -not (Test-Path (Join-Path $out 'WinMuse.exe'))) { throw 'The build failed. See the messages above.' }
-        Write-Log "Built: $out"
-        $exe = Join-Path $out 'WinMuse.exe'
-        if ($chkRegister.Checked) {
-            $dir = $txtInstall.Text.Trim()
-            $running = Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" }
-            if ($running) {
-                if ([System.Windows.Forms.MessageBox]::Show("$($state.Name) is running from the install folder. Close it to update it?", 'Install', 'YesNo', 'Question') -ne 'Yes') { throw 'Install skipped: the app is still running.' }
-                $running | ForEach-Object { $_.CloseMainWindow() | Out-Null }; Start-Sleep 2
-                Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" } | Stop-Process -Force
+        if ($state.Phase -eq 'installer') {
+            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path $state.Setup)) { throw 'Making the installer failed. See the messages above.' }
+            $done = $true
+        } else {
+            $out = Join-Path $Root "src\WinMuse\bin\$($state.Arch)\Release\net10.0-windows10.0.22621.0\win-$($state.Arch.ToLower())"
+            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path (Join-Path $out 'WinMuse.exe'))) { throw 'The build failed. See the messages above.' }
+            Write-Log "Built: $out"
+            $state.Exe = Join-Path $out 'WinMuse.exe'
+            if ($chkRegister.Checked) {
+                $dir = $txtInstall.Text.Trim()
+                $running = Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" }
+                if ($running) {
+                    if ([System.Windows.Forms.MessageBox]::Show("$($state.Name) is running from the install folder. Close it to update it?", 'Install', 'YesNo', 'Question') -ne 'Yes') { throw 'Install skipped: the app is still running.' }
+                    $running | ForEach-Object { $_.CloseMainWindow() | Out-Null }; Start-Sleep 2
+                    Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" } | Stop-Process -Force
+                }
+                Write-Log "Installing to $dir…"; [System.Windows.Forms.Application]::DoEvents()
+                New-Item -ItemType Directory -Force $dir | Out-Null
+                robocopy $out $dir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:1 | Out-Null
+                if ($LASTEXITCODE -ge 8) { throw "Copying to $dir failed (robocopy $LASTEXITCODE)." }
+                Register-App $dir $state.Name
+                $state.Exe = Join-Path $dir 'WinMuse.exe'
             }
-            Write-Log "Installing to $dir…"; [System.Windows.Forms.Application]::DoEvents()
-            New-Item -ItemType Directory -Force $dir | Out-Null
-            robocopy $out $dir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:1 | Out-Null
-            if ($LASTEXITCODE -ge 8) { throw "Copying to $dir failed (robocopy $LASTEXITCODE)." }
-            Register-App $dir $state.Name
-            $exe = Join-Path $dir 'WinMuse.exe'
+            if ($chkInstaller.Checked) {
+                # Second step, in the background like the build: publish self-contained, zip, wrap in the installer.
+                $state.Setup = Join-Path $txtShare.Text.Trim() "$($state.Name) Setup.exe"
+                $setupLog = Join-Path $Work 'installer.log'; Set-Content $setupLog ''
+                $script = Join-Path $PSScriptRoot 'Make-Installer.ps1'
+                $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Name `"$($state.Name -replace '"', '')`" -Arch $($state.Arch) -Out `"$($state.Setup)`" > `"$setupLog`" 2>&1"
+                Write-Log 'Making the installer (a few minutes)…'
+                $state.Process = Start-Process cmd.exe -ArgumentList '/c', $cmd -PassThru -WindowStyle Hidden
+                $state.Log = $setupLog; $state.Read = 0; $state.Phase = 'installer'
+                $timer.Start()
+                return
+            }
+            $done = $true
         }
-        Write-Log 'Done.'
-        if ($chkLaunch.Checked) { Start-Process $exe }
-        [System.Windows.Forms.MessageBox]::Show("$($state.Name) is ready.`n`n$exe", 'Build complete', 'OK', 'Information') | Out-Null
-        $done = $true
     } catch { Write-Log ('Error: ' + $_.Exception.Message) }
-    finally { Set-Busy $false }
-    # A finished build closes the tool; after a failure it stays open so the messages can be read.
-    if ($done) { $form.Close() }
+    finally { if (-not $timer.Enabled) { Set-Busy $false } }
+    if (-not $done) { return }   # after a failure the tool stays open so the messages can be read
+    # Finished: open the app (and show the installer in File Explorer), then close the tool.
+    Write-Log 'Done.'
+    if ($chkLaunch.Checked) { Start-Process $state.Exe }
+    if ($state.Setup) { Start-Process explorer.exe "/select,`"$($state.Setup)`"" }
+    $form.Close()
 })
 
 $form.Add_Shown({ Update-Preview })
