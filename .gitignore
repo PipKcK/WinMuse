@@ -4,8 +4,12 @@ obj/
 *.user
 external/ffmpeg/
 
-# The downloader binary is supplied by the user
+# The downloader (199 MB) is over GitHub's 100 MB file limit; kept out until it goes through Git LFS
 src/WinMuse/Tools/mdown.exe
 
 # Local logs and editor state
 *.log
+
+# Secrets never go in the repo (the app keeps them in %LocalAppData%\WinMuse)
+*secret*.txt
+settings.json

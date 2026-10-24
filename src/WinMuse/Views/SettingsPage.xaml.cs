@@ -60,24 +60,24 @@ public sealed partial class SettingsPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         _loading = true;
-        ThemeBox.SelectedIndex = (int)S.Theme;
-        AccentBox.SelectedIndex = (int)S.AccentSource;
+        Select(ThemeBox, (int)S.Theme);
+        Select(AccentBox, (int)S.AccentSource);
         AccentPicker.Color = ColorKit.Parse(S.CustomAccent, Microsoft.UI.Colors.Purple);
-        BackgroundBox.SelectedIndex = (int)S.BackgroundMode;
+        Select(BackgroundBox, (int)S.BackgroundMode);
         IntensitySlider.Value = S.BackgroundIntensity;
         AnimateToggle.IsOn = S.AnimateBackground;
         BlurSlider.Value = S.WallpaperBlur;
         DimSlider.Value = S.WallpaperDim;
         VizToggle.IsOn = S.ShowVisualizer;
         VizBarToggle.IsOn = S.ShowBarVisualizer;
-        HighlightBox.SelectedIndex = (int)S.PlayingHighlight;
-        GreetingStyleBox.SelectedIndex = (int)S.GreetingStyle;
-        CardColorBox.SelectedIndex = Math.Max(0, Array.IndexOf(CardColorChoices, S.ShelfCardColor));
-        VizStyleBox.SelectedIndex = (int)S.VisualizerStyle;
+        Select(HighlightBox, (int)S.PlayingHighlight);
+        Select(GreetingStyleBox, (int)S.GreetingStyle);
+        Select(CardColorBox, Math.Max(0, Array.IndexOf(CardColorChoices, S.ShelfCardColor)));
+        Select(VizStyleBox, (int)S.VisualizerStyle);
         EqGenreToggle.IsOn = S.EqMatchGenre;
         GaplessToggle.IsOn = S.Gapless;
         CrossfadeSlider.Value = S.CrossfadeSeconds;
-        WriteModeBox.SelectedIndex = (int)S.WriteMode;
+        Select(WriteModeBox, (int)S.WriteMode);
         AutoLyricsToggle.IsOn = S.AutoFetchLyrics;
         AutoFixToggle.IsOn = S.AutoFixMetadata;
         QueuePanelToggle.IsOn = S.ShowQueuePanel;
@@ -431,9 +431,15 @@ public sealed partial class SettingsPage : Page
         Svc.Settings.Set(nameof(AppSettings.ShelfCardColor), s => s.ShelfCardColor = CardColorChoices[CardColorBox.SelectedIndex]);
     }
 
+    /// <summary>
+    /// Shows a saved choice in a box; a value the box doesn't list (e.g. from a newer option picked elsewhere) shows
+    /// the first entry instead of failing, which made the whole page unopenable.
+    /// </summary>
+    private static void Select(ComboBox box, int index) => box.SelectedIndex = index >= 0 && index < box.Items.Count ? index : 0;
+
     // The order of the Card color box.
     private static readonly ShelfCardColor[] CardColorChoices =
-        { ShelfCardColor.Neutral, ShelfCardColor.Glass, ShelfCardColor.Smoke, ShelfCardColor.Slate, ShelfCardColor.Elevated, ShelfCardColor.Outline };
+        { ShelfCardColor.Neutral, ShelfCardColor.Glass, ShelfCardColor.Smoke, ShelfCardColor.Slate, ShelfCardColor.Elevated, ShelfCardColor.Outline, ShelfCardColor.None };
 
     private void OnGreetingStyleChanged(object sender, SelectionChangedEventArgs e)
     {

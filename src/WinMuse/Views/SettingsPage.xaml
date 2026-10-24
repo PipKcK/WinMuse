@@ -150,6 +150,7 @@
                     <x:String>Slate</x:String>
                     <x:String>Elevated</x:String>
                     <x:String>Outline</x:String>
+                    <x:String>None</x:String>
                 </ComboBox>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Playing song highlight" Description="Animated border around the song that is playing, in every song list.">
@@ -324,6 +325,7 @@
                 <ComboBox x:Name="GreetingStyleBox" SelectionChanged="OnGreetingStyleChanged" MinWidth="180">
                     <x:String>Banner</x:String>
                     <x:String>Gradient</x:String>
+                    <x:String>None</x:String>
                 </ComboBox>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Create test playlists" Description="Creates 10 playlists named &quot;Test playlist 1&quot; to &quot;Test playlist 10&quot;, each with 20 random songs from your library.">
