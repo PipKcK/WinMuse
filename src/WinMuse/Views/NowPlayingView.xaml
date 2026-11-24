@@ -8,6 +8,11 @@
 
     <UserControl.Resources>
         <helpers:TimeTooltipConverter x:Key="TimeTip" />
+        <!-- Text built in code (lyric lines, details rows). A ThemeResource in a style follows theme switches;
+             a brush looked up once in code would keep the old theme's color (white lyrics on the light theme). -->
+        <Style x:Key="NowPlayingTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{ThemeResource NowPlayingTextBrush}" />
+        </Style>
     </UserControl.Resources>
 
     <Grid x:Name="Root" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">

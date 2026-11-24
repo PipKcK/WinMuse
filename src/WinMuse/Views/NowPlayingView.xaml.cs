@@ -231,14 +231,15 @@ public sealed partial class NowPlayingView : UserControl
         for (int i = 0; i < rows.Count; i++)
         {
             DetailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var k = new TextBlock { Text = rows[i].Item1, Opacity = 0.7 };
-            var v = new TextBlock { Text = rows[i].Item2, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
-            k.SetValue(TextBlock.ForegroundProperty, ThemeRes.Brush("NowPlayingTextBrush", this));
-            v.SetValue(TextBlock.ForegroundProperty, ThemeRes.Brush("NowPlayingTextBrush", this));
+            var k = new TextBlock { Text = rows[i].Item1, Opacity = 0.7, Style = TextStyle };
+            var v = new TextBlock { Text = rows[i].Item2, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true, Style = TextStyle };
             Grid.SetRow(k, i); Grid.SetRow(v, i); Grid.SetColumn(v, 1);
             DetailsGrid.Children.Add(k); DetailsGrid.Children.Add(v);
         }
     }
+
+    /// <summary>Text built in code takes its color from this style, so it follows light/dark switches.</summary>
+    private Style TextStyle => (Style)Resources["NowPlayingTextStyle"];
 
     // ---------------- Lyrics ----------------
 
@@ -287,7 +288,6 @@ public sealed partial class NowPlayingView : UserControl
         UpdateTimingButton();
         UpdateOffsetText();
 
-        var fg = ThemeRes.Brush("NowPlayingTextBrush", this);
         foreach (var line in result.Lines)
         {
             var tb = new TextBlock
@@ -300,8 +300,8 @@ public sealed partial class NowPlayingView : UserControl
                 OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(350) },
                 ScaleTransition = new Vector3Transition { Duration = TimeSpan.FromMilliseconds(400) },
                 Scale = result.IsSynced ? new Vector3(0.94f, 0.94f, 1) : Vector3.One,
+                Style = TextStyle,
             };
-            tb.SetValue(TextBlock.ForegroundProperty, fg);
             if (result.IsSynced)
             {
                 var time = line.Time;
