@@ -22,6 +22,9 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Project = Join-Path $Root 'src\WinMuse\WinMuse.csproj'
+# The app's version comes from <Version> in the project (also stamped on the exe and shown in Settings > About).
+$AppVersion = ([xml](Get-Content -Raw $Project)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+if (-not $AppVersion) { $AppVersion = '0.0.0' }
 $Assets = Join-Path $Root 'src\WinMuse\Assets'
 $IconDir = Join-Path $PSScriptRoot 'icons'
 $Work = Join-Path $env:TEMP 'WinMuse-Build'
@@ -370,7 +373,7 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `$dir
         New-Item -Force $key | Out-Null
         $size = [int]((Get-ChildItem $installDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
         $props = @{
-            DisplayName = $name; DisplayIcon = "$exe,0"; DisplayVersion = '1.0.0'; Publisher = 'WinMuse'
+            DisplayName = $name; DisplayIcon = "$exe,0"; DisplayVersion = $AppVersion; Publisher = 'WinMuse'
             InstallLocation = $installDir; UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$uninstall`""
         }
         foreach ($k in $props.Keys) { Set-ItemProperty $key $k $props[$k] }

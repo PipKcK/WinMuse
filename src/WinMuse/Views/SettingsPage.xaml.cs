@@ -95,7 +95,7 @@ public sealed partial class SettingsPage : Page
         DeviceBox.ItemsSource = devices;
         DeviceBox.SelectedItem = devices.FirstOrDefault(d => d.Id == S.OutputDeviceId) ?? devices[0];
 
-        AboutCard.Description = $"Version 1.1 · FFmpeg {FFmpegLoader.Version} · {Svc.Library.Tracks.Count:N0} songs";
+        AboutCard.Description = $"{AppInfo.DisplayVersion} · FFmpeg {FFmpegLoader.Version} · {Svc.Library.Tracks.Count:N0} songs";
         _loading = false;
 
         RefreshFolders();

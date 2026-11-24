@@ -10,10 +10,14 @@ param(
     [string]$Name = 'Music',
     [ValidateSet('x64', 'ARM64')] [string]$Arch = 'x64',
     [string]$Out = (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Music Setup.exe'),
-    [string]$Version = '1.0.0'
+    [string]$Version = ''   # empty: the <Version> in src\WinMuse\WinMuse.csproj (the single source of the app's version)
 )
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
+if (-not $Version) {
+    $Version = ([xml](Get-Content -Raw (Join-Path $Root 'src\WinMuse\WinMuse.csproj'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+    if (-not $Version) { throw 'No <Version> found in src\WinMuse\WinMuse.csproj.' }
+}
 $Work = Join-Path $env:TEMP 'WinMuse-Build\installer'
 $publish = Join-Path $Work "app-$Arch"
 $zip = Join-Path $Work 'app.zip'
