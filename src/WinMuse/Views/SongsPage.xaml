@@ -20,10 +20,10 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <TextBox x:Name="FilterBox" PlaceholderText="Search songs…" Width="200" TextChanged="OnFilterChanged" VerticalAlignment="Center" />
-                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnShuffle">
+                <Button AutomationProperties.Name="Shuffle" Style="{StaticResource GhostPillButtonStyle}" Click="OnShuffle">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B1;" FontSize="14" /><TextBlock Text="Shuffle" /></StackPanel>
                 </Button>
-                <Button Style="{StaticResource PillButtonStyle}" Click="OnPlayAll">
+                <Button AutomationProperties.Name="Play all" Style="{StaticResource PillButtonStyle}" Click="OnPlayAll">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE768;" FontSize="14" /><TextBlock Text="Play all" /></StackPanel>
                 </Button>
             </StackPanel>

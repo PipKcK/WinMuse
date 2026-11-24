@@ -55,7 +55,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox x:Name="QueryBox" PlaceholderText="Search (Artist - Title)" KeyDown="OnQueryKey" />
-            <Button Grid.Column="1" Click="OnSearch">
+            <Button AutomationProperties.Name="Search" Grid.Column="1" Click="OnSearch">
                 <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE721;" FontSize="13" /><TextBlock Text="Search" /></StackPanel>
             </Button>
             <Button Grid.Column="2" Click="OnAuto" ToolTipService.ToolTip="Identify automatically" AutomationProperties.Name="Identify">

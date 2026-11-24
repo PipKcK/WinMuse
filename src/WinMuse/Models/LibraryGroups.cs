@@ -16,6 +16,9 @@ public sealed class Album
     public string YearText => Year > 0 ? Year.ToString() : "";
     public string Subtitle => Year > 0 ? $"{Artist} · {Year}" : Artist;
     public string Summary => $"{TrackCount} {(TrackCount == 1 ? "song" : "songs")} · {Helpers.Format.LongTime(Duration)}";
+
+    /// <summary>What screen readers announce for the album tile (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Title}, {Subtitle}";
 }
 
 public sealed class Artist
@@ -31,6 +34,9 @@ public sealed class Artist
     public string Summary => $"{Albums.Count} {(Albums.Count == 1 ? "album" : "albums")} · {Tracks.Count} {(Tracks.Count == 1 ? "song" : "songs")}";
     public string Initials => string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
     public bool IsFavorite => Services.Svc.Favorites.IsFavoriteArtist(Name);
+
+    /// <summary>What screen readers announce for the artist tile (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Name}, {Summary}";
 }
 
 public sealed class Genre
@@ -43,6 +49,9 @@ public sealed class Genre
     public string? Art3 => ArtPaths.ElementAtOrDefault(2);
     public string? Art4 => ArtPaths.ElementAtOrDefault(3);
     public string Summary => $"{Tracks.Count} {(Tracks.Count == 1 ? "song" : "songs")}";
+
+    /// <summary>What screen readers announce for the genre tile (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Name}, {Summary}";
 }
 
 /// <summary>Navigation parameter for a generic song list page (genre, search, etc.).</summary>

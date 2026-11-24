@@ -120,13 +120,13 @@
             <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Top">
                 <TextBlock Text="Album art" Style="{StaticResource BodyStrongTextBlockStyle}" />
                 <TextBlock x:Name="ArtInfo" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <Button HorizontalAlignment="Stretch" Click="OnChooseArt">
+                <Button AutomationProperties.Name="Browse…" HorizontalAlignment="Stretch" Click="OnChooseArt">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B9;" FontSize="14" /><TextBlock Text="Browse…" /></StackPanel>
                 </Button>
-                <Button HorizontalAlignment="Stretch" Click="OnSearchArt">
+                <Button AutomationProperties.Name="Fetch image" HorizontalAlignment="Stretch" Click="OnSearchArt">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock Text="Fetch image" /></StackPanel>
                 </Button>
-                <Button HorizontalAlignment="Stretch" Click="OnRemoveArt">
+                <Button AutomationProperties.Name="Remove" HorizontalAlignment="Stretch" Click="OnRemoveArt">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE74D;" FontSize="14" /><TextBlock Text="Remove" /></StackPanel>
                 </Button>
             </StackPanel>
@@ -142,7 +142,7 @@
                 <TextBlock Text="Supports plain text and synchronized LRC format." VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                     <ProgressRing x:Name="LyricsProgress" IsActive="False" Width="18" Height="18" />
-                    <Button Click="OnDownloadLyrics">
+                    <Button AutomationProperties.Name="Fetch lyrics" Click="OnDownloadLyrics">
                         <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock Text="Fetch lyrics" /></StackPanel>
                     </Button>
                 </StackPanel>
@@ -162,7 +162,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <ToggleSwitch x:Name="WriteToggle" OnContent="Save to file tags" OffContent="Save to library only" />
-            <HyperlinkButton Grid.Column="1" HorizontalAlignment="Right" Click="OnFix">
+            <HyperlinkButton AutomationProperties.Name="Fetch…" Grid.Column="1" HorizontalAlignment="Right" Click="OnFix">
                 <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xEBD3;" FontSize="13" /><TextBlock Text="Fetch…" /></StackPanel>
             </HyperlinkButton>
         </Grid>

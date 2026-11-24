@@ -20,6 +20,9 @@ public sealed partial class DownloadEntry : ObservableObject
     [ObservableProperty] public partial string Status { get; set; } = "Downloading…";
     [ObservableProperty] public partial string Glyph { get; set; } = "";
     [ObservableProperty] public partial Brush Brush { get; set; } = ThemeRes.Brush("TextFillColorSecondaryBrush");
+
+    /// <summary>What screen readers announce for the entry (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Url}, {Status}";
 }
 
 /// <summary>Downloads songs with mdown.exe, adds them to the library and runs the online checks on them.</summary>

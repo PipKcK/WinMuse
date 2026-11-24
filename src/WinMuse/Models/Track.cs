@@ -113,6 +113,9 @@ public sealed class Track : ObservableObject
 
     public bool IsHiRes => BitsPerSample > 16 || SampleRate > 48000;
 
+    /// <summary>What screen readers announce for the song in lists (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{DisplayTitle}, {DisplayArtist}";
+
     /// <summary>Online checks only run on songs from 30 seconds to 15 minutes: shorter clips and long mixes aren't catalogued songs.</summary>
     public bool IsCheckable => DurationMs is >= 30_000 and <= 15 * 60_000;
 

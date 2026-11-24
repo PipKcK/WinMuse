@@ -165,13 +165,13 @@
                 CornerRadius="12" Padding="16,8" Background="{ThemeResource GlassBrush}" BorderBrush="{ThemeResource HairlineBrush}" BorderThickness="1">
             <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock x:Name="SelectionCount" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,0,10,0" MinWidth="90" />
-                <Button Click="OnSelectionPlay">
+                <Button AutomationProperties.Name="Play" Click="OnSelectionPlay">
                     <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE768;" FontSize="13" /><TextBlock Text="Play" /></StackPanel>
                 </Button>
-                <Button Click="OnSelectionQueue">
+                <Button AutomationProperties.Name="Add to queue" Click="OnSelectionQueue">
                     <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE8FD;" FontSize="13" /><TextBlock Text="Add to queue" /></StackPanel>
                 </Button>
-                <Button x:Name="SelectionPlaylistButton" Click="OnSelectionPlaylist">
+                <Button AutomationProperties.Name="Add to playlist" x:Name="SelectionPlaylistButton" Click="OnSelectionPlaylist">
                     <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE90B;" FontSize="13" /><TextBlock Text="Add to playlist" /></StackPanel>
                 </Button>
                 <Button Click="OnSelectionAll" Content="Select all" />

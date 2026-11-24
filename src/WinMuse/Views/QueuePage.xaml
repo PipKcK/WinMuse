@@ -14,13 +14,13 @@
                 <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnJump">
+                <Button AutomationProperties.Name="Go to current" Style="{StaticResource GhostPillButtonStyle}" Click="OnJump">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE81C;" FontSize="14" /><TextBlock Text="Go to current" /></StackPanel>
                 </Button>
-                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnSave">
+                <Button AutomationProperties.Name="Save as playlist" Style="{StaticResource GhostPillButtonStyle}" Click="OnSave">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE74E;" FontSize="14" /><TextBlock Text="Save as playlist" /></StackPanel>
                 </Button>
-                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnClear">
+                <Button AutomationProperties.Name="Clear" Style="{StaticResource GhostPillButtonStyle}" Click="OnClear">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE74D;" FontSize="14" /><TextBlock Text="Clear" /></StackPanel>
                 </Button>
             </StackPanel>

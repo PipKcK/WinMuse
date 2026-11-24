@@ -102,13 +102,13 @@
                     </StackPanel>
                     <TextBlock x:Name="Stats" Style="{StaticResource BodyTextBlockStyle}" Foreground="#E6FFFFFF" />
                     <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
-                        <Button x:Name="ShuffleAllButton" Click="OnShuffleAll" Height="36" CornerRadius="18" Padding="18,0" Background="White" Foreground="#FF1A1A1A" BorderThickness="0">
+                        <Button AutomationProperties.Name="Shuffle All" x:Name="ShuffleAllButton" Click="OnShuffleAll" Height="36" CornerRadius="18" Padding="18,0" Background="White" Foreground="#FF1A1A1A" BorderThickness="0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE8B1;" FontSize="15" />
                                 <TextBlock Text="Shuffle All" FontWeight="SemiBold" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="ResumeButton" Click="OnResume" Height="36" CornerRadius="18" Padding="16,0" Background="#33FFFFFF" Foreground="White" BorderThickness="0" Visibility="Collapsed">
+                        <Button x:Name="ResumeButton" AutomationProperties.Name="Resume" Click="OnResume" Height="36" CornerRadius="18" Padding="16,0" Background="#33FFFFFF" Foreground="White" BorderThickness="0" Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE768;" FontSize="14" />
                                 <TextBlock x:Name="ResumeText" Text="Resume" MaxWidth="260" TextTrimming="CharacterEllipsis" />
@@ -156,10 +156,10 @@
                     <TextBlock TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                x:Name="WelcomeText" Text="Add the folders that contain your music. Files remain on this PC. Supported formats include MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, APE, WavPack and DSD." />
                     <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,8,0,0">
-                        <Button Style="{StaticResource PillButtonStyle}" Click="OnUseMusicFolder">
+                        <Button AutomationProperties.Name="Add Music Folder" Style="{StaticResource PillButtonStyle}" Click="OnUseMusicFolder">
                             <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEC4F;" FontSize="14" /><TextBlock x:Name="MusicFolderButtonText" Text="Add Music Folder" /></StackPanel>
                         </Button>
-                        <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnAddFolder">
+                        <Button AutomationProperties.Name="Add Folder…" Style="{StaticResource GhostPillButtonStyle}" Click="OnAddFolder">
                             <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="14" /><TextBlock Text="Add Folder…" /></StackPanel>
                         </Button>
                     </StackPanel>
@@ -187,7 +187,7 @@
             <StackPanel x:Name="RecentAddedSection">
                 <!-- Section heading: the title (opens the playlist) and a one-line subtitle. -->
                 <StackPanel Margin="0,0,0,14" Spacing="0">
-                    <Button Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-1" Click="OnOpenSystemPlaylist"
+                    <Button AutomationProperties.Name="Fresh in Your Library" Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-1" Click="OnOpenSystemPlaylist"
                             HorizontalAlignment="Left" Padding="0,0,2,1" ToolTipService.ToolTip="Open playlist (updates automatically)">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Fresh in Your Library" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
@@ -212,7 +212,7 @@
             <StackPanel x:Name="MostPlayedSection">
                 <!-- Section heading: the title (opens the playlist) and a one-line subtitle. -->
                 <StackPanel Margin="0,0,0,14" Spacing="0">
-                    <Button Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-3" Click="OnOpenSystemPlaylist"
+                    <Button AutomationProperties.Name="On Repeat" Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-3" Click="OnOpenSystemPlaylist"
                             HorizontalAlignment="Left" Padding="0,0,2,1" ToolTipService.ToolTip="Open playlist (updates automatically)">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="On Repeat" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
@@ -227,7 +227,7 @@
             <StackPanel x:Name="RediscoverSection">
                 <!-- Section heading: the title (opens the playlist) and a one-line subtitle. -->
                 <StackPanel Margin="0,0,0,14" Spacing="0">
-                    <Button Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-4" Click="OnOpenSystemPlaylist"
+                    <Button AutomationProperties.Name="Long Time No Play" Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True" Tag="-4" Click="OnOpenSystemPlaylist"
                             HorizontalAlignment="Left" Padding="0,0,2,1" ToolTipService.ToolTip="Open playlist (updates automatically)">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Long Time No Play" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
@@ -290,7 +290,7 @@
                             <!-- The title opens the playlist (underlined on hover). -->
                             <StackPanel>
                                 <Grid Margin="0,0,0,12">
-                                    <Button HorizontalAlignment="Left" Click="OnOpenPlaylist" Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True"
+                                    <Button AutomationProperties.Name="{x:Bind Name}" HorizontalAlignment="Left" Click="OnOpenPlaylist" Style="{StaticResource TextLinkButtonStyle}" controls:Effects.HoverUnderline="True"
                                             Padding="0,2,2,4" Margin="0,-2,96,0" ToolTipService.ToolTip="Open playlist">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock Text="{x:Bind Name}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />

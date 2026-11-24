@@ -54,7 +54,7 @@
                         <Button x:Name="StarButton" Grid.Column="1" Style="{StaticResource IconButtonStyle}" Width="26" Height="26" FontSize="13" Content="&#xEB51;"
                                 Click="OnStar" Visibility="Collapsed" ToolTipService.ToolTip="Add to Favorite" AutomationProperties.Name="Favorite" />
                     </Grid>
-                    <HyperlinkButton Padding="0" Click="OnArtistClick" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                    <HyperlinkButton Padding="0" Click="OnArtistClick" AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                         <HyperlinkButton.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.ThemeDictionaries>
@@ -85,11 +85,11 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
                     <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Content="&#xE8B1;" IsChecked="{x:Bind Player.Shuffle, Mode=TwoWay}" ToolTipService.ToolTip="Shuffle (Ctrl+S)" AutomationProperties.Name="Shuffle (Ctrl+S)" />
                     <Button Style="{StaticResource IconButtonStyle}" Content="&#xE892;" Click="OnPrevious" ToolTipService.ToolTip="Previous (Ctrl+Left)" AutomationProperties.Name="Previous (Ctrl+Left)" />
-                    <Button x:Name="PlayButton" Style="{StaticResource PlayButtonStyle}" Click="OnPlayPause" ToolTipService.ToolTip="{x:Bind helpers:Conv.PlayLabel(Player.IsPlaying), Mode=OneWay}">
+                    <Button x:Name="PlayButton" Style="{StaticResource PlayButtonStyle}" Click="OnPlayPause" AutomationProperties.Name="{x:Bind helpers:Conv.PlayLabel(Player.IsPlaying), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind helpers:Conv.PlayLabel(Player.IsPlaying), Mode=OneWay}">
                         <FontIcon x:Name="PlayGlyph" Glyph="{x:Bind helpers:Conv.PlayGlyph(Player.IsPlaying), Mode=OneWay}" FontSize="18" />
                     </Button>
                     <Button Style="{StaticResource IconButtonStyle}" Content="&#xE893;" Click="OnNext" ToolTipService.ToolTip="Next (Ctrl+Right)" AutomationProperties.Name="Next (Ctrl+Right)" />
-                    <ToggleButton x:Name="RepeatButton" Style="{StaticResource IconToggleButtonStyle}" Click="OnRepeat"
+                    <ToggleButton x:Name="RepeatButton" Style="{StaticResource IconToggleButtonStyle}" Click="OnRepeat" AutomationProperties.Name="{x:Bind helpers:Conv.RepeatTip(Player.Repeat), Mode=OneWay}"
                                   Content="{x:Bind helpers:Conv.RepeatGlyph(Player.Repeat), Mode=OneWay}"
                                   IsChecked="{x:Bind helpers:Conv.RepeatOn(Player.Repeat), Mode=OneWay}"
                                   ToolTipService.ToolTip="{x:Bind helpers:Conv.RepeatTip(Player.Repeat), Mode=OneWay}" />

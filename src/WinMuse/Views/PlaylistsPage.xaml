@@ -12,7 +12,7 @@
                 <TextBlock x:Name="CountText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnImport">
+                <Button AutomationProperties.Name="Import" Style="{StaticResource GhostPillButtonStyle}" Click="OnImport">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B5;" FontSize="14" /><TextBlock Text="Import" /></StackPanel>
                 </Button>
                 <!-- One "New" button: a regular playlist or a smart one. -->

@@ -21,10 +21,10 @@
                         <TextBlock x:Name="NameText" Style="{StaticResource DisplayTextBlockStyle}" FontSize="52" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="WrapWholeWords" MaxLines="2" />
                         <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
-                            <Button Style="{StaticResource PillButtonStyle}" Click="OnPlay">
+                            <Button AutomationProperties.Name="Play" Style="{StaticResource PillButtonStyle}" Click="OnPlay">
                                 <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE768;" FontSize="14" /><TextBlock Text="Play" /></StackPanel>
                             </Button>
-                            <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnShuffle">
+                            <Button AutomationProperties.Name="Shuffle" Style="{StaticResource GhostPillButtonStyle}" Click="OnShuffle">
                                 <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B1;" FontSize="14" /><TextBlock Text="Shuffle" /></StackPanel>
                             </Button>
                             <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnAllSongs" Content="All songs" />

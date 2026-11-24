@@ -43,4 +43,7 @@ public sealed class ContinueItem : ObservableObject
 
     /// <summary>Share of the song already heard (0–100), shown as a thin bar on the cover.</summary>
     public double Progress => Track.DurationMs > 0 ? Math.Clamp(Entry.PositionSeconds * 1000 / Track.DurationMs * 100, 0, 100) : 0;
+
+    /// <summary>What screen readers announce for the card (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Title}, {Artist}, {Source}";
 }

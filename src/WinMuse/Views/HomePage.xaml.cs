@@ -383,7 +383,11 @@ public sealed partial class HomePage : Page
     {
         var t = Svc.Player.CurrentTrack;
         ResumeButton.Visibility = t != null ? Visibility.Visible : Visibility.Collapsed;
-        if (t != null) ResumeText.Text = $"{t.DisplayTitle} · {t.DisplayArtist}";
+        if (t != null)
+        {
+            ResumeText.Text = $"{t.DisplayTitle} · {t.DisplayArtist}";
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ResumeButton, $"Resume {t.DisplayTitle} by {t.DisplayArtist}");
+        }
     }
 
     private void OnPageWheel(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

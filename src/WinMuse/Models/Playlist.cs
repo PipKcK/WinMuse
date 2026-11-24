@@ -13,6 +13,9 @@ public sealed class Playlist : ObservableObject
     public string? RulesJson { get; set; }
     public string? CoverPath { get; set; }
 
+    /// <summary>What screen readers announce for the playlist tile (WinUI names list items from ToString).</summary>
+    public override string ToString() => IsSmart ? $"{Name}, smart playlist" : Name;
+
     /// <summary>
     /// Automatic playlists (Fresh in Your Library, On Repeat, Long Time No Play) have negative ids: the app
     /// keeps them up to date, they are never saved and they are not listed with your playlists.

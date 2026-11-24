@@ -115,7 +115,7 @@
                         <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" FontWeight="Bold"
                                    Foreground="{ThemeResource NowPlayingTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <HyperlinkButton Padding="0" Click="OnArtist" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
+                            <HyperlinkButton AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Padding="0" Click="OnArtist" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
                                 <HyperlinkButton.Resources>
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>
@@ -133,7 +133,7 @@
                                 <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
                             </HyperlinkButton>
                             <TextBlock Text="·" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
-                            <HyperlinkButton Padding="0" Click="OnAlbum" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
+                            <HyperlinkButton x:Name="AlbumLink" Padding="0" Click="OnAlbum" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
                                 <HyperlinkButton.Resources>
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>
@@ -173,13 +173,13 @@
 
                     <Grid Grid.Row="3">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
-                            <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Content="&#xE8B1;" IsChecked="{x:Bind Player.Shuffle, Mode=TwoWay}" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
-                            <Button Style="{StaticResource IconButtonStyle}" Content="&#xE892;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnPrevious" Foreground="{ThemeResource NowPlayingTextBrush}" />
-                            <Button Style="{StaticResource PlayButtonStyle}" Width="68" Height="68" CornerRadius="34" Click="OnPlayPause">
+                            <ToggleButton AutomationProperties.Name="Shuffle (Ctrl+S)" Style="{StaticResource IconToggleButtonStyle}" Content="&#xE8B1;" IsChecked="{x:Bind Player.Shuffle, Mode=TwoWay}" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
+                            <Button AutomationProperties.Name="Previous (Ctrl+Left)" Style="{StaticResource IconButtonStyle}" Content="&#xE892;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnPrevious" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <Button Style="{StaticResource PlayButtonStyle}" Width="68" Height="68" CornerRadius="34" Click="OnPlayPause" AutomationProperties.Name="{x:Bind helpers:Conv.PlayLabel(Player.IsPlaying), Mode=OneWay}">
                                 <FontIcon x:Name="PlayGlyph" Glyph="{x:Bind helpers:Conv.PlayGlyph(Player.IsPlaying), Mode=OneWay}" FontSize="26" />
                             </Button>
-                            <Button Style="{StaticResource IconButtonStyle}" Content="&#xE893;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnNext" Foreground="{ThemeResource NowPlayingTextBrush}" />
-                            <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Click="OnRepeat" Foreground="{ThemeResource NowPlayingSubtleTextBrush}"
+                            <Button AutomationProperties.Name="Next (Ctrl+Right)" Style="{StaticResource IconButtonStyle}" Content="&#xE893;" FontSize="20" Width="48" Height="48" CornerRadius="24" Click="OnNext" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <ToggleButton Style="{StaticResource IconToggleButtonStyle}" Click="OnRepeat" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" AutomationProperties.Name="{x:Bind helpers:Conv.RepeatTip(Player.Repeat), Mode=OneWay}"
                                           Content="{x:Bind helpers:Conv.RepeatGlyph(Player.Repeat), Mode=OneWay}"
                                           IsChecked="{x:Bind helpers:Conv.RepeatOn(Player.Repeat), Mode=OneWay}" />
                         </StackPanel>
@@ -197,7 +197,7 @@
                             <FontIcon Glyph="&#xE8BD;" FontSize="40" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
                             <TextBlock x:Name="LyricsEmptyText" Text="Lyrics unavailable" HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                <Button x:Name="FetchLyricsButton" Style="{StaticResource PillButtonStyle}" Click="OnFetchLyrics">
+                                <Button AutomationProperties.Name="Fetch lyrics" x:Name="FetchLyricsButton" Style="{StaticResource PillButtonStyle}" Click="OnFetchLyrics">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xEBD3;" FontSize="14" />
                                         <TextBlock Text="Fetch lyrics" />
@@ -220,10 +220,10 @@
                             <RatingControl x:Name="Rating" HorizontalAlignment="Left" IsClearEnabled="True" ValueChanged="OnRatingChanged" />
                             <Grid x:Name="DetailsGrid" ColumnSpacing="24" RowSpacing="10" />
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnEditInfo">
+                                <Button AutomationProperties.Name="Edit metadata" Style="{StaticResource GhostPillButtonStyle}" Click="OnEditInfo">
                                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE70F;" FontSize="14" /><TextBlock Text="Edit metadata" /></StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnFixInfo">
+                                <Button AutomationProperties.Name="Fetch" Style="{StaticResource GhostPillButtonStyle}" Click="OnFixInfo">
                                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock Text="Fetch" /></StackPanel>
                                 </Button>
                             </StackPanel>

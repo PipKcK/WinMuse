@@ -207,6 +207,7 @@ public sealed partial class NowPlayingView : UserControl
     private void LoadTrack(Track? t, bool animate)
     {
         AlbumText.Text = t?.DisplayAlbum ?? "";
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(AlbumLink, AlbumText.Text);
         Rating.Value = t?.Rating > 0 ? t.Rating : -1;
         BuildDetails(t);
         if (animate)

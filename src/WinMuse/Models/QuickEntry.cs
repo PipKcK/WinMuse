@@ -28,5 +28,8 @@ public sealed class QuickEntry
     public Visibility BadgeVisibility => IsPinned || IsFavorite ? Visibility.Visible : Visibility.Collapsed;
     public string BadgeTip => IsPinned ? "Pinned" : "Favorite";
 
+    /// <summary>What screen readers announce for the tile (WinUI names list items from ToString).</summary>
+    public override string ToString() => IsPinned || IsFavorite ? $"{Title}, {Subtitle}, {BadgeTip}" : $"{Title}, {Subtitle}";
+
     public bool SameAs(QuickEntry o) => o.Key == Key && o.Title == Title && o.ArtPath == ArtPath && o.Subtitle == Subtitle && o.BadgeGlyph == BadgeGlyph;
 }

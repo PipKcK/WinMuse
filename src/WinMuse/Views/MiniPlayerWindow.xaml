@@ -31,11 +31,11 @@
                            Foreground="{ThemeResource NowPlayingSubtleTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                 <ProgressBar Value="{x:Bind Player.Position, Mode=OneWay}" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" Margin="0,10,0,6" />
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                    <Button Style="{StaticResource IconButtonStyle}" Width="36" Height="36" Content="&#xE892;" Click="OnPrevious" Foreground="{ThemeResource NowPlayingTextBrush}" />
-                    <Button Style="{StaticResource PlayButtonStyle}" Width="40" Height="40" CornerRadius="20" Click="OnPlayPause">
+                    <Button AutomationProperties.Name="Previous" Style="{StaticResource IconButtonStyle}" Width="36" Height="36" Content="&#xE892;" Click="OnPrevious" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                    <Button Style="{StaticResource PlayButtonStyle}" Width="40" Height="40" CornerRadius="20" Click="OnPlayPause" AutomationProperties.Name="{x:Bind helpers:Conv.PlayLabel(Player.IsPlaying), Mode=OneWay}">
                         <FontIcon Glyph="{x:Bind helpers:Conv.PlayGlyph(Player.IsPlaying), Mode=OneWay}" FontSize="15" />
                     </Button>
-                    <Button Style="{StaticResource IconButtonStyle}" Width="36" Height="36" Content="&#xE893;" Click="OnNext" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                    <Button AutomationProperties.Name="Next" Style="{StaticResource IconButtonStyle}" Width="36" Height="36" Content="&#xE893;" Click="OnNext" Foreground="{ThemeResource NowPlayingTextBrush}" />
                     <Button Style="{StaticResource IconButtonStyle}" Width="36" Height="36" Content="&#xEE47;" Click="OnExpand" Foreground="{ThemeResource NowPlayingSubtleTextBrush}"
                             ToolTipService.ToolTip="Restore" AutomationProperties.Name="Restore" Margin="8,0,0,0" />
                 </StackPanel>

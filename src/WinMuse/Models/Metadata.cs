@@ -37,6 +37,9 @@ public sealed class MetadataCandidate
     public string ScoreText => $"{Score:0}% match";
     public string Headline => $"{Title} — {Artist}";
     public string Detail => string.Join(" · ", new[] { Album, Year > 0 ? Year.ToString() : null, TrackNumber > 0 ? $"Track {TrackNumber}" : null, Source }.Where(s => !string.IsNullOrEmpty(s)));
+
+    /// <summary>What screen readers announce for the match in the Fetch dialog (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Title}, {Artist}, {Detail}";
 }
 
 public sealed record LyricLine(TimeSpan Time, string Text);

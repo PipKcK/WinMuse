@@ -30,7 +30,7 @@
                     <x:String>Edited by you</x:String>
                     <x:String>Complete</x:String>
                 </ComboBox>
-                <Button x:Name="SyncButton" Style="{StaticResource PillButtonStyle}" Click="OnSync">
+                <Button x:Name="SyncButton" AutomationProperties.Name="Fetch" Style="{StaticResource PillButtonStyle}" Click="OnSync">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock x:Name="SyncText" Text="Fetch" /></StackPanel>
                 </Button>
             </StackPanel>

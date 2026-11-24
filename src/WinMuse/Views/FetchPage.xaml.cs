@@ -36,6 +36,8 @@ public sealed class SourceRow
     public SourceStatus Lyrics { get; }
     public int Flag { get; }
     public string FlagText => Flag switch { 1 => "Complete (1)", -1 => "Edited (-1)", _ => "Incomplete (0)" };
+    /// <summary>What screen readers announce for the row (WinUI names list items from ToString).</summary>
+    public override string ToString() => $"{Track}, {FlagText}";
     public Brush FlagBackground { get; }
     public Brush FlagForeground { get; }
     public bool CanSync => Track.IsCheckable;
@@ -112,6 +114,8 @@ public sealed partial class FetchPage : Page
     private void OnProgress(int done, int total, string? current)
     {
         SyncText.Text = total > 0 ? $"Stop · {Math.Min(done + 1, total)} of {total}" : "Fetch";
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(SyncButton,
+            total > 0 ? $"Stop fetching, song {Math.Min(done + 1, total)} of {total}" : "Fetch");
     }
 
     private void OnFilterChanged(object sender, SelectionChangedEventArgs e) { if (IsLoaded) Load(); }

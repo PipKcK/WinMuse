@@ -7,7 +7,11 @@ using WinMuse.Services;
 
 namespace WinMuse.Views;
 
-public sealed record SearchSuggestion(string Title, string Subtitle, string? ArtPath, string Glyph, object Payload);
+public sealed record SearchSuggestion(string Title, string Subtitle, string? ArtPath, string Glyph, object Payload)
+{
+    /// <summary>What screen readers announce for the suggestion (a record's default ToString lists every field, file path included).</summary>
+    public override string ToString() => $"{Title}, {Subtitle}";
+}
 
 public sealed partial class SearchPage : Page
 {

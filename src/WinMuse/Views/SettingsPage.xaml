@@ -24,7 +24,7 @@
             <TextBlock Text="Library" Style="{StaticResource GroupHeader}" />
             <tk:SettingsExpander Header="Library folders" Description="Folders included in your library. Changes are detected automatically." IsExpanded="True">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8B7;" /></tk:SettingsExpander.HeaderIcon>
-                <Button Style="{StaticResource AccentButtonStyle}" Click="OnAddFolder">
+                <Button AutomationProperties.Name="Add folder" Style="{StaticResource AccentButtonStyle}" Click="OnAddFolder">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="13" /><TextBlock Text="Add folder" /></StackPanel>
                 </Button>
                 <tk:SettingsExpander.ItemsHeader>
