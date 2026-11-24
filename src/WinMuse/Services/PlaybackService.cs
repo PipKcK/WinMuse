@@ -59,6 +59,18 @@ public sealed partial class PlaybackService : ObservableObject
         Shuffle = s.Shuffle;
         Repeat = s.Repeat;
         Queue.CollectionChanged += OnQueueChanged;
+        library.TracksRemoved += ForgetRemoved;
+    }
+
+    /// <summary>
+    /// Songs that left the library leave the queue too (the Queue badge and Up next stop counting them). The song
+    /// playing now stays until playback moves on, so it isn't cut off.
+    /// </summary>
+    private void ForgetRemoved(IReadOnlyCollection<Track> removed)
+    {
+        var set = removed as ISet<Track> ?? removed.ToHashSet();
+        var indices = Queue.Select((t, i) => (t, i)).Where(x => set.Contains(x.t) && !ReferenceEquals(x.t, CurrentTrack)).Select(x => x.i).ToList();
+        if (indices.Count > 0) RemoveFromQueue(indices);
     }
 
     public void Initialize()

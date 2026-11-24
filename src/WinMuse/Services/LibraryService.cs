@@ -111,6 +111,11 @@ public sealed partial class LibraryService
     public event Action? ScanCompleted;
     /// <summary>Songs that appeared in the library folders during a scan (not ones already in the library).</summary>
     public event Action<IReadOnlyList<Track>>? TracksAdded;
+    /// <summary>
+    /// Songs that left the library (on the UI thread): files gone from disk at a rescan, Remove from library, or
+    /// Delete file. The queue drops them.
+    /// </summary>
+    public event Action<IReadOnlyCollection<Track>>? TracksRemoved;
 
     public LibraryService(TagService tags, ArtworkService art, SettingsService settings)
     {
@@ -282,6 +287,7 @@ public sealed partial class LibraryService
                 ResolvePlaylistsAfterChange();
                 Changed?.Invoke();
                 if (added.Count > 0) TracksAdded?.Invoke(added);
+                if (result.removed.Count > 0) TracksRemoved?.Invoke(result.removed);
             }
         }
         finally
@@ -491,6 +497,7 @@ public sealed partial class LibraryService
         foreach (var p in Playlists.Where(p => !p.IsSmart)) p.Tracks.RemoveAll(set.Contains);
         ResolvePlaylistsAfterChange();
         Changed?.Invoke();
+        if (set.Count > 0) TracksRemoved?.Invoke(set);
     }
 
     public void SetAutoFixed(IEnumerable<Track> tracks, bool value)
