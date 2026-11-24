@@ -286,7 +286,7 @@ public sealed partial class NowPlayingView : UserControl
             _lyricsSynced = false;
             UpdateTimingButton();
             LyricsEmpty.Visibility = Visibility.Visible;
-            LyricsEmptyText.Text = "Lyrics unavailable";
+            LyricsEmptyText.Text = Player.CurrentTrack?.LyricsState == ItemState.Instrumental ? "Instrumental" : "Lyrics unavailable";
             return;
         }
         LyricsEmpty.Visibility = Visibility.Collapsed;
@@ -420,7 +420,7 @@ public sealed partial class NowPlayingView : UserControl
             var r = await Svc.Lyrics.DownloadAsync(t);
             LyricsProgress.IsActive = false;
             if (r != null) { ShowLyrics(r); Notifier.Success("Lyrics downloaded", "Saved for offline use."); }
-            else LyricsEmptyText.Text = "No lyrics were found for this song";
+            else LyricsEmptyText.Text = t.LyricsState == ItemState.Instrumental ? "Instrumental: this song has no lyrics" : "No lyrics were found for this song";
         }
         catch (Exception ex)
         {

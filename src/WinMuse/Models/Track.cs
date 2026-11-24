@@ -133,6 +133,16 @@ public static class ItemState
     public const int Downloaded = 1;    // provided by the online sources
     public const int NotFound = 2;      // looked up, nothing found
     public const int FromFile = 3;      // already present in the file/folder
+    public const int Instrumental = 4;  // lyrics only: the song has none (LRCLIB says so, or the title/genre does)
 
-    public static bool IsSatisfied(int s) => s is Downloaded or FromFile;
+    /// <summary>Nothing left to download for the item. An instrumental has no lyrics to find, so it counts as done.</summary>
+    public static bool IsSatisfied(int s) => s is Downloaded or FromFile or Instrumental;
+
+    /// <summary>
+    /// The song says it is instrumental: "Instrumental" in its title (e.g. "Song (Instrumental)") or genre
+    /// (e.g. "Instrumental Hip-Hop").
+    /// </summary>
+    public static bool LooksInstrumental(Track t) =>
+        (t.Title?.Contains("instrumental", StringComparison.OrdinalIgnoreCase) ?? false)
+        || (t.Genre?.Contains("instrumental", StringComparison.OrdinalIgnoreCase) ?? false);
 }

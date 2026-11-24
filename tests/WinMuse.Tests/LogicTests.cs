@@ -179,3 +179,26 @@ public class CollectionSyncTests
         Assert.Equal("B", target[1].v);
     }
 }
+
+/// <summary>Lyrics states: an instrumental has no lyrics to find, so it counts as complete.</summary>
+public class LyricsStateTests
+{
+    [Theory]
+    [InlineData("Soul Key (Instrumental)", null, true)]
+    [InlineData("Soul Key", "Instrumental Hip-Hop", true)]
+    [InlineData("Soul Key", "instrumental", true)]
+    [InlineData("Soul Key", "Hip-Hop", false)]
+    [InlineData("Soul Key", null, false)]
+    [InlineData(null, null, false)]
+    public void LooksInstrumental(string? title, string? genre, bool expected) =>
+        Assert.Equal(expected, ItemState.LooksInstrumental(new Track { Title = title, Genre = genre }));
+
+    [Theory]
+    [InlineData(ItemState.Downloaded, true)]
+    [InlineData(ItemState.FromFile, true)]
+    [InlineData(ItemState.Instrumental, true)]
+    [InlineData(ItemState.NotFound, false)]   // might still have lyrics somewhere: Sync keeps trying
+    [InlineData(ItemState.Missing, false)]
+    [InlineData(ItemState.EditedByUser, false)]
+    public void Satisfied(int state, bool expected) => Assert.Equal(expected, ItemState.IsSatisfied(state));
+}

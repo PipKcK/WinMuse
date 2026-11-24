@@ -18,6 +18,9 @@ public sealed class ServiceBusyException(string service) : Exception($"{service}
     public string Service { get; } = service;
 }
 
+/// <summary>A lyrics lookup: the lyrics found (LRC or plain), or none and whether LRCLIB lists the song as instrumental.</summary>
+public sealed record LyricsLookup(string? Text, bool Instrumental);
+
 public sealed partial class OnlineMetadataService
 {
     private readonly HttpClient _http;
@@ -314,9 +317,13 @@ public sealed partial class OnlineMetadataService
 
     // ---------------- LRCLIB ----------------
 
-    /// <summary>Returns LRC (synced) text if available, else plain lyrics, else null.</summary>
-    public async Task<string?> FetchLyricsAsync(string? artist, string title, string? album, int durationSec, CancellationToken ct = default)
+    /// <summary>
+    /// LRC (synced) text if available, else plain lyrics. Without either, <see cref="LyricsLookup.Instrumental"/> says
+    /// whether LRCLIB lists the song as an instrumental (so there are no lyrics to find).
+    /// </summary>
+    public async Task<LyricsLookup> FetchLyricsAsync(string? artist, string title, string? album, int durationSec, CancellationToken ct = default)
     {
+        bool instrumental = false;
         try
         {
             var url = $"https://lrclib.net/api/get?track_name={Uri.EscapeDataString(title)}&artist_name={Uri.EscapeDataString(artist ?? "")}";
@@ -327,27 +334,33 @@ public sealed partial class OnlineMetadataService
                 if (resp.IsSuccessStatusCode)
                 {
                     using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
-                    if (PickLyrics(doc.RootElement) is { } found) return found;
+                    if (PickLyrics(doc.RootElement) is { } found) return new(found, false);
+                    instrumental = IsInstrumental(doc.RootElement);
                 }
             }
 
             var search = $"https://lrclib.net/api/search?track_name={Uri.EscapeDataString(title)}";
             if (!string.IsNullOrWhiteSpace(artist)) search += $"&artist_name={Uri.EscapeDataString(artist)}";
             using var sresp = await _http.GetAsync(search, ct);
-            if (!sresp.IsSuccessStatusCode) return null;
+            if (!sresp.IsSuccessStatusCode) return new(null, instrumental);
             using var sdoc = JsonDocument.Parse(await sresp.Content.ReadAsStringAsync(ct));
             var items = sdoc.RootElement.EnumerateArray()
                 .OrderBy(e => durationSec > 0 && e.TryGetProperty("duration", out var d) && d.ValueKind == JsonValueKind.Number ? Math.Abs(d.GetDouble() - durationSec) : 0)
                 .ToList();
-            foreach (var e in items.Where(e => Str(e, "syncedLyrics") != null)) return Str(e, "syncedLyrics");
-            foreach (var e in items) if (PickLyrics(e) is { } p) return p;
+            foreach (var e in items.Where(e => Str(e, "syncedLyrics") != null)) return new(Str(e, "syncedLyrics"), false);
+            foreach (var e in items) if (PickLyrics(e) is { } p) return new(p, false);
+            // No lyrics anywhere: an instrumental if the closest match (by length) is marked as one.
+            if (items.Count > 0) instrumental |= IsInstrumental(items[0]);
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { AppPaths.Log("Lyrics fetch failed: " + ex.Message); }
-        return null;
+        return new(null, instrumental);
     }
 
     private static string? PickLyrics(JsonElement e) => Str(e, "syncedLyrics") ?? Str(e, "plainLyrics");
+
+    private static bool IsInstrumental(JsonElement e) =>
+        e.ValueKind == JsonValueKind.Object && e.TryGetProperty("instrumental", out var v) && v.ValueKind == JsonValueKind.True;
 
     // ---------------- JSON helpers ----------------
 

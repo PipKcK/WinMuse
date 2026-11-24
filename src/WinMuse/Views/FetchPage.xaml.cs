@@ -21,6 +21,7 @@ public sealed record SourceStatus(int State, string Label, string Glyph, Brush B
         ItemState.Downloaded => new(state, "Downloaded", "", ThemeRes.Brush("SystemFillColorSuccessBrush"), $"{item} downloaded by Music"),
         ItemState.FromFile => new(state, "From file", "", ThemeRes.Brush("TextFillColorSecondaryBrush"), $"{item} was already in the file or folder"),
         ItemState.EditedByUser => new(state, "Edited", "", ThemeRes.Brush("AccentTextFillColorPrimaryBrush"), $"{item} was changed by you"),
+        ItemState.Instrumental => new(state, "Instrumental", "", ThemeRes.Brush("TextFillColorSecondaryBrush"), "Instrumental: this song has no lyrics"),
         ItemState.NotFound => new(state, "Not found", "", ThemeRes.Brush("SystemFillColorCautionBrush"), $"{item} was looked up but not found online"),
         _ => new(state, "Pending", "", ThemeRes.Brush("TextFillColorTertiaryBrush"), $"{item} has not been processed yet"),
     };

@@ -224,9 +224,10 @@ public sealed partial class MetadataEditorDialog : ContentDialog
         LyricsProgress.IsActive = true;
         try
         {
-            var text = await Svc.Online.FetchLyricsAsync(NullIfEmpty(GetText(ArtistBox)) ?? t.Artist, NullIfEmpty(GetText(TitleBox)) ?? t.DisplayTitle,
+            var (text, instrumental) = await Svc.Online.FetchLyricsAsync(NullIfEmpty(GetText(ArtistBox)) ?? t.Artist, NullIfEmpty(GetText(TitleBox)) ?? t.DisplayTitle,
                 NullIfEmpty(GetText(AlbumBox)) ?? t.Album, (int)t.Duration.TotalSeconds);
             if (text != null) LyricsBox.Text = text;
+            else if (instrumental) Notifier.Show("Instrumental", "This song is listed as an instrumental, so it has no lyrics.");
             else Notifier.Show("Lyrics unavailable", "No lyrics were found for this song.");
         }
         finally { LyricsProgress.IsActive = false; }

@@ -82,19 +82,41 @@ public sealed class LyricsService
         return await DownloadAsync(t, ct);
     }
 
-    /// <summary>Downloads lyrics from LRCLIB and stores them locally.</summary>
+    /// <summary>
+    /// Downloads lyrics from LRCLIB and stores them locally. Instrumentals (the title or genre says so, or LRCLIB lists
+    /// the song as one) are marked <see cref="ItemState.Instrumental"/>: they have no lyrics, so they count as complete
+    /// and Sync stops looking them up.
+    /// </summary>
     public async Task<LyricsResult?> DownloadAsync(Track t, CancellationToken ct = default)
     {
-        var text = await _online.FetchLyricsAsync(t.Artist, t.DisplayTitle, t.Album, (int)t.Duration.TotalSeconds, ct);
+        if (ItemState.LooksInstrumental(t))
+        {
+            MarkNoLyrics(t, instrumental: true);
+            return null;
+        }
+        var (text, instrumental) = await _online.FetchLyricsAsync(t.Artist, t.DisplayTitle, t.Album, (int)t.Duration.TotalSeconds, ct);
         if (string.IsNullOrWhiteSpace(text))
         {
-            if (t.LyricsState == ItemState.Missing) { t.LyricsState = ItemState.NotFound; _library.SaveStates(new[] { t }); }
+            MarkNoLyrics(t, instrumental);
             return null;
         }
         Save(t, text);
         t.LyricsState = ItemState.Downloaded;
         _library.SaveStates(new[] { t });
         return LrcParser.Parse(text, "Downloaded");
+    }
+
+    /// <summary>
+    /// Records a lookup that found no lyrics: Instrumental when the song has none, otherwise Not found. Only replaces a
+    /// "nothing yet" state (lyrics from the file, downloaded earlier or edited by you are kept).
+    /// </summary>
+    private void MarkNoLyrics(Track t, bool instrumental)
+    {
+        if (t.LyricsState is not (ItemState.Missing or ItemState.NotFound or ItemState.Instrumental)) return;
+        var state = instrumental ? ItemState.Instrumental : ItemState.NotFound;
+        if (t.LyricsState == state) return;
+        t.LyricsState = state;
+        _library.SaveStates(new[] { t });
     }
 
     public void Save(Track t, string text)
