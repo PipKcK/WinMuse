@@ -288,9 +288,11 @@ public sealed partial class ThemeService : ObservableObject
         }
 
         _albumAccent = ColorKit.PickAccent(palette);
-        Palette = _settings.Current.BackgroundMode == BackgroundMode.Gradient ? GradientPalette() : palette;
+        // Accent first: listeners of Palette (Now Playing's visualizer and glow) read Accent, which must already be
+        // this song's color rather than the previous one's.
         AlbumPalette = palette;
         if (_settings.Current.AccentSource == AccentSource.AlbumArt) ApplyAccent();
+        Palette = _settings.Current.BackgroundMode == BackgroundMode.Gradient ? GradientPalette() : palette;
     }
 
     /// <summary>Palette of the current album regardless of the background mode (used by Now Playing).</summary>

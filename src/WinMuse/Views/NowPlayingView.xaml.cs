@@ -85,6 +85,8 @@ public sealed partial class NowPlayingView : UserControl
         Svc.Theme.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(ThemeService.Palette)) ApplyPalette();
+            // The accent can also change on its own (custom color, Windows accent, light/dark tuning).
+            else if (e.PropertyName == nameof(ThemeService.Accent)) ApplyVisualizerColors();
         };
 
         ActualThemeChanged += (_, _) => Aurora.LightMode = ActualTheme == ElementTheme.Light;
@@ -162,15 +164,20 @@ public sealed partial class NowPlayingView : UserControl
         };
     }
 
+    private void ApplyVisualizerColors()
+    {
+        var accent = Svc.Theme.Accent;
+        Viz.SetColors(accent, ColorKit.Lighten(accent, 0.18));
+    }
+
     private void ApplyPalette()
     {
         var p = Svc.Theme.AlbumPalette.Length > 0 ? Svc.Theme.AlbumPalette : Svc.Theme.Palette;
         Aurora.SetPalette(p);
-        var accent = Svc.Theme.Accent;
-        Viz.SetColors(accent, ColorKit.Lighten(accent, 0.18));
+        ApplyVisualizerColors();
         if (_glowShadow != null && p.Length > 0)
         {
-            var glowColor = ColorKit.PickAccent(p) ?? accent;
+            var glowColor = ColorKit.PickAccent(p) ?? Svc.Theme.Accent;
             var anim = _glowShadow.Compositor.CreateColorKeyFrameAnimation();
             anim.InsertKeyFrame(1, glowColor);
             anim.Duration = TimeSpan.FromMilliseconds(900);
