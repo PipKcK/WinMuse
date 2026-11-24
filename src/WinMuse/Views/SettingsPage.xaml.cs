@@ -77,12 +77,14 @@ public sealed partial class SettingsPage : Page
         EqGenreToggle.IsOn = S.EqMatchGenre;
         GaplessToggle.IsOn = S.Gapless;
         CrossfadeSlider.Value = S.CrossfadeSeconds;
-        Select(WriteModeBox, (int)S.WriteMode);
+        FileChangesToggle.IsOn = S.AllowFileChanges;
+        WriteModeBox.SelectedItem = WriteModeBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == S.WriteMode.ToString()) ?? WriteModeBox.Items[0];
+        DeleteFilesToggle.IsOn = S.AllowDeleteFiles;
+        UpdateFileChangesCard();
         AutoLyricsToggle.IsOn = S.AutoFetchLyrics;
         AutoFixToggle.IsOn = S.AutoFixMetadata;
         QueuePanelToggle.IsOn = S.ShowQueuePanel;
         AutoArtToggle.IsOn = S.AutoFetchArt;
-        EmbedArtToggle.IsOn = S.EmbedFetchedArt;
         AcoustIdKey.Load(S.AcoustIdApiKey);
         YouTubeKey.Load(S.YouTubeApiKey);
         LastFmKey.Load(S.LastFmApiKey);
@@ -360,10 +362,42 @@ public sealed partial class SettingsPage : Page
 
     // ---------------- Metadata ----------------
 
-    private void OnWriteModeChanged(object sender, SelectionChangedEventArgs e)
+    // ---------------- Your music files ----------------
+
+    private void OnFileChangesToggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        Svc.Settings.Set(nameof(AppSettings.WriteMode), s => s.WriteMode = (MetadataWriteMode)WriteModeBox.SelectedIndex);
+        Svc.Settings.Set(nameof(AppSettings.AllowFileChanges), s => s.AllowFileChanges = FileChangesToggle.IsOn);
+        UpdateFileChangesCard();
+        // Turned on: open the card so the choice of where edits go is right there.
+        if (FileChangesToggle.IsOn) FileChangesCard.IsExpanded = true;
+    }
+
+    private void OnWriteModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || WriteModeBox.SelectedItem is not ComboBoxItem { Tag: string tag }) return;
+        Svc.Settings.Set(nameof(AppSettings.WriteMode), s => s.WriteMode = Enum.Parse<MetadataWriteMode>(tag));
+        UpdateFileChangesCard();
+    }
+
+    private void OnDeleteFilesToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        Svc.Settings.Set(nameof(AppSettings.AllowDeleteFiles), s => s.AllowDeleteFiles = DeleteFilesToggle.IsOn);
+    }
+
+    /// <summary>The choice of where edits go shows only while changing files is on, and explains the chosen mode.</summary>
+    private void UpdateFileChangesCard()
+    {
+        var on = FileChangesToggle.IsOn;
+        WriteModeCard.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        if (!on) FileChangesCard.IsExpanded = false;
+        WriteModeCard.Description = (WriteModeBox.SelectedItem as ComboBoxItem)?.Tag switch
+        {
+            "WriteToFiles" => "Edits are written into the files' tags. Album art Music downloads is embedded in the files too.",
+            "Ask" => "Edit windows offer Save to library and Save to files. Automatic updates stay in Music's library.",
+            _ => "Edits stay in Music's library. Your files aren't changed until you pick another option.",
+        };
     }
 
     private void OnAutoLyricsToggled(object sender, RoutedEventArgs e)
@@ -378,11 +412,6 @@ public sealed partial class SettingsPage : Page
         Svc.Settings.Set(nameof(AppSettings.AutoFetchArt), s => s.AutoFetchArt = AutoArtToggle.IsOn);
     }
 
-    private void OnEmbedArtToggled(object sender, RoutedEventArgs e)
-    {
-        if (_loading) return;
-        Svc.Settings.Set(nameof(AppSettings.EmbedFetchedArt), s => s.EmbedFetchedArt = EmbedArtToggle.IsOn);
-    }
 
 
     private void OnAutoFixToggled(object sender, RoutedEventArgs e)

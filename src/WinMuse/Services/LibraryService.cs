@@ -467,15 +467,26 @@ public sealed partial class LibraryService
         await ScanAsync();
     }
 
-    /// <summary>Moves the files (and their .lrc lyrics) to the Recycle Bin and removes them from the library.</summary>
+    /// <summary>
+    /// Moves the files (and their .lrc lyrics) to the Recycle Bin and removes them from the library. Only while
+    /// deleting files is allowed in Settings; otherwise nothing is touched.
+    /// </summary>
     public List<string> DeleteFiles(IEnumerable<Track> tracks)
     {
         var errors = new List<string>();
         var deleted = new List<Track>();
+        if (!_settings.Current.AllowDeleteFiles)
+        {
+            errors.Add("Deleting files is turned off (Settings > Your music files).");
+            return errors;
+        }
         foreach (var t in tracks)
         {
             try
             {
+                // The lyrics Music saved for the song are its own data: they go too.
+                var saved = LyricsService.AppLyricsPath(t.Path);
+                if (File.Exists(saved)) File.Delete(saved);
                 if (File.Exists(t.Path))
                     Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(t.Path, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
                 var lrc = Path.ChangeExtension(t.Path, ".lrc");

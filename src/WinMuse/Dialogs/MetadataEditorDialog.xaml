@@ -161,7 +161,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <ToggleSwitch x:Name="WriteToggle" OnContent="Save to file tags" OffContent="Save to library only" />
+            <!-- Where edits go (Settings > Your music files); filled in code. -->
+            <ContentPresenter x:Name="DestinationNote" VerticalAlignment="Center" />
             <HyperlinkButton AutomationProperties.Name="Fetch…" Grid.Column="1" HorizontalAlignment="Right" Click="OnFix">
                 <StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xEBD3;" FontSize="13" /><TextBlock Text="Fetch…" /></StackPanel>
             </HyperlinkButton>

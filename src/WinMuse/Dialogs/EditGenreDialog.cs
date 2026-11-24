@@ -82,12 +82,13 @@ public sealed class EditGenreDialog : ContentDialog
             {
                 DialogChrome.Card("Genre", "", new StackPanel { Spacing = 8, Children = { _name, _nameNote } }),
                 DialogChrome.Card("Add songs", "", add),
+                SaveDestinationUi.CreateNote(),
             },
         };
         DialogChrome.AddCloseButton(this);
         Fill();
         Validate();
-        PrimaryButtonClick += OnSave;
+        SaveDestinationUi.Attach(this, "Save to library", "Save to files", OnSave);
     }
 
     /// <summary>Edits <paramref name="genre"/>, or creates a new genre when it is null.</summary>
@@ -117,17 +118,17 @@ public sealed class EditGenreDialog : ContentDialog
 
     private void UpdateCount() => _count.Text = _selected.Count == 0 ? "No songs selected" : $"{Songs(_selected.Count)} will be added";
 
-    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args, EditDestination? destination)
     {
         var deferral = args.GetDeferral();
         try
         {
             var name = _name.Text.Trim();
             var errors = new List<string>();
-            if (!_creating && name != _oldName) errors.AddRange(await Svc.Metadata.RenameGenreAsync(_oldName, name));
-            if (_selected.Count > 0) errors.AddRange(await Svc.Metadata.AddGenreToTracksAsync(name, _selected));
+            if (!_creating && name != _oldName) errors.AddRange(await Svc.Metadata.RenameGenreAsync(_oldName, name, destination));
+            if (_selected.Count > 0) errors.AddRange(await Svc.Metadata.AddGenreToTracksAsync(name, _selected, destination));
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
-            else Notifier.Success(_creating ? "Genre created" : "Genre updated", name);
+            else Notifier.Success(_creating ? $"Genre created: {name}" : $"Genre updated: {name}", SaveDestinationUi.SavedText(destination));
         }
         catch (Exception ex) { Notifier.Error("Unable to update the genre", ex.Message); }
         finally { deferral.Complete(); }

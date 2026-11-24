@@ -45,7 +45,10 @@ public sealed class FingerprintService
     }
 }
 
-/// <summary>Finds, downloads and stores lyrics. Synced lyrics are saved as .lrc next to the song (or in app data).</summary>
+/// <summary>
+/// Finds, downloads and stores lyrics. Lyrics Music saves (downloaded or added by you) go to the app's data folder, so
+/// music folders are never changed; an .lrc file already next to a song is still read.
+/// </summary>
 public sealed class LyricsService
 {
     private readonly OnlineMetadataService _online;
@@ -57,17 +60,24 @@ public sealed class LyricsService
         _online = online; _settings = settings; _library = library;
     }
 
-    private static string AppDataLrc(Track t) =>
-        Path.Combine(AppPaths.LyricsDir, Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(t.Path.ToLowerInvariant()))) + ".lrc");
+    /// <summary>Where Music keeps a song's lyrics: %LocalAppData%\WinMuse\Lyrics, named after the song's path.</summary>
+    public static string AppLyricsPath(string songPath) =>
+        Path.Combine(AppPaths.LyricsDir, Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(songPath.ToLowerInvariant()))) + ".lrc");
 
+    private static string AppDataLrc(Track t) => AppLyricsPath(t.Path);
+
+    /// <summary>
+    /// The song's lyrics: those Music saved (the latest you downloaded or added) first, then an .lrc file next to the
+    /// song, then lyrics embedded in the file.
+    /// </summary>
     public LyricsResult? GetLocal(Track t)
     {
         try
         {
+            var app = AppDataLrc(t);
+            if (File.Exists(app)) return LrcParser.Parse(File.ReadAllText(app), "Saved in Music");
             var side = Path.ChangeExtension(t.Path, ".lrc");
             if (File.Exists(side)) return LrcParser.Parse(File.ReadAllText(side), "Lyrics file");
-            var app = AppDataLrc(t);
-            if (File.Exists(app)) return LrcParser.Parse(File.ReadAllText(app), "Downloaded");
             if (!string.IsNullOrWhiteSpace(t.Lyrics)) return LrcParser.Parse(t.Lyrics!, "Embedded");
         }
         catch (Exception ex) { AppPaths.Log("Lyrics read failed: " + ex.Message); }
@@ -119,11 +129,9 @@ public sealed class LyricsService
         _library.SaveStates(new[] { t });
     }
 
+    /// <summary>Saves lyrics in the app's data folder (never next to the song: music folders aren't changed).</summary>
     public void Save(Track t, string text)
     {
-        var side = Path.ChangeExtension(t.Path, ".lrc");
-        try { File.WriteAllText(side, text, Encoding.UTF8); return; }
-        catch { /* read-only folder: fall back to app data */ }
         try { File.WriteAllText(AppDataLrc(t), text, Encoding.UTF8); }
         catch (Exception ex) { AppPaths.Log("Lyrics save failed: " + ex.Message); }
     }
@@ -144,15 +152,31 @@ public sealed partial class MetadataEditService
         _tags = tags; _art = art; _library = library; _settings = settings; _online = online; _fingerprint = fingerprint;
     }
 
-    public bool WritesToFiles => _settings.Current.WriteMode == MetadataWriteMode.WriteToFiles;
+    // ---------------- Where edits go ----------------
+    // Music never changes a music file unless Settings > Your music files > Change music files is on. Every write to a
+    // file goes through ApplyAsync (and WriteDeferred), and both check it, so no other path can change a file.
 
+    /// <summary>Changing music files is allowed (off by default).</summary>
+    public bool FileChangesAllowed => _settings.Current.AllowFileChanges;
+
+    /// <summary>The user picks where each edit goes (Save to library / Save to files): the Ask each time mode.</summary>
+    public bool AsksForDestination => FileChangesAllowed && _settings.Current.WriteMode == MetadataWriteMode.Ask;
+
+    /// <summary>
+    /// Where edits go without asking: the files only in the Files only mode; the library otherwise (also for automatic
+    /// changes in the Ask each time mode, since nobody is there to be asked).
+    /// </summary>
+    public EditDestination DefaultDestination =>
+        FileChangesAllowed && _settings.Current.WriteMode == MetadataWriteMode.WriteToFiles ? EditDestination.Files : EditDestination.Library;
 
     /// <summary>Applies the edit to each track. Returns error messages for files that couldn't be written.</summary>
     /// <param name="byUser">True for edits made by the user (states become "edited by you"); false for online results.</param>
-    public async Task<List<string>> ApplyAsync(IList<Track> tracks, TagEdit edit, bool markReviewed = true, bool byUser = false)
+    /// <param name="destination">Where the edit goes; null: <see cref="DefaultDestination"/>. Files are only written while
+    /// changing music files is allowed, whatever is asked for.</param>
+    public async Task<List<string>> ApplyAsync(IList<Track> tracks, TagEdit edit, bool markReviewed = true, bool byUser = false, EditDestination? destination = null)
     {
         var errors = new List<string>();
-        var toFiles = WritesToFiles;
+        var toFiles = FileChangesAllowed && (destination ?? DefaultDestination) == EditDestination.Files;
         var artPath = edit.Artwork is { Length: > 0 } ? _art.Save(edit.Artwork) : null;
         // Artists each song had before, to tell which artists just gained a song.
         Dictionary<Track, IReadOnlyList<string>>? before = null;
@@ -232,6 +256,8 @@ public sealed partial class MetadataEditService
         var written = new List<Track>();
         foreach (var (t, edits, wasLocal) in due)
         {
+            // Changing files was turned off meanwhile: the edit stays what it already is, a library edit.
+            if (!FileChangesAllowed) { AppPaths.Log($"Tag write for {t.FileName} dropped: changing music files is off"); continue; }
             try
             {
                 foreach (var e in edits) _tags.Write(t.Path, e);
@@ -622,7 +648,7 @@ public sealed partial class MetadataEditService
     /// Renames an artist on every song that credits them (as artist or album artist). Other artists on those songs stay
     /// as written ("A & B" becomes "New & B"); the artist's photo moves to the new name. Returns files that couldn't be written.
     /// </summary>
-    public async Task<List<string>> RenameArtistAsync(string oldName, string newName)
+    public async Task<List<string>> RenameArtistAsync(string oldName, string newName, EditDestination? destination = null)
     {
         newName = newName.Trim();
         var errors = new List<string>();
@@ -634,17 +660,17 @@ public sealed partial class MetadataEditService
             artist: unknown && string.IsNullOrWhiteSpace(t.Artist) ? newName : ArtistCredit.Rename(t.Artist, oldName, newName),
             albumArtist: ArtistCredit.Rename(t.AlbumArtist, oldName, newName)));
         foreach (var g in groups)
-            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Artist = g.Key.artist, AlbumArtist = g.Key.albumArtist }, byUser: true));
+            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Artist = g.Key.artist, AlbumArtist = g.Key.albumArtist }, byUser: true, destination: destination));
         _library.MoveArtistImage(oldName, newName);
         return errors;
     }
 
     /// <summary>Adds the artist to each song's artists (the songs keep their other artists). Returns files that couldn't be written.</summary>
-    public async Task<List<string>> AddArtistToTracksAsync(string artist, IEnumerable<Track> tracks)
+    public async Task<List<string>> AddArtistToTracksAsync(string artist, IEnumerable<Track> tracks, EditDestination? destination = null)
     {
         var errors = new List<string>();
         foreach (var g in tracks.Where(t => !t.ArtistNames.Contains(artist, StringComparer.OrdinalIgnoreCase)).GroupBy(t => ArtistCredit.Add(t.Artist, artist)))
-            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Artist = g.Key }, byUser: true));
+            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Artist = g.Key }, byUser: true, destination: destination));
         return errors;
     }
 
@@ -656,7 +682,7 @@ public sealed partial class MetadataEditService
             : genre.Split(new[] { ';', '/' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     /// <summary>Renames a genre on every song that has it (their other genres stay). Returns files that couldn't be written.</summary>
-    public async Task<List<string>> RenameGenreAsync(string oldName, string newName)
+    public async Task<List<string>> RenameGenreAsync(string oldName, string newName, EditDestination? destination = null)
     {
         newName = newName.Trim();
         var errors = new List<string>();
@@ -668,17 +694,17 @@ public sealed partial class MetadataEditService
                          .Distinct(StringComparer.OrdinalIgnoreCase);
                      return string.Join("; ", list);
                  }))
-            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Genre = g.Key }, byUser: true));
+            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Genre = g.Key }, byUser: true, destination: destination));
         return errors;
     }
 
     /// <summary>Adds the genre to each song (they keep their other genres). Returns files that couldn't be written.</summary>
-    public async Task<List<string>> AddGenreToTracksAsync(string genre, IEnumerable<Track> tracks)
+    public async Task<List<string>> AddGenreToTracksAsync(string genre, IEnumerable<Track> tracks, EditDestination? destination = null)
     {
         var errors = new List<string>();
         foreach (var g in tracks.Where(t => !GenresOf(t.Genre).Contains(genre, StringComparer.OrdinalIgnoreCase))
                                 .GroupBy(t => string.Join("; ", GenresOf(t.Genre).Append(genre))))
-            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Genre = g.Key }, byUser: true));
+            errors.AddRange(await ApplyAsync(g.ToList(), new TagEdit { Genre = g.Key }, byUser: true, destination: destination));
         return errors;
     }
 
@@ -769,7 +795,8 @@ public sealed partial class MetadataEditService
         if (bytes == null) return false;
         if (fromYouTube) bytes = await ArtworkService.CropToSquareAsync(bytes); // 16:9 video frame -> square cover
 
-        if (_settings.Current.EmbedFetchedArt)
+        // Into the files only when edits go there (Files only); otherwise kept in the app's artwork cache.
+        if (DefaultDestination == EditDestination.Files)
         {
             await ApplyAsync(tracks, new TagEdit { Artwork = bytes }, markReviewed: false);
         }

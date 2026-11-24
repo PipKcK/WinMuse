@@ -124,11 +124,12 @@ public sealed class EditArtistDialog : ContentDialog
             add.Children.Add(_count);
             root.Children.Add(DialogChrome.Card("Add songs", "", add));
         }
+        root.Children.Add(SaveDestinationUi.CreateNote());
         Content = root;
         DialogChrome.AddCloseButton(this);
 
         Fill();
-        PrimaryButtonClick += OnSave;
+        SaveDestinationUi.Attach(this, "Save to library", "Save to files", OnSave);
     }
 
     /// <summary>Creates an artist: a name, a photo, and the songs to credit them on.</summary>
@@ -182,7 +183,7 @@ public sealed class EditArtistDialog : ContentDialog
 
     private void UpdateCount() => _count.Text = _selected.Count == 0 ? "No songs selected" : $"{Songs(_selected.Count)} will be added";
 
-    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args, EditDestination? destination)
     {
         var deferral = args.GetDeferral();
         try
@@ -191,7 +192,7 @@ public sealed class EditArtistDialog : ContentDialog
             var errors = new List<string>();
             if (_oldName.Length > 0 && name != _oldName)
             {
-                errors.AddRange(await Svc.Metadata.RenameArtistAsync(_oldName, name));
+                errors.AddRange(await Svc.Metadata.RenameArtistAsync(_oldName, name, destination));
                 Svc.Favorites.RenameArtist(_oldName, name);
             }
             if (_image != null)
@@ -199,10 +200,10 @@ public sealed class EditArtistDialog : ContentDialog
                 if (_imageChosen) Svc.Metadata.SetArtistImageByUser(name, _image);
                 else if (Svc.Art.Save(_image) is { } path) Svc.Library.SetArtistImage(name, path);
             }
-            if (_selected.Count > 0) errors.AddRange(await Svc.Metadata.AddArtistToTracksAsync(name, _selected));
+            if (_selected.Count > 0) errors.AddRange(await Svc.Metadata.AddArtistToTracksAsync(name, _selected, destination));
             ResultName = name;
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
-            else Notifier.Success("Artist updated", name);
+            else Notifier.Success($"Artist updated: {name}", SaveDestinationUi.SavedText(destination));
         }
         catch (Exception ex) { Notifier.Error("Unable to update the artist", ex.Message); }
         finally { deferral.Complete(); }

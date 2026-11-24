@@ -194,28 +194,17 @@
 
             <!-- ================= Metadata ================= -->
             <TextBlock Text="Metadata" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsCard Header="Automatic metadata" Description="Identify new songs and update their tags when they are added to the library. Your later edits are preserved.">
+            <tk:SettingsCard Header="Automatic metadata" Description="Identify new songs and fill in their details when they are added to the library. Your later edits are preserved.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE945;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoFixToggle" Toggled="OnAutoFixToggled" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB and save them as .lrc files.">
+            <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB. They're saved in Music's data folder, never next to your songs.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8BD;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Automatic album art" Description="Download missing album art from Cover Art Archive.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8B9;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoArtToggle" Toggled="OnAutoArtToggled" />
-            </tk:SettingsCard>
-            <tk:SettingsCard Header="Embed album art" Description="Store downloaded album art in file tags instead of the app cache.">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7C3;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="EmbedArtToggle" Toggled="OnEmbedArtToggled" />
-            </tk:SettingsCard>
-            <tk:SettingsCard Header="Metadata storage" Description="Write edits to file tags so they appear in other apps, or store them in the library only.">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE70F;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="WriteModeBox" SelectionChanged="OnWriteModeChanged" MinWidth="180">
-                    <x:String>File tags</x:String>
-                    <x:String>Library only</x:String>
-                </ComboBox>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Fetch" Description="Download metadata, album art, artist images and lyrics for every song that is incomplete or was edited by you. Complete songs are skipped. Edits you made are replaced.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBD3;" /></tk:SettingsCard.HeaderIcon>
@@ -224,6 +213,30 @@
                     <Button x:Name="FixAllButton" Content="Fetch" Click="OnFixAll" />
                 </StackPanel>
             </tk:SettingsCard>
+            <!-- ================= Your music files ================= -->
+            <!-- Music never changes music files unless allowed here (enforced in MetadataEditService and LibraryService). -->
+            <TextBlock Text="Your music files" Style="{StaticResource GroupHeader}" />
+            <TextBlock Text="Music never changes your music files unless you allow it here. Your edits, downloaded album art and lyrics are kept in Music's own library."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="2,0,0,8" />
+            <tk:SettingsExpander x:Name="FileChangesCard" Header="Change music files"
+                                 Description="Let Music write your edits (titles, artists, albums, album art, lyrics) into the songs' tags, so other apps and devices see them too.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8A5;" /></tk:SettingsExpander.HeaderIcon>
+                <ToggleSwitch x:Name="FileChangesToggle" Toggled="OnFileChangesToggled" />
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard x:Name="WriteModeCard" Header="Save edits to">
+                        <ComboBox x:Name="WriteModeBox" SelectionChanged="OnWriteModeChanged" MinWidth="200" AutomationProperties.Name="Save edits to">
+                            <ComboBoxItem Content="App only" Tag="LibraryOnly" />
+                            <ComboBoxItem Content="Files only" Tag="WriteToFiles" />
+                            <ComboBoxItem Content="Ask each time" Tag="Ask" />
+                        </ComboBox>
+                    </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+            <tk:SettingsCard Header="Allow deleting files" Description="Adds Delete file to the song menu. Deleted songs go to the Recycle Bin, where you can restore them.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE74D;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="DeleteFilesToggle" Toggled="OnDeleteFilesToggled" />
+            </tk:SettingsCard>
+
             <!-- ================= API keys ================= -->
             <TextBlock Text="API keys" Style="{StaticResource GroupHeader}" />
             <TextBlock Text="Optional free keys that improve song identification. Each key is verified automatically after you paste it."

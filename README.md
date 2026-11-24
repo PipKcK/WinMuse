@@ -41,6 +41,8 @@ photos and lyrics for you, but only when it is sure.
   applied only when the evidence agrees, and your own edits are never overwritten.
 - 🎚️ **A 10-band equalizer that follows the genre.** Rock gets the Rock curve, jazz gets the Jazz curve. Save a custom
   EQ for a single song and it always wins.
+- 🛡️ **Your music files stay untouched.** Edits, downloaded covers and lyrics live in Music's own library. Writing tags
+  into the files or deleting files are separate opt-in settings, and you can choose to be asked on every save.
 - 🔒 **Private by design.** No account, no telemetry, no streaming. API keys are optional and free, and every online
   source is listed below.
 - 🪟 **Feels native.** Mica, acrylic, Fluent icons, media keys, the Windows media overlay, taskbar buttons, a mini player
@@ -119,8 +121,9 @@ When a song joins the library, WinMuse tries to identify it once:
 
 Album art, artist photos, genres and synced lyrics are downloaded alongside. The **Fetch** page shows where every
 piece came from (downloaded, from the file, edited by you, not found) and lets you redo any song with one click.
-The **editor** handles one song or many at once. By default, edits stay in the library and your files are untouched;
-switch to writing tags into the files whenever you like.
+The **editor** handles one song or many at once. Your edits stay in Music's library and your files are never changed,
+unless you allow it in **Settings → Your music files**: then choose **App only**, **Files only** (edits are written into
+the tags), or **Ask each time** (every edit window offers *Save to library* and *Save to files*).
 
 <table>
   <tr>
@@ -165,8 +168,8 @@ click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narr
 | **Playlists** | Normal playlists (reorder, custom cover, M3U import/export), smart playlists from rules, automatic playlists on Home, and Favorite (the heart). |
 | **Home** | Time-of-day greeting with Shuffle All, Quick Access (pins, favorites and a few discoveries), Continue Listening, automatic playlists, and one row per playlist with the sort order of your choice. |
 | **Metadata** | Automatic identification of new songs, manual **Fetch** for any song (pick another match or search yourself), the Fetch overview page, a single- or multi-song editor (details, artwork, lyrics, file info), a read-only Properties view, artist and genre renaming, and **New album** to build an album from songs you choose. |
-| **Lyrics** | Synced lyrics from LRCLIB, saved as `.lrc` next to the song. Click a line to seek, adjust timing per song, or add your own. |
-| **Files** | **Remove from library** hides a song but keeps the file (restore it in Settings). **Delete file** sends the song and its lyrics to the Recycle Bin. |
+| **Lyrics** | Synced lyrics from LRCLIB, kept in Music's data folder (an `.lrc` you already have next to a song is read too). Click a line to seek, adjust timing per song, or add your own. |
+| **Files** | **Remove from library** hides a song but keeps the file (restore it in Settings). **Delete file** (opt-in: Settings → Your music files) sends the song to the Recycle Bin. |
 | **Windows** | Media keys and the media overlay, taskbar thumbnail buttons, mini player, a single running instance ("Open with" sends files to the open window), and Start menu and "Open with" registration through the build tool. |
 | **Appearance** | Light, dark, system or OLED theme on Mica Alt; accent from Windows, a custom color or the album; album aurora, gradient or wallpaper background; card styles; playing-song highlight; visualizer styles. |
 
@@ -281,8 +284,9 @@ A few decisions worth knowing about:
   never blocks on an audio lock (see `Helpers/UiLock.cs`).
 - **The accent really is everywhere.** `ThemeService` points WinUI's own control brushes at app-owned accent brushes and
   recolors them in place, so every control follows the album without restyling anything.
-- **Your files are treated with care.** Library-only edits are the default. Tag writes to the song that is playing (or
-  queued next) wait until it closes, so playback never jumps.
+- **Your files are never changed behind your back.** Every write to a music file goes through one place
+  (`MetadataEditService.ApplyAsync`), which refuses unless *Change music files* is on. When it is, tag writes to the
+  song that is playing (or queued next) wait until it closes, so playback never jumps.
 
 ```
 src/WinMuse/

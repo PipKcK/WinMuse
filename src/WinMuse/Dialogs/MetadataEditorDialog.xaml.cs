@@ -58,10 +58,10 @@ public sealed partial class MetadataEditorDialog : ContentDialog
         }
 
         BuildFileInfo();
-        WriteToggle.IsOn = Svc.Metadata.WritesToFiles;
-        WriteToggle.Toggled += (_, _) => Svc.Settings.Set(nameof(AppSettings.WriteMode), s => s.WriteMode = WriteToggle.IsOn ? MetadataWriteMode.WriteToFiles : MetadataWriteMode.LibraryOnly);
-
-        PrimaryButtonClick += OnSave;
+        // Where edits go is chosen in Settings (Your music files); the note says so, and in Ask each time the buttons
+        // are "Save to library" and "Save to files".
+        DestinationNote.Content = SaveDestinationUi.CreateNote();
+        SaveDestinationUi.Attach(this, "Save to library", "Save to files", OnSave);
         // The body takes the room the window has, so the footer and buttons always show (scrolls inside instead).
         Opened += (_, _) => FitToWindow();
     }
@@ -124,10 +124,17 @@ public sealed partial class MetadataEditorDialog : ContentDialog
         else if (c is Controls.TagPicker tp) tp.PlaceholderText = text == "Multiple values" ? "Different on each song: add to replace on all" : text;
     }
 
+    /// <summary>Lyrics kept outside the tags, in the same order as playback: Music's saved copy, then an .lrc beside the song.</summary>
     private static string? ReadSidecar(Track t)
     {
-        var side = Path.ChangeExtension(t.Path, ".lrc");
-        try { return File.Exists(side) ? File.ReadAllText(side) : null; } catch { return null; }
+        try
+        {
+            var app = LyricsService.AppLyricsPath(t.Path);
+            if (File.Exists(app)) return File.ReadAllText(app);
+            var side = Path.ChangeExtension(t.Path, ".lrc");
+            return File.Exists(side) ? File.ReadAllText(side) : null;
+        }
+        catch { return null; }
     }
 
     private void BuildFileInfo()
@@ -241,7 +248,7 @@ public sealed partial class MetadataEditorDialog : ContentDialog
         Hide();
     }
 
-    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args, EditDestination? destination)
     {
         var deferral = args.GetDeferral();
         try
@@ -267,12 +274,12 @@ public sealed partial class MetadataEditorDialog : ContentDialog
             }
             if (!any) return;
 
-            var errors = await Svc.Metadata.ApplyAsync(_tracks, edit, byUser: true);
+            var errors = await Svc.Metadata.ApplyAsync(_tracks, edit, byUser: true, destination: destination);
             if (lyricsChanged && LrcParser.LooksSynced(lyricsNow)) Svc.Lyrics.Save(_tracks[0], lyricsNow);
 
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", string.Join("\n", errors.Take(3)));
             else Notifier.Success(_tracks.Count == 1 ? "Metadata saved" : $"Metadata saved for {_tracks.Count} songs",
-                Svc.Metadata.WritesToFiles ? "Saved to file tags." : "Saved to the library.");
+                SaveDestinationUi.SavedText(destination));
         }
         catch (Exception ex)
         {

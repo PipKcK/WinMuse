@@ -73,19 +73,23 @@ public static class TrackActions
                     "The songs are hidden from Music only. The files stay on your PC. You can bring them back in Settings > Library > Removed songs."))
                 Svc.Library.RemoveTracks(tracks);
         })));
-        menu.SecondaryCommands.Add(Row(new MenuAction("Delete file", "\uE74D", async () =>
+        // Deleting files is opt-in (Settings > Your music files > Allow deleting files).
+        if (Svc.Settings.Current.AllowDeleteFiles)
         {
-            if (!await Confirm(tracks.Count == 1 ? $"Delete \"{tracks[0].DisplayTitle}\"?" : $"Delete {tracks.Count} songs?",
-                    "The files are moved to the Recycle Bin and removed from your library.", "Delete")) return;
-            // Release the files first: stop if one is playing and drop them from the queue.
-            var set = tracks.ToHashSet();
-            if (Svc.Player.CurrentTrack is { } cur && set.Contains(cur)) Svc.Player.Stop();
-            Svc.Player.RemoveFromQueue(Svc.Player.Queue.Select((t, i) => (t, i)).Where(x => set.Contains(x.t)).Select(x => x.i).ToList());
-            await Task.Delay(150);
-            var errors = Svc.Library.DeleteFiles(tracks);
-            if (errors.Count > 0) Notifier.Error("Some files could not be deleted", string.Join(Environment.NewLine, errors.Take(3)));
-            else Notifier.Show(tracks.Count == 1 ? "Moved to Recycle Bin" : $"{tracks.Count} songs moved to Recycle Bin");
-        })));
+            menu.SecondaryCommands.Add(Row(new MenuAction("Delete file", "\uE74D", async () =>
+            {
+                if (!await Confirm(tracks.Count == 1 ? $"Delete \"{tracks[0].DisplayTitle}\"?" : $"Delete {tracks.Count} songs?",
+                        "The files are moved to the Recycle Bin and removed from your library.", "Delete")) return;
+                // Release the files first: stop if one is playing and drop them from the queue.
+                var set = tracks.ToHashSet();
+                if (Svc.Player.CurrentTrack is { } cur && set.Contains(cur)) Svc.Player.Stop();
+                Svc.Player.RemoveFromQueue(Svc.Player.Queue.Select((t, i) => (t, i)).Where(x => set.Contains(x.t)).Select(x => x.i).ToList());
+                await Task.Delay(150);
+                var errors = Svc.Library.DeleteFiles(tracks);
+                if (errors.Count > 0) Notifier.Error("Some files could not be deleted", string.Join(Environment.NewLine, errors.Take(3)));
+                else Notifier.Show(tracks.Count == 1 ? "Moved to Recycle Bin" : $"{tracks.Count} songs moved to Recycle Bin");
+            })));
+        }
         if (single != null)
         {
             menu.SecondaryCommands.Add(new AppBarSeparator());

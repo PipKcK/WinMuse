@@ -91,6 +91,7 @@ public sealed class CreateAlbumDialog : ContentDialog
         var root = new StackPanel { Spacing = 12, Width = 680 };
         root.Children.Add(DialogChrome.Card("Album", "", top));
         root.Children.Add(DialogChrome.Card("Songs", "", songs));
+        root.Children.Add(SaveDestinationUi.CreateNote());
         Content = root;
         DialogChrome.AddCloseButton(this);
 
@@ -103,7 +104,7 @@ public sealed class CreateAlbumDialog : ContentDialog
         _title.TextChanged += (_, _) => { _cover.Seed = _title.Text; Validate(); };
         Fill();
         Validate();
-        PrimaryButtonClick += OnCreate;
+        SaveDestinationUi.Attach(this, "Create in library", "Create in files", OnCreate);
     }
 
     public static async Task ShowAsync(IList<Track>? preselected)
@@ -140,7 +141,7 @@ public sealed class CreateAlbumDialog : ContentDialog
 
     private void Validate() => IsPrimaryButtonEnabled = _title.Text.Trim().Length > 0 && _selected.Count > 0;
 
-    private async void OnCreate(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnCreate(ContentDialog sender, ContentDialogButtonClickEventArgs args, EditDestination? destination)
     {
         var deferral = args.GetDeferral();
         try
@@ -164,15 +165,15 @@ public sealed class CreateAlbumDialog : ContentDialog
                         Album = common.Album, AlbumArtist = common.AlbumArtist, Year = common.Year, Genre = common.Genre,
                         Artwork = common.Artwork, TrackCount = common.TrackCount, TrackNumber = i + 1, DiscNumber = 1,
                     };
-                    errors.AddRange(await Svc.Metadata.ApplyAsync(new[] { _selected[i] }, e, byUser: true));
+                    errors.AddRange(await Svc.Metadata.ApplyAsync(new[] { _selected[i] }, e, byUser: true, destination: destination));
                 }
             }
             else
             {
-                errors.AddRange(await Svc.Metadata.ApplyAsync(_selected, common, byUser: true));
+                errors.AddRange(await Svc.Metadata.ApplyAsync(_selected, common, byUser: true, destination: destination));
             }
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
-            else Notifier.Success($"Album created: {common.Album}");
+            else Notifier.Success($"Album created: {common.Album}", SaveDestinationUi.SavedText(destination));
             App.MainWindow.Navigate(typeof(Views.AlbumDetailPage), _selected[0].AlbumKey);
         }
         catch (Exception ex) { Notifier.Error("Unable to create album", ex.Message); }

@@ -16,7 +16,7 @@ public sealed class SettingsService
     private readonly Debouncer _saveDebounce = new(TimeSpan.FromMilliseconds(600));
 
     public AppSettings Current { get; }
-    private const int CurrentVersion = 2;
+    private const int CurrentVersion = 3;
 
     /// <summary>Raised on the calling thread with the name of the setting that changed.</summary>
     public event Action<string>? Changed;
@@ -46,10 +46,17 @@ public sealed class SettingsService
         }
 
         // Version 2: edits are kept in the library only, and the equalizer follows each song's genre.
-        if (Current.SettingsVersion < CurrentVersion)
+        if (Current.SettingsVersion < 2)
         {
             Current.WriteMode = MetadataWriteMode.LibraryOnly;
             Current.EqMatchGenre = true;
+        }
+        // Version 3: changing music files is a setting of its own (off by default). Someone who had chosen to write
+        // edits into file tags keeps doing so; everyone else keeps their files untouched.
+        if (Current.SettingsVersion < 3)
+            Current.AllowFileChanges = Current.WriteMode == MetadataWriteMode.WriteToFiles;
+        if (Current.SettingsVersion < CurrentVersion)
+        {
             Current.SettingsVersion = CurrentVersion;
             Save();
         }

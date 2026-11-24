@@ -13,7 +13,14 @@ public enum ShelfCardColor { Neutral, Accent, Opposite, Glass, Smoke, Slate, Ele
 public enum PlaylistSort { Alphabetical, RecentActivity, DateCreated, Custom }
 public enum AccentSource { Windows, Custom, AlbumArt }
 public enum BackgroundMode { None, AlbumArt, Gradient, Wallpaper }
-public enum MetadataWriteMode { WriteToFiles, LibraryOnly }
+/// <summary>
+/// Where edits go when changing music files is allowed (<see cref="AppSettings.AllowFileChanges"/>): the app's library
+/// only (App only), the files' tags (Files only), or the user picks on each save (Ask). The names are stored in
+/// settings.json, so they stay as they are.
+/// </summary>
+public enum MetadataWriteMode { WriteToFiles, LibraryOnly, Ask }
+/// <summary>Where one edit is saved.</summary>
+public enum EditDestination { Library, Files }
 /// <summary>The logo in the title bar (drawn in the accent color).</summary>
 public enum AppLogoStyle { Rings, Simple, Image }
 public enum RepeatMode { Off, All, One }
@@ -79,12 +86,18 @@ public sealed class AppSettings
     public float[] EqBands { get; set; } = new float[10];
     public float EqPreamp { get; set; }
 
-    // Metadata
+    // Your music files: by default Music never changes them.
+    /// <summary>Music may write edits into the songs' tags. Off: files are never changed; edits stay in the library.</summary>
+    public bool AllowFileChanges { get; set; }
+    /// <summary>Where edits go while <see cref="AllowFileChanges"/> is on (App only by default).</summary>
     public MetadataWriteMode WriteMode { get; set; } = MetadataWriteMode.LibraryOnly;
+    /// <summary>Delete file appears in song menus (files go to the Recycle Bin).</summary>
+    public bool AllowDeleteFiles { get; set; }
+
+    // Metadata
     public bool AutoFixMetadata { get; set; } = true;
     public bool AutoFetchArt { get; set; } = true;
     public bool AutoFetchLyrics { get; set; } = true;
-    public bool EmbedFetchedArt { get; set; } = true;
     public string? AcoustIdApiKey { get; set; }
     public string? YouTubeApiKey { get; set; }
     public string? LastFmApiKey { get; set; }

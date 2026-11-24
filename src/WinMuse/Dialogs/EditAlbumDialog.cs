@@ -93,9 +93,9 @@ public sealed class EditAlbumDialog : ContentDialog
         Grid.SetColumn(right, 1);
         body.Children.Add(left); body.Children.Add(right);
 
-        Content = new StackPanel { Width = 640, Children = { DialogChrome.Card("Album", "", body) } };
+        Content = new StackPanel { Width = 640, Spacing = 12, Children = { DialogChrome.Card("Album", "", body), SaveDestinationUi.CreateNote() } };
         DialogChrome.AddCloseButton(this);
-        PrimaryButtonClick += OnSave;
+        SaveDestinationUi.Attach(this, "Save to library", "Save to files", OnSave);
     }
 
     public static async Task ShowAsync(Album album)
@@ -121,7 +121,7 @@ public sealed class EditAlbumDialog : ContentDialog
         _coverNote.Visibility = Visibility.Collapsed;
     }
 
-    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    private async void OnSave(ContentDialog sender, ContentDialogButtonClickEventArgs args, EditDestination? destination)
     {
         var deferral = args.GetDeferral();
         try
@@ -135,9 +135,9 @@ public sealed class EditAlbumDialog : ContentDialog
             if (year != _initialYear) edit.Year = int.TryParse(year, out var y) ? y : 0;
             edit.Artwork = _art;
             if (!edit.HasMetadataFields && edit.Artwork == null) return; // nothing changed
-            var errors = await Svc.Metadata.ApplyAsync(_album.Tracks.ToList(), edit, byUser: true);
+            var errors = await Svc.Metadata.ApplyAsync(_album.Tracks.ToList(), edit, byUser: true, destination: destination);
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
-            else Notifier.Success("Album updated", name.Length > 0 ? name : _album.Title);
+            else Notifier.Success($"Album updated: {(name.Length > 0 ? name : _album.Title)}", SaveDestinationUi.SavedText(destination));
         }
         catch (Exception ex) { Notifier.Error("Unable to update the album", ex.Message); }
         finally { deferral.Complete(); }
