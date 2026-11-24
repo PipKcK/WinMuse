@@ -1,102 +1,341 @@
-# Music (WinMuse)
+<div align="center">
 
-A Fluent-design music player for local files, built with WinUI 3 (Windows App SDK 1.8) and .NET 10.
-The app shows itself as **Music**. The project, namespaces and exe are **WinMuse**.
+<img src="src/WinMuse/Assets/AppIcon.png" width="96" alt="" />
 
-## Build & run
+# WinMuse
 
-Requirements: Windows 11, .NET 10 SDK. Visual Studio 2022+ with the WinUI workload is optional.
+**A beautiful, native Windows 11 music player for the music you already own.**
+
+Plays almost any audio format, makes messy libraries tidy without breaking them, and paints the whole app in the
+colors of whatever is playing.
+
+![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows11&logoColor=white)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![WinUI 3](https://img.shields.io/badge/WinUI-3-6E4AFF)
+![FFmpeg](https://img.shields.io/badge/decoding-FFmpeg_8-007808?logo=ffmpeg&logoColor=white)
+![x64 and ARM64](https://img.shields.io/badge/arch-x64%20%7C%20ARM64-555)
+
+<img src="docs/screenshots/home.jpg" alt="Home: greeting, Quick Access, Fresh in Your Library and the Up next panel, tinted by the album that is playing" />
+
+</div>
+
+---
+
+Streaming apps have taken over, but a lot of us still have folders full of FLACs, rips, old MP3s and downloads with names
+like `Artist - Song (Official Video) [dQw4w9WgXcQ].mp3`. WinMuse is a player built for that library. It looks and feels
+like a first-party Windows 11 app, it never streams or uploads your music, and it quietly fixes titles, covers, artist
+photos and lyrics for you, but only when it is sure.
+
+> The app shows itself as **Music** by default, and the built-in build tool lets you give it any name and icon you like.
+> The project, namespaces and executable are **WinMuse**.
+
+## Highlights
+
+- 🎧 **Plays practically everything.** MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, WMA, APE, WavPack, Musepack, TTA,
+  TAK, DSD, AC-3, DTS, TrueHD, and anything else FFmpeg can read. Output goes straight to WASAPI.
+- ⏭️ **Gapless by default.** The next song is opened and decoded ahead of time. Add a crossfade of up to 12 seconds if you prefer.
+- 🎨 **Your music sets the colors.** The accent color, the animated "aurora" background, the visualizer and every toggle,
+  slider and check box follow the album art, blending smoothly from song to song.
+- 🎤 **Synced lyrics.** Lyrics come from LRCLIB and scroll with the song. Click a line to jump to it, and adjust the timing per song.
+- 🪄 **A library that fixes itself, carefully.** New songs are identified by audio fingerprint and by name. A match is
+  applied only when the evidence agrees, and your own edits are never overwritten.
+- 🎚️ **A 10-band equalizer that follows the genre.** Rock gets the Rock curve, jazz gets the Jazz curve. Save a custom
+  EQ for a single song and it always wins.
+- 🔒 **Private by design.** No account, no telemetry, no streaming. API keys are optional and free, and every online
+  source is listed below.
+- 🪟 **Feels native.** Mica, acrylic, Fluent icons, media keys, the Windows media overlay, taskbar buttons, a mini player
+  and keyboard shortcuts.
+
+## Tour
+
+### Now Playing
+
+Album art that pulses gently with the bass, a live spectrum, and lyrics that follow along. Switch between Artwork,
+Lyrics, Up next and Details without leaving the screen.
+
+<img src="docs/screenshots/now-playing-lyrics.jpg" alt="Now Playing with synced lyrics, album art and the spectrum visualizer" />
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/now-playing-queue.jpg" alt="Now Playing with the Up next list; the playing song has an animated rainbow border" /></td>
+    <td width="50%"><img src="docs/screenshots/now-playing-artwork.jpg" alt="Now Playing, artwork view" /></td>
+  </tr>
+  <tr>
+    <td><sub><b>Up next</b>: drag to reorder. The playing song gets an animated border (Rainbow, Accent or Off).</sub></td>
+    <td><sub><b>Artwork view</b>: just the cover, the song and the controls.</sub></td>
+  </tr>
+</table>
+
+### Browse your library your way
+
+Songs, albums, artists and genres, each with its own search and sort. Album and artist pages take their color from
+the artwork. A song credited to "A & B" or "A feat. B" appears on both artists' pages.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/albums.jpg" alt="Albums grid" /></td>
+    <td width="50%"><img src="docs/screenshots/artist.jpg" alt="Artist page with photo, popular songs and albums" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/album.jpg" alt="Album page tinted red by its cover" /></td>
+    <td width="50%"><img src="docs/screenshots/genres.jpg" alt="Genres as colorful tiles with stacked covers" /></td>
+  </tr>
+</table>
+
+<img src="docs/screenshots/songs.jpg" alt="Songs list with favorites, columns and the playing song highlighted" />
+
+### Home that keeps up with you
+
+Home brings together **Quick Access** (pinned and favorite songs and artists), **Continue Listening** (every album,
+artist or playlist you played, with its position, ready to resume), automatic playlists (**Fresh in Your Library**,
+**On Repeat**, **Long Time No Play**) and a row for each of your playlists. Rows glide with the mouse wheel and
+fade softly at their edges.
+
+<img src="docs/screenshots/home-full.jpg" alt="Home with Quick Access full of favorites and Continue Listening with resume progress" />
+
+### Playlists, including ones that fill themselves
+
+Make normal playlists (reorder them, give them a custom cover, import or export M3U), or **smart playlists** built from
+rules: genre, play count, rating, dates added and played, format and more. Smart playlists update by themselves as your
+library changes. Tap the heart on any song to add it to **Favorite**.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/playlists.jpg" alt="Playlists page with a smart playlist, Favorite and a custom playlist" /></td>
+    <td width="50%"><img src="docs/screenshots/smart-playlist.jpg" alt="Smart playlist editor with a Genre contains Hop rule" /></td>
+  </tr>
+</table>
+
+### Metadata that fixes itself, but never behind your back
+
+When a song joins the library, WinMuse tries to identify it once:
+
+1. **Audio fingerprint first** (AcoustID). This works even when the file is called `track01.mp3`.
+2. **Then the name and tags.** It searches MusicBrainz, iTunes and Deezer, and ranks results by how well the title,
+   artist *and* length agree, not by the service's own relevance. Video-download noise such as "(Official Video)",
+   "[video ID]" or "(Lyrics)" is stripped first.
+3. **Only confident matches are applied.** Without a fingerprint match, a name match needs both artist and title, and
+   a length within 3 seconds. Otherwise the song is left exactly as it was.
+
+Album art, artist photos, genres and synced lyrics are downloaded alongside. The **Fetch** page shows where every
+piece came from (downloaded, from the file, edited by you, not found) and lets you redo any song with one click.
+The **editor** handles one song or many at once. By default, edits stay in the library and your files are untouched;
+switch to writing tags into the files whenever you like.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/fetch.jpg" alt="Fetch page listing the source of each song's metadata, art, artist image and lyrics" /></td>
+    <td width="50%"><img src="docs/screenshots/editor.jpg" alt="Metadata editor with artist chips and album fields" /></td>
+  </tr>
+</table>
+
+### Sound
+
+An always-on 10-band EQ with presets and a preamp. **Match genre** picks the right curve for each song, and **Save for
+this song** pins a custom one. The player also offers gapless playback, crossfade, smooth volume changes with no
+clicks, and a choice of output device.
+
+<img src="docs/screenshots/equalizer.jpg" alt="Equalizer flyout matched to Electronic" />
+
+### Make it yours
+
+Light, dark, follow Windows, or **OLED true black**. The accent comes from Windows, a color you pick, or the album
+art. The background can be the album "aurora", a three-color gradient, or your own wallpaper with real blur and dim.
+Choose the card style for Home and the highlight for the playing song. A compact, always-on-top **mini player** is one
+click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narrow windows.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/light-theme.jpg" alt="Albums in the light theme" /></td>
+    <td width="50%"><img src="docs/screenshots/settings.jpg" alt="Appearance and playback settings" /></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><img src="docs/screenshots/mini-player.jpg" alt="Mini player" /><br /><sub>Mini player</sub></td>
+    <td width="50%"><img src="docs/screenshots/narrow.jpg" alt="Now Playing in a narrow window" /><br /><sub>Narrow window</sub></td>
+  </tr>
+</table>
+
+## Everything it does
+
+| Area | Features |
+|---|---|
+| **Playback** | FFmpeg decoding (decoded ahead on its own thread) → WASAPI. Gapless, crossfade (0–12 s), 10-band EQ with presets, preamp and soft limiter, genre-matched and per-song EQ, smooth volume, output device choice. The queue and position are restored when you reopen the app. |
+| **Library** | Scans any number of folders (TagLib#, with FFmpeg filling the gaps), stores everything in SQLite, watches folders for changes, and reads embedded or folder art (`cover.jpg`, `folder.jpg`…). Browse by songs, albums, artists and genres, with search everywhere. |
+| **Queue** | Collapsible **Up next** panel, a full Queue page, drag to reorder, play next or add to queue, shuffle, repeat all or one. |
+| **Playlists** | Normal playlists (reorder, custom cover, M3U import/export), smart playlists from rules, automatic playlists on Home, and Favorite (the heart). |
+| **Home** | Time-of-day greeting with Shuffle All, Quick Access (pins, favorites and a few discoveries), Continue Listening, automatic playlists, and one row per playlist with the sort order of your choice. |
+| **Metadata** | Automatic identification of new songs, manual **Fetch** for any song (pick another match or search yourself), the Fetch overview page, a single- or multi-song editor (details, artwork, lyrics, file info), a read-only Properties view, artist and genre renaming, and **New album** to build an album from songs you choose. |
+| **Lyrics** | Synced lyrics from LRCLIB, saved as `.lrc` next to the song. Click a line to seek, adjust timing per song, or add your own. |
+| **Files** | **Remove from library** hides a song but keeps the file (restore it in Settings). **Delete file** sends the song and its lyrics to the Recycle Bin. |
+| **Windows** | Media keys and the media overlay, taskbar thumbnail buttons, mini player, a single running instance ("Open with" sends files to the open window), and Start menu and "Open with" registration through the build tool. |
+| **Appearance** | Light, dark, system or OLED theme on Mica Alt; accent from Windows, a custom color or the album; album aurora, gradient or wallpaper background; card styles; playing-song highlight; visualizer styles. |
+
+### Keyboard shortcuts
+
+| Keys | Action |
+|---|---|
+| <kbd>Space</kbd> / <kbd>Ctrl</kbd>+<kbd>P</kbd> | Play / pause |
+| <kbd>Ctrl</kbd>+<kbd>→</kbd> / <kbd>Ctrl</kbd>+<kbd>←</kbd> | Next / previous |
+| <kbd>Ctrl</kbd>+<kbd>↑</kbd> / <kbd>Ctrl</kbd>+<kbd>↓</kbd> | Volume up / down |
+| <kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd> | Shuffle / repeat |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd> | Search |
+| <kbd>Ctrl</kbd>+<kbd>M</kbd> | Mini player |
+| <kbd>F11</kbd> / <kbd>Esc</kbd> | Open / close Now Playing |
+
+## Getting started
+
+### Requirements
+
+- Windows 11 (x64 or ARM64)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) to build from source. Visual Studio 2022+ with the WinUI workload is optional.
+
+### Build and run
 
 ```powershell
+git clone <this repository>
+cd WinMuse
 dotnet build src/WinMuse/WinMuse.csproj -c Release -p:Platform=x64
 src/WinMuse/bin/x64/Release/net10.0-windows10.0.22621.0/win-x64/WinMuse.exe
 ```
 
-Or open `WinMuse.sln` and press F5 with the **x64** platform selected.
+Or open `WinMuse.sln` and press <kbd>F5</kbd> with the **x64** (or **ARM64**) platform selected.
 
-- The first build downloads the LGPL FFmpeg 8.1 shared build into `external/ffmpeg` (`tools/Get-FFmpeg.ps1`).
-  Only `avcodec`, `avformat`, `avutil` and `swresample` are copied to the output.
-- The app is unpackaged and self-contained: no MSIX install and no separate Windows App Runtime are needed.
-- On first launch the library starts with your Music folder (`C:\Users\<you>\Music`). Add more folders in Settings.
+- The first build downloads the LGPL FFmpeg 8.1 shared libraries for your CPU into `external/` (`tools/Get-FFmpeg.ps1`).
+  Only `avcodec`, `avformat`, `avutil` and `swresample` ship with the app.
+- The app is unpackaged: no MSIX and no separate Windows App Runtime install. A plain `dotnet build` uses the
+  .NET 10 runtime installed with the SDK. To run it on a PC without .NET, use a self-contained build (next section).
+- On first launch the library starts with your Music folder. Add more folders in **Settings → Library**.
 
-### Build tool (name, icon, install)
+### Build tool, installer and your own branding
 
-`tools/Build-App.ps1` opens a window that builds the app for you (right-click > Run with PowerShell, or
+`tools/Build-App.ps1` opens a small window that builds the app for you (right-click → *Run with PowerShell*, or
 `powershell -ExecutionPolicy Bypass -File tools\Build-App.ps1`):
 
-- **Name**: shown in the title bar, window titles, Start menu and Settings > Apps (default "Music"). The exe stays
-  `WinMuse.exe`, and your library and settings stay in `%LocalAppData%\WinMuse`.
-- **Icon**: one of the designs in `tools/icons` (default Purple), any color (the design is recolored to it), or your own
-  SVG/PNG/JPG/ICO, with a live preview. SVGs are drawn with Microsoft Edge in headless mode.
-- **Title-bar logo**: follows the accent color, or shows the icon exactly as it is.
-- **Architecture**: Auto (this PC), x64 or ARM64.
-- **Install as a Windows app** (optional): copies the build to `%LocalAppData%\Programs\<name>` and adds a Start menu
-  shortcut, plus optionally a desktop shortcut, an entry in Settings > Apps with an uninstaller, and "Open with" for
-  audio files. **Uninstall…** in the tool removes it again.
+- **Name**: shown in the title bar, Start menu and Settings → Apps (default "Music"). The exe stays `WinMuse.exe` and
+  your library stays in `%LocalAppData%\WinMuse`.
+- **Icon**: one of the designs in `tools/icons`, any color (the design is recolored for you), or your own SVG, PNG, JPG
+  or ICO, with a live preview.
+- **Title-bar logo**: follows the accent color, or shows your icon exactly as it is.
+- **Architecture**: Auto, x64 or ARM64.
+- **Install as a Windows app** (optional): Start menu shortcut, desktop shortcut, an entry in Settings → Apps with an
+  uninstaller, and "Open with" for audio files.
+- **Create installer**: a single self-contained `<Name> Setup.exe` you can share with anyone (`tools/Make-Installer.ps1`).
 
-The name and title-bar logo are written to `src/WinMuse/Assets/Branding.json`.
+The name and logo choice are written to `src/WinMuse/Assets/Branding.json`.
 
-### Using your own icon
-
-Pick either option:
+<details>
+<summary>Using your own icon without the build tool</summary>
 
 1. **Build property.** Point the build at any square PNG (256×256 or larger):
    ```powershell
    dotnet build src/WinMuse/WinMuse.csproj -c Release -p:Platform=x64 -p:AppIconPng=C:\path\to\logo.png
    ```
    To make it permanent, uncomment the `AppIconPng` property in `src/WinMuse/WinMuse.csproj`.
-2. **Manual.** Run `tools/Make-Icons.ps1 -FromPng C:\path\to\logo.png`, or replace `src/WinMuse/Assets/AppIcon.ico`
-   (multi-size) and `AppIcon.png` (256×256) yourself.
+2. **Manually.** Run `tools/Make-Icons.ps1 -FromPng C:\path\to\logo.png`, or replace `src/WinMuse/Assets/AppIcon.ico`
+   (multi-size) and `AppIcon.png` (256×256) yourself. `tools/Make-Icons.ps1` with no arguments restores the default.
 
-Either way, the icon is used for the exe, the window, the taskbar and the About page. Running `tools/Make-Icons.ps1`
-with no arguments restores the default icon.
+</details>
 
-## Features
+### Optional API keys
 
-| Area | What's there |
+Everything works without keys. These free keys add more (Settings → API keys, also offered on first launch). Each one
+has step-by-step instructions in the app and is checked as soon as you paste it.
+
+| Key | What it adds |
 |---|---|
-| Playback | FFmpeg decoding of any audio format FFmpeg reads (MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, WMA, APE, WavPack, Musepack, TTA, TAK, DSD, AC-3/E-AC-3, DTS, TrueHD, …) → WASAPI output. Gapless playback, crossfade (0–12 s), an always-on 10-band EQ with presets and preamp, smooth volume changes. The EQ follows each song's genre (**Match genre**, on by default) and can be saved for a single song (**Save for this song**), which then always wins. |
-| Library | Folder scanning with TagLib# (falls back to FFmpeg for missing tags), a SQLite database, automatic monitoring of every library folder, and embedded or folder cover art. Browse by songs, albums, artists and genres, plus search. |
-| Queue & playlists | A collapsible **Up next** panel (bottom right, toggled from the player bar) shows the current song, highlights the next one, and lists a few after it. Drag-to-reorder queue, shuffle, repeat all/one. The queue is restored when you reopen the app. Normal playlists (reorder, custom cover, M3U import/export) and smart playlists that fill themselves from rules (genre, play count, added/last-played dates, rating, format…). |
-| Favorites and Quick access | Star a song (in any song list, the player bar or the right-click menu) to add it to the **Favorite** playlist; star an artist to list it first on the Artists page. Right-click a song or artist and choose **Pin to Quick access** to keep it on Home. Quick access shows up to 10 tiles in as many columns as fit (2–5) and up to 2 rows: pinned items first, then favorites, then five random tiles (2 artists and 3 songs, preferring ones with artwork); within each group artists come before songs. Artists have round photos and an artist icon, songs square art and a note icon. |
-| Playlists on Home | Under a large **Playlists** heading at the bottom of Home (select it to open the Playlists page), each playlist has its own section, laid out like "Recently added": its name (select it to open the playlist) and a row of its songs; selecting a song plays the playlist from there. Sorted Alphabetically, by Recent activity (played, opened or changed; default), by Date created, or in a Custom order set with each playlist's move buttons. |
-| Home rows | Albums and songs appear as cards: artwork the full width of the card, then title, artist and year. The mouse wheel always scrolls the page, with a gentle eased glide. Pointing at a row shows ‹ › arrows at its ends that slide it (Shift + wheel, tilt wheels, touchpad swipes and touch also scroll rows). Cards cut off at either end of a row fade and shrink. Accent colors blend into each other when the song changes. |
-| Albums | **New album** builds an album from songs you choose: name, album artist, year, genre, cover, and optional track numbering. |
-| Automatic metadata & Sync | New songs are identified once when they are added. Only songs from 30 seconds to 15 minutes are checked online. The audio fingerprint decides first; the file name and tags confirm it or choose between recordings that share the same audio. Without a fingerprint match, a name match is applied only when the name or tags give both artist and title and the length agrees within 3 seconds; otherwise the song is left untouched. Each song tracks where its metadata, album art, artist image and lyrics came from, giving a Sync flag: **1** complete (everything downloaded or already in the file), **0** incomplete, **-1** edited by you. **Sync** (Settings or the Source page) re-downloads everything for songs flagged 0 or -1 and skips complete ones. |
-| Source page | Lists every song with the state of its metadata, album art, artist image and lyrics (Downloaded, From file, Edited, Not found, Pending, Skipped) and its Sync flag, with filters for incomplete, edited and complete songs. Each row has a Sync button that redoes the checks for that song. |
-| Removing and deleting | **Remove from library** hides a song but keeps the file (restore it in Settings > Library > Removed songs). **Delete file** moves the file and its .lrc lyrics to the Recycle Bin. |
-| Metadata | **Edit** opens the editor for one song or many at once (details, artwork, lyrics, file info). A setting chooses whether edits are **kept in the library only** (default) or **written into the files**. **Properties** shows read-only details: tags, audio format, file, listening history and where each item came from. |
-| Sync (right-click a song) | Identifies the song as soon as it opens, preselects the match the automatic rules would choose, and applies it together with album art, artist photo, lyrics and genre (each can be unticked). You can pick another match or search manually; several songs are handled one after another. Results are ranked by how well title, artist and length agree with the song, not by each service's search relevance. Sources, in order: AcoustID audio fingerprint (free key), MusicBrainz, iTunes Search, Deezer, and YouTube as the last resort (free key). File names from video downloads are cleaned first ("(Official Video)", "(Lyrics)", "[video ID]" are removed). YouTube results are used only when the uploader matches the artist in the video title (for example "Beautiful - Giulio Cercato" uploaded by Giulio Cercato); otherwise the song stays Unknown Artist. |
-| Online (download only, nothing is streamed) | Album art: the matched source, Cover Art Archive, iTunes, Deezer, then the YouTube video thumbnail (cropped to a square) as the last resort. Artist photos: found through the artist's MusicBrainz entry and the profiles it links to (Wikidata/Wikimedia Commons, Fanart.tv, TheAudioDB, Spotify, Deezer, the official YouTube channel, Bandcamp), then by exact-name search (TheAudioDB, Deezer, Spotify), the YouTube uploader of the file's video ID, and finally Wikipedia. Each credited artist is tried in turn. Genres: MusicBrainz, Last.fm (free key), then iTunes; only recognised genres are written. Synced lyrics from LRCLIB, saved as a `.lrc` file next to the song. |
-| Song lists | Title (with the duration underneath), Artist, Year, Album and Genre columns; an unknown album shows "-", an unknown year or genre stays blank. Click a song to play it; the playing song gets an animated border (Rainbow, Accent color or Off in Settings). Right-click a song and choose **Select** to show checkboxes in every song list; checked songs can then be played, queued or added to a playlist from the selection bar. Esc or **Cancel** clears the selection. |
-| Now Playing | Animated "aurora" background in the album's colors, synced lyrics with highlighting and auto-scroll (click a line to seek) and a per-song timing offset, up-next queue, details with a rating, a real-time spectrum visualizer, and artwork that pulses gently with the bass. A second spectrum plays behind the player bar, whose acrylic diffuses it. |
-| Appearance | Light, dark, system or OLED (true black) theme on a Mica Alt window. Accent color from Windows, a custom pick, or the current album art; it applies to every control, including toggles, sliders, check boxes and text boxes. Background: album aurora, custom 3-color gradient, or a wallpaper image with blur and dim. |
-| Windows integration | Media keys and the Windows media overlay, play/pause and skip buttons on the taskbar thumbnail, a compact always-on-top mini player, a single running instance ("Open with" sends files to the open window), and keyboard shortcuts. |
-| Download | Downloads a song from a URL with `mdown.exe "<url>" --secret <secret file>`, run inside the **Save to** folder. Upload the secret file once; it is kept in the app's data folder and used for every download until replaced. New songs are added to the library and checked right away. Failures show an error box with the error code and mdown's output, ready to copy. Put `mdown.exe` in `src/WinMuse/Tools` (copied to `Tools\mdown.exe` next to `WinMuse.exe`). |
+| **AcoustID** (recommended) | Identifies songs by their audio fingerprint, even with wrong names and tags |
+| **Last.fm** | More detailed genres |
+| **Fanart.tv** | High-quality artist photos |
+| **Spotify** (client ID + secret) | Photos for smaller and independent artists |
+| **YouTube Data API** | Last-resort song details and images for video downloads (10,000 free units per day) |
 
-### Keyboard shortcuts
+## Privacy: what goes online
 
-Space / Ctrl+P play-pause · Ctrl+→ / Ctrl+← next / previous · Ctrl+↑ / Ctrl+↓ volume · Ctrl+S shuffle · Ctrl+R repeat ·
-Ctrl+F search · Ctrl+M mini player · F11 Now Playing · Esc close Now Playing.
+WinMuse never streams, uploads or shares your audio. It only *downloads* information about songs:
 
-## Where things live
+- **Identification:** AcoustID (a fingerprint, if you set a key), MusicBrainz, iTunes Search and Deezer, plus YouTube as a last resort if you set a key.
+- **Album art:** the matched source, Cover Art Archive, iTunes, Deezer, then a YouTube thumbnail cropped to a square.
+- **Artist photos:** via the artist's MusicBrainz links (Wikidata/Wikimedia Commons, Fanart.tv, TheAudioDB, Spotify,
+  Deezer, YouTube, Bandcamp), then exact-name searches, then Wikipedia.
+- **Genres:** MusicBrainz, Last.fm, then iTunes. Only recognised genres are written.
+- **Lyrics:** LRCLIB.
+
+Rate limits are respected (MusicBrainz 1 request per second, iTunes about 20 per minute), and at most four songs are
+processed at a time. Turn any automatic download off in **Settings → Metadata**.
+
+## Under the hood
+
+WinMuse is a single WinUI 3 app with a small set of app-wide services (`Services/Svc.cs`) and pages that talk to them
+directly.
+
+```
+FFmpegDecoder ──► PlaybackPipeline ──► PcmOutputProvider ──► WASAPI (NAudio)
+ (decode-ahead     (gapless / crossfade,
+  thread)           EQ, volume, spectrum)
+```
+
+A few decisions worth knowing about:
+
+- **The audio never waits on the UI.** Decoding runs ahead on a dedicated thread registered with Windows' multimedia
+  scheduler (MMCSS), the output keeps a 200 ms buffer, garbage collection runs in low-latency mode, and the UI thread
+  never blocks on an audio lock (see `Helpers/UiLock.cs`).
+- **The accent really is everywhere.** `ThemeService` points WinUI's own control brushes at app-owned accent brushes and
+  recolors them in place, so every control follows the album without restyling anything.
+- **Your files are treated with care.** Library-only edits are the default. Tag writes to the song that is playing (or
+  queued next) wait until it closes, so playback never jumps.
 
 ```
 src/WinMuse/
-  Services/Audio/    FFmpegDecoder, PlaybackPipeline (gapless, crossfade, EQ, spectrum), AudioEngine (WASAPI)
-  Services/          Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Theme,
-                     OnlineMetadata (MusicBrainz / CAA / AcoustID / LRCLIB), MetadataServices (lyrics, fingerprint,
-                     edit/identify), DownloadService (mdown.exe), SystemIntegration (media overlay + taskbar)
-  Controls/          PlayerBar, TrackList, ArtImage, AmbientBackground (aurora), Visualizer, Effects (hover/entrance motion)
-  Views/             Pages, NowPlayingView, MiniPlayerWindow
-  Dialogs/           Metadata editor, Identify & fix, Playlist (incl. smart rules), Create album
-  Themes/            Styles (Fluent control styles, accent brushes) and card templates
+  Services/Audio/   FFmpegDecoder, PlaybackPipeline, Equalizer, SpectrumAnalyzer, AudioEngine (WASAPI)
+  Services/         Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Theme,
+                    OnlineMetadata + MusicSources + ArtistImages, MetadataServices (identify, edit, lyrics,
+                    fingerprint), AutoFix, Favorites, ContinueListening, SystemIntegration (media overlay, taskbar)
+  Controls/         PlayerBar, TrackList, QueuePanel, ArtImage, AmbientBackground (aurora), Visualizer, shelf rows
+  Views/            Pages, NowPlayingView, MiniPlayerWindow
+  Dialogs/          Metadata editor, Fetch, playlists (incl. smart rules), album/artist/genre editors, API keys
+  Themes/           Fluent control styles, accent brushes and card templates
+tools/              Build tool, installer, icon and FFmpeg scripts
+tests/              Unit tests (WinMuse.Tests) and UI stress/visual scripts (ui/)
 ```
 
-User data is stored in `%LocalAppData%\WinMuse`: `settings.json`, `library.db`, an artwork cache, downloaded lyrics, the download secret file (`download-secret.txt`), and `log.txt`.
+**Your data** lives in `%LocalAppData%\WinMuse`: `settings.json`, `library.db`, the artwork cache, downloaded
+lyrics and `log.txt`. Set `WINMUSE_DATA_DIR` to run a fully separate copy (handy for testing).
+
+## Testing
+
+```powershell
+dotnet test tests\WinMuse.Tests -p:Platform=x64
+```
+
+The unit tests cover artist credits, matching, lyrics parsing, formatting, the database, and the audio engine (every
+song decodes, decode-ahead is bit-identical, seeking, gapless joins). `tests/ui` adds a scripted stress session that
+tracks CPU and memory, a screenshot pass over every page in both themes, and a report generator. See
+[tests/README.md](tests/README.md).
+
+## Contributing
+
+Issues and pull requests are welcome. If you're changing something visible, a before/after screenshot helps a lot.
+For anything touching playback, please run the audio tests: they catch gaps and glitches you can't always hear.
 
 ## Notes
 
-- **API keys** (Settings → API keys, and a dialog on first launch when none are set; the first sync waits for it) are optional and free: AcoustID (audio fingerprints), YouTube Data API (last-resort artist/title and images; 10,000 free quota units per day) and Last.fm (detailed genres), Fanart.tv (artist photos) and Spotify (artist photos; client ID and secret). Each card has step-by-step instructions for getting a key, and keys are verified automatically when pasted and when Settings opens.
-- **Library-only edits** are kept in the database and survive rescans. Edits written to files are read back on the next scan.
-- **Automatic metadata** processes up to four songs at a time; MusicBrainz (1 request/second) and iTunes (about 20/minute) rate limits are always respected.
+- **Download page (optional):** a page for running a separate downloader tool (`mdown.exe`, not included). Without the
+  tool the page simply says it isn't installed.
+
+## Credits
+
+- Decoding by [FFmpeg](https://ffmpeg.org) (LGPL, shared libraries), tags by [TagLib#](https://github.com/mono/taglib-sharp),
+  audio output by [NAudio](https://github.com/naudio/NAudio), fingerprints with [AcoustID.NET](https://github.com/wo80/AcoustID.NET),
+  storage by [Microsoft.Data.Sqlite](https://learn.microsoft.com/dotnet/standard/data/sqlite/) and [Dapper](https://github.com/DapperLib/Dapper),
+  UI by the [Windows App SDK](https://github.com/microsoft/WindowsAppSDK) and the [Windows Community Toolkit](https://github.com/CommunityToolkit/Windows).
+- Song data from [MusicBrainz](https://musicbrainz.org), [Cover Art Archive](https://coverartarchive.org),
+  [AcoustID](https://acoustid.org) and [LRCLIB](https://lrclib.net).
+- **Music in the screenshots** is Creative Commons–licensed, from the [Internet Archive netlabels collection](https://archive.org/details/netlabels):
+  ProleteR · Boogie Belgique · Riding Alone for Thousands of Miles · Miranda Shvangiradze · Candlegravity · mccandless ·
+  Echo Lali · The Underscore Orkestra · Poodleplay Arkestra · Intoxicated Piano · The Transisters · Kova
+  (CC BY-NC-ND / BY-NC-SA / BY-NC). Thank you for sharing your music.
+
+## License
+
+No license has been chosen yet. Until one is added, all rights are reserved by the author. FFmpeg is distributed under
+the LGPL. See `external/ffmpeg/LICENSE.txt`.
