@@ -70,3 +70,38 @@ public class ContrastTests
         }
     }
 }
+
+/// <summary>The log rolls over at 1 MB and never keeps more than five files.</summary>
+public class AppLogTests
+{
+    [Fact]
+    public void RollsOver_AndKeepsFiveFiles()
+    {
+        var dir = Directory.CreateTempSubdirectory("winmuse-log").FullName;
+        var before = AppLog.Path;
+        try
+        {
+            AppLog.Path = Path.Combine(dir, "log.txt");
+            var line = new string('x', 1000);
+            for (int i = 0; i < 7_000; i++) AppLog.Write(line); // about 7 MB
+            var files = Directory.GetFiles(dir).Select(Path.GetFileName).Order().ToArray();
+            Assert.Equal(new[] { "log.1.txt", "log.2.txt", "log.3.txt", "log.4.txt", "log.txt" }, files);
+            Assert.All(Directory.GetFiles(dir), f => Assert.True(new FileInfo(f).Length <= AppLog.MaxBytes + 2048));
+        }
+        finally { AppLog.Path = before; Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void ParallelWrites_LoseNoLines()
+    {
+        var dir = Directory.CreateTempSubdirectory("winmuse-log").FullName;
+        var before = AppLog.Path;
+        try
+        {
+            AppLog.Path = Path.Combine(dir, "log.txt");
+            Parallel.For(0, 2000, i => AppLog.Write($"line {i}"));
+            Assert.Equal(2000, File.ReadAllLines(AppLog.Path).Count(l => l.Contains("] line ")));
+        }
+        finally { AppLog.Path = before; Directory.Delete(dir, true); }
+    }
+}

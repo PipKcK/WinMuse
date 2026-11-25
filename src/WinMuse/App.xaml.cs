@@ -35,6 +35,7 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         UI = DispatcherQueue.GetForCurrentThread();
+        AppPaths.Log($"{AppInfo.DisplayVersion} started (Windows {Environment.OSVersion.Version}, .NET {Environment.Version})");
         Svc.Create();
         MainWindow = new MainWindow();
         MainWindow.Activate();

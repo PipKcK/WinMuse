@@ -34,6 +34,7 @@
     <Compile Include="..\..\src\WinMuse\Helpers\CollectionSync.cs" Link="App\CollectionSync.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\LrcParser.cs" Link="App\LrcParser.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\AppPaths.cs" Link="App\AppPaths.cs" />
+    <Compile Include="..\..\src\WinMuse\Helpers\AppLog.cs" Link="App\AppLog.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\UiLock.cs" Link="App\UiLock.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\PlaylistOrder.cs" Link="App\PlaylistOrder.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\WebLink.cs" Link="App\WebLink.cs" />

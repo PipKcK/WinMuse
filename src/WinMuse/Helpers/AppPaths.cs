@@ -30,6 +30,6 @@ public static class AppPaths
 
     public static void Log(string message)
     {
-        try { File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}"); } catch { }
+        AppLog.Write(message);
     }
 }

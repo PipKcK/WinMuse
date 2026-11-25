@@ -603,5 +603,6 @@ public sealed partial class MainWindow : Window
         Svc.Player.Shutdown();
         Svc.Metadata.WriteDeferred(all: true);
         Svc.Settings.Save();
+        AppPaths.Log("Closed");
     }
 }
