@@ -41,14 +41,14 @@
     <DataTemplate x:Key="SongCardTemplate" x:DataType="models:Track">
         <StackPanel Width="148" Spacing="6" Padding="4" controls:Effects.HoverScale="1.03" controls:Effects.RevealTarget="{Binding ElementName=PlayOverlay}" Background="Transparent">
             <Grid Width="140" Height="140">
-                <controls:ArtImage Source="{x:Bind ArtPath}" Seed="{x:Bind AlbumKey}" CornerRadius="10" DecodeSize="160" />
+                <controls:ArtImage Source="{x:Bind ArtPath, Mode=OneWay}" Seed="{x:Bind AlbumKey, Mode=OneWay}" CornerRadius="10" DecodeSize="160" />
                 <Button x:Name="PlayOverlay" Style="{StaticResource PlayButtonStyle}" Width="40" Height="40" CornerRadius="20"
                         HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" Click="OnPlayTrack">
                     <FontIcon Glyph="&#xE768;" FontSize="14" />
                 </Button>
             </Grid>
-            <TextBlock Text="{x:Bind DisplayTitle}" Style="{StaticResource CardTitleStyle}" Margin="2,2,2,0" />
-            <TextBlock Text="{x:Bind DisplayArtist}" Style="{StaticResource CardSubtitleStyle}" Margin="2,0" />
+            <TextBlock Text="{x:Bind DisplayTitle, Mode=OneWay}" Style="{StaticResource CardTitleStyle}" Margin="2,2,2,0" />
+            <TextBlock Text="{x:Bind DisplayArtist, Mode=OneWay}" Style="{StaticResource CardSubtitleStyle}" Margin="2,0" />
         </StackPanel>
     </DataTemplate>
 
@@ -191,16 +191,16 @@
             <StackPanel>
                 <Grid Height="174">
                     <Grid.Clip><RectangleGeometry Rect="0,0,174,174" /></Grid.Clip>
-                    <controls:ArtImage x:Name="CardArt" Source="{x:Bind ArtPath}" Seed="{x:Bind AlbumKey}" DecodeSize="200" />
+                    <controls:ArtImage x:Name="CardArt" Source="{x:Bind ArtPath, Mode=OneWay}" Seed="{x:Bind AlbumKey, Mode=OneWay}" DecodeSize="200" />
                     <Button x:Name="PlayOverlay" Style="{StaticResource PlayButtonStyle}" Width="42" Height="42" CornerRadius="21"
                             HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10" Click="OnPlayTrack" ToolTipService.ToolTip="Play" AutomationProperties.Name="Play">
                         <FontIcon Glyph="&#xE768;" FontSize="15" />
                     </Button>
                 </Grid>
                 <StackPanel Padding="12,10,12,12" Spacing="1">
-                    <TextBlock Text="{x:Bind DisplayTitle}" Style="{StaticResource CardTitleStyle}" />
-                    <TextBlock Text="{x:Bind DisplayArtist}" Style="{StaticResource CardSubtitleStyle}" />
-                    <TextBlock Text="{x:Bind YearText}" Style="{StaticResource CardSubtitleStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" MinHeight="16" />
+                    <TextBlock Text="{x:Bind DisplayTitle, Mode=OneWay}" Style="{StaticResource CardTitleStyle}" />
+                    <TextBlock Text="{x:Bind DisplayArtist, Mode=OneWay}" Style="{StaticResource CardSubtitleStyle}" />
+                    <TextBlock Text="{x:Bind YearText, Mode=OneWay}" Style="{StaticResource CardSubtitleStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" MinHeight="16" />
                 </StackPanel>
             </StackPanel>
         </Border>
