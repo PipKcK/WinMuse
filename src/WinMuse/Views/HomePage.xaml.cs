@@ -46,6 +46,7 @@ public sealed partial class HomePage : Page
         Svc.Settings.Changed += name =>
         {
             if (name == nameof(AppSettings.GreetingStyle) && IsLoaded) ApplyGreetingStyle();
+            if (name == nameof(AppSettings.ShowAllHomeRows)) { if (IsLoaded) Refresh(); else _dirty = true; }
             if (name == nameof(AppSettings.ShelfCardColor) && IsLoaded) UpdateAppearanceButton(); // the circle's color changed
         };
         // Appearance button hover: the icon lifts and the palette tilts.
@@ -178,7 +179,9 @@ public sealed partial class HomePage : Page
         ShowSystemPlaylist(RecentAdded, RecentAddedSection, ref _recentAdded, LibraryService.RecentlyAddedId);
         RefreshContinue();
         ShowSystemPlaylist(MostPlayed, MostPlayedSection, ref _most, LibraryService.MostPlayedId);
-        ShowSystemPlaylist(Rediscover, RediscoverSection, ref _rediscover, LibraryService.NotPlayedRecentlyId);
+        // Long Time No Play waits for listening history (Settings > Debug can show it anyway).
+        ShowSystemPlaylist(Rediscover, RediscoverSection, ref _rediscover, LibraryService.NotPlayedRecentlyId,
+            lib.HasListeningHistory || Svc.Settings.Current.ShowAllHomeRows);
 
         RefreshPlaylists();
 
@@ -316,9 +319,9 @@ public sealed partial class HomePage : Page
         e.Handled = true;
     }
 
-    private static void ShowSystemPlaylist(ListView list, FrameworkElement section, ref ObservableCollection<Track> bound, long id)
+    private static void ShowSystemPlaylist(ListView list, FrameworkElement section, ref ObservableCollection<Track> bound, long id, bool ready = true)
     {
-        var tracks = Svc.Library.SystemPlaylist(id)?.Tracks ?? new List<Track>();
+        var tracks = ready ? Svc.Library.SystemPlaylist(id)?.Tracks ?? new List<Track>() : new List<Track>();
         Bind(list, ref bound, tracks, t => t);
         section.Visibility = tracks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }

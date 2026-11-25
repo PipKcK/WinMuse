@@ -76,6 +76,7 @@ public sealed partial class SettingsPage : Page
         VizBarToggle.IsOn = S.ShowBarVisualizer;
         Select(HighlightBox, (int)S.PlayingHighlight);
         Select(GreetingStyleBox, (int)S.GreetingStyle);
+        AllHomeRowsToggle.IsOn = S.ShowAllHomeRows;
         Select(CardColorBox, Math.Max(0, Array.IndexOf(CardColorChoices, S.ShelfCardColor)));
         Select(VizStyleBox, (int)S.VisualizerStyle);
         EqGenreToggle.IsOn = S.EqMatchGenre;
@@ -480,6 +481,12 @@ public sealed partial class SettingsPage : Page
     {
         if (_loading) return;
         Svc.Settings.Set(nameof(AppSettings.GreetingStyle), s => s.GreetingStyle = (GreetingStyle)GreetingStyleBox.SelectedIndex);
+    }
+
+    private void OnAllHomeRowsToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        Svc.Settings.Set(nameof(AppSettings.ShowAllHomeRows), s => s.ShowAllHomeRows = AllHomeRowsToggle.IsOn);
     }
 
     private void OnCreateTestPlaylists(object sender, RoutedEventArgs e)

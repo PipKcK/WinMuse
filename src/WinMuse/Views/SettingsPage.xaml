@@ -343,6 +343,10 @@
                     <x:String>None</x:String>
                 </ComboBox>
             </tk:SettingsCard>
+            <tk:SettingsCard Header="Show all Home rows" Description="Shows rows that wait for listening history. Long Time No Play appears by itself after a week of use and 15 different songs played.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE80F;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="AllHomeRowsToggle" Toggled="OnAllHomeRowsToggled" />
+            </tk:SettingsCard>
             <tk:SettingsCard Header="Create test playlists" Description="Creates 10 playlists named &quot;Test playlist 1&quot; to &quot;Test playlist 10&quot;, each with 20 random songs from your library.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBE8;" /></tk:SettingsCard.HeaderIcon>
                 <Button Content="Create" Click="OnCreateTestPlaylists" />

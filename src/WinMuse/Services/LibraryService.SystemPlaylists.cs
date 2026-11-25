@@ -52,6 +52,19 @@ public sealed partial class LibraryService
         };
     }
 
+    /// <summary>
+    /// Long Time No Play waits for some listening history: on a new library every song is "not played in a while".
+    /// It appears once the library has been in use for a week and 15 different songs have been played.
+    /// </summary>
+    public bool HasListeningHistory
+    {
+        get
+        {
+            if (_tracks.Count == 0 || _tracks.Count(t => t.LastPlayedUtc > 0) < 15) return false;
+            return Format.NowUnix() - _tracks.Min(t => t.AddedUtc) >= 7 * 86400;
+        }
+    }
+
     /// <summary>A random pick that stays put: songs already in the list keep their place while they still qualify.</summary>
     private static List<Track> Rediscover(List<Track> current, List<Track> eligible)
     {

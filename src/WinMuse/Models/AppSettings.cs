@@ -53,6 +53,8 @@ public sealed class AppSettings
     public PlayingHighlight PlayingHighlight { get; set; } = PlayingHighlight.Rainbow;
     public ShelfCardColor ShelfCardColor { get; set; } = ShelfCardColor.Neutral;
     public GreetingStyle GreetingStyle { get; set; } = GreetingStyle.Banner;
+    /// <summary>Home shows rows that wait for listening history (Long Time No Play) anyway. Debug option.</summary>
+    public bool ShowAllHomeRows { get; set; }
 
     // Favorites and Quick access
     /// <summary>The playlist that holds favorite songs ("Favorites"); created on the first heart.</summary>
