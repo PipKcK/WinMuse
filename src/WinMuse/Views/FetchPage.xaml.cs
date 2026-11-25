@@ -12,20 +12,30 @@ using WinMuse.Services;
 
 namespace WinMuse.Views;
 
-/// <summary>One status cell on the Fetch page.</summary>
-public sealed record SourceStatus(int State, string Label, string Glyph, Brush Brush, string Tooltip)
+/// <summary>
+/// One status cell on the Fetch page. The icon carries the state's color (status fill colors are made for icons);
+/// the label uses a theme text color so it stays readable in light and dark mode.
+/// </summary>
+public sealed record SourceStatus(int State, string Label, string Glyph, Brush IconBrush, Brush TextBrush, string Tooltip)
 {
-    public static SourceStatus From(int state, string item, bool checkable = true) => state switch
+    public static SourceStatus From(int state, string item, bool checkable = true)
     {
-        ItemState.Missing when !checkable => new(state, "Skipped", "", ThemeRes.Brush("TextFillColorTertiaryBrush"), "Songs shorter than 30 seconds or longer than 15 minutes aren't checked online"),
-        ItemState.Downloaded => new(state, "Downloaded", "", ThemeRes.Brush("SystemFillColorSuccessBrush"), $"{item} downloaded by Music"),
-        ItemState.FromFile => new(state, "From file", "", ThemeRes.Brush("TextFillColorSecondaryBrush"), $"{item} was already in the file or folder"),
-        ItemState.EditedByUser => new(state, "Edited", "", ThemeRes.Brush("AccentTextFillColorPrimaryBrush"), $"{item} was changed by you"),
-        ItemState.Instrumental => new(state, "Instrumental", "", ThemeRes.Brush("TextFillColorSecondaryBrush"), "Instrumental: this song has no lyrics"),
-        ItemState.NotFound => new(state, "Not found", "", ThemeRes.Brush("SystemFillColorCautionBrush"), $"{item} was looked up but not found online"),
-        _ => new(state, "Pending", "", ThemeRes.Brush("TextFillColorTertiaryBrush"), $"{item} has not been processed yet"),
-    };
+        Brush Text(string key = "TextFillColorSecondaryBrush") => ThemeRes.Brush(key);
+        return state switch
+        {
+            ItemState.Missing when !checkable => new(state, "Skipped", "", Text("TextFillColorTertiaryBrush"), Text("TextFillColorTertiaryBrush"), "Songs shorter than 30 seconds or longer than 15 minutes aren't checked online"),
+            ItemState.Downloaded => new(state, "Downloaded", "", ThemeRes.Brush("SystemFillColorSuccessBrush"), Text("TextFillColorPrimaryBrush"), $"{item} was downloaded from the online sources"),
+            ItemState.FromFile => new(state, "From file", "", Text(), Text(), $"{item} was already in the file or its folder"),
+            ItemState.EditedByUser => new(state, "Edited", "", ThemeRes.Brush("AccentTextFillColorPrimaryBrush"), Text("TextFillColorPrimaryBrush"), $"{item} was changed by hand"),
+            ItemState.Instrumental => new(state, "Instrumental", "", Text(), Text(), "Instrumental: this song has no lyrics"),
+            ItemState.NotFound => new(state, "Not found", "", ThemeRes.Brush("SystemFillColorCautionBrush"), Text(), $"{item} was looked up, but the online sources have nothing for this song. Fetch tries again."),
+            _ => new(state, "Pending", "", Text("TextFillColorTertiaryBrush"), Text("TextFillColorTertiaryBrush"), $"{item} has not been looked up yet"),
+        };
+    }
 }
+
+/// <summary>Overall fetch status of a song (the Fetch page's filter and summary).</summary>
+public enum FetchStatus { Complete, Pending, NotFound, Edited, Skipped }
 
 /// <summary>A song with the state of each downloadable item and its overall fetch status.</summary>
 public sealed class SourceRow
@@ -35,12 +45,15 @@ public sealed class SourceRow
     public SourceStatus AlbumArt { get; }
     public SourceStatus ArtistImage { get; }
     public SourceStatus Lyrics { get; }
-    public int Flag { get; }
-    public string FlagText => Flag switch { 1 => "Complete (1)", -1 => "Edited (-1)", _ => "Incomplete (0)" };
+    public FetchStatus Status { get; }
+    /// <summary>"Complete", "Pending: lyrics", "Not found: lyrics, artist image", "Edited by hand" or "Skipped".</summary>
+    public string StatusText { get; }
+    /// <summary>Every item with its exact state, for checking why a song is where it is.</summary>
+    public string StatusTooltip { get; }
     /// <summary>What screen readers announce for the row (WinUI names list items from ToString).</summary>
-    public override string ToString() => $"{Track}, {FlagText}";
-    public Brush FlagBackground { get; }
-    public Brush FlagForeground { get; }
+    public override string ToString() => $"{Track}, {StatusText}";
+    public Brush StatusBackground { get; }
+    public Brush StatusForeground { get; }
     public bool CanSync => Track.IsCheckable;
     public string SyncTooltip => Track.IsCheckable ? "Fetch this song" : "Songs shorter than 30 seconds or longer than 15 minutes aren't checked online";
 
@@ -50,20 +63,46 @@ public sealed class SourceRow
         bool checkable = t.IsCheckable;
         Metadata = SourceStatus.From(t.MetaState, "Metadata", checkable);
         AlbumArt = SourceStatus.From(t.ArtState, "Album art", checkable);
-        ArtistImage = SourceStatus.From(Svc.Library.ArtistImageStateOf(t), "Artist image", checkable);
+        int artistState = Svc.Library.ArtistImageStateOf(t);
+        ArtistImage = SourceStatus.From(artistState, "Artist image", checkable);
         Lyrics = SourceStatus.From(t.LyricsState, "Lyrics", checkable);
-        Flag = Svc.Library.SyncState(t);
-        (FlagBackground, FlagForeground) = Flag switch
+
+        // The same rules as LibraryService.SyncState, item by item, so the page says what is left and why.
+        var gaps = new List<(string name, int state)>();
+        if (t.MetaState != ItemState.Downloaded) gaps.Add(("metadata", t.MetaState));
+        if (!ItemState.IsSatisfied(t.ArtState)) gaps.Add(("album art", t.ArtState));
+        if (artistState != ItemState.Downloaded) gaps.Add(("artist image", artistState));
+        if (!ItemState.IsSatisfied(t.LyricsState)) gaps.Add(("lyrics", t.LyricsState));
+        string Names(IEnumerable<(string name, int state)> g) => string.Join(", ", g.Select(x => x.name));
+
+        var flag = Svc.Library.SyncState(t);
+        if (flag == -1) { Status = FetchStatus.Edited; StatusText = "Edited by hand"; }
+        else if (flag == 1) { Status = FetchStatus.Complete; StatusText = "Complete"; }
+        else if (!checkable) { Status = FetchStatus.Skipped; StatusText = "Skipped"; }
+        else if (gaps.Any(g => g.state == ItemState.Missing)) { Status = FetchStatus.Pending; StatusText = "Pending: " + Names(gaps.Where(g => g.state == ItemState.Missing)); }
+        else { Status = FetchStatus.NotFound; StatusText = "Not found: " + Names(gaps); }
+
+        StatusTooltip = string.Join("\n",
+            $"Metadata: {Metadata.Label} ({t.MetaState})",
+            $"Album art: {AlbumArt.Label} ({t.ArtState})",
+            $"Artist image: {ArtistImage.Label} ({artistState}) · {string.Join(", ", t.ArtistNames)}",
+            $"Lyrics: {Lyrics.Label} ({t.LyricsState})",
+            $"Length: {Format.Time(t.DurationMs / 1000.0)}{(checkable ? "" : " (not checked online)")} · Processed: {(t.AutoFixed ? "yes" : "no")}",
+            t.Path);
+
+        (StatusBackground, StatusForeground) = Status switch
         {
-            1 => (ThemeRes.Brush("SystemFillColorSuccessBackgroundBrush"), ThemeRes.Brush("SystemFillColorSuccessBrush")),
-            -1 => (ThemeRes.Brush("SubtleFillColorSecondaryBrush"), ThemeRes.Brush("AccentTextFillColorPrimaryBrush")),
-            _ => (ThemeRes.Brush("SystemFillColorCautionBackgroundBrush"), ThemeRes.Brush("SystemFillColorCautionBrush")),
+            FetchStatus.Complete => (ThemeRes.Brush("SystemFillColorSuccessBackgroundBrush"), ThemeRes.Brush("TextFillColorPrimaryBrush")),
+            FetchStatus.Edited => (ThemeRes.Brush("SubtleFillColorSecondaryBrush"), ThemeRes.Brush("AccentTextFillColorPrimaryBrush")),
+            FetchStatus.NotFound => (ThemeRes.Brush("SystemFillColorCautionBackgroundBrush"), ThemeRes.Brush("TextFillColorPrimaryBrush")),
+            _ => (ThemeRes.Brush("SubtleFillColorSecondaryBrush"), ThemeRes.Brush("TextFillColorSecondaryBrush")),
         };
     }
 
     public bool SameAs(SourceRow o) =>
         o.Metadata.State == Metadata.State && o.AlbumArt.State == AlbumArt.State && o.ArtistImage.State == ArtistImage.State
-        && o.Lyrics.State == Lyrics.State && o.Track.ArtPath == Track.ArtPath && o.Track.DisplayTitle == Track.DisplayTitle && o.Track.DisplayArtist == Track.DisplayArtist;
+        && o.Lyrics.State == Lyrics.State && o.StatusText == StatusText && o.Track.ArtPath == Track.ArtPath
+        && o.Track.DisplayTitle == Track.DisplayTitle && o.Track.DisplayArtist == Track.DisplayArtist;
 }
 
 /// <summary>Lists every song and where its metadata, album art, artist image and lyrics came from.</summary>
@@ -96,14 +135,22 @@ public sealed partial class FetchPage : Page
             .ThenBy(t => t.DisplayTitle, StringComparer.CurrentCultureIgnoreCase)
             .Select(t => new SourceRow(t)).ToList();
 
-        int complete = all.Count(r => r.Flag == 1), edited = all.Count(r => r.Flag == -1);
-        SummaryText.Text = $"{all.Count:N0} songs · {complete:N0} complete · {all.Count - complete - edited:N0} incomplete · {edited:N0} edited by you";
+        int Count(FetchStatus s) => all.Count(r => r.Status == s);
+        var parts = new List<string> { $"{all.Count:N0} songs", $"{Count(FetchStatus.Complete):N0} complete" };
+        if (Count(FetchStatus.Pending) is > 0 and var pending) parts.Add($"{pending:N0} pending");
+        if (Count(FetchStatus.NotFound) is > 0 and var notFound) parts.Add($"{notFound:N0} with items not found online");
+        if (Count(FetchStatus.Edited) is > 0 and var edited) parts.Add($"{edited:N0} edited by hand");
+        if (Count(FetchStatus.Skipped) is > 0 and var skipped) parts.Add($"{skipped:N0} skipped");
+        SummaryText.Text = string.Join(" · ", parts);
 
+        // Filter order matches FilterBox: All, Complete, Pending, Not found online, Edited by hand, Skipped.
         var shown = FilterBox.SelectedIndex switch
         {
-            1 => all.Where(r => r.Flag == 0).ToList(),
-            2 => all.Where(r => r.Flag == -1).ToList(),
-            3 => all.Where(r => r.Flag == 1).ToList(),
+            1 => all.Where(r => r.Status == FetchStatus.Complete).ToList(),
+            2 => all.Where(r => r.Status == FetchStatus.Pending).ToList(),
+            3 => all.Where(r => r.Status == FetchStatus.NotFound).ToList(),
+            4 => all.Where(r => r.Status == FetchStatus.Edited).ToList(),
+            5 => all.Where(r => r.Status == FetchStatus.Skipped).ToList(),
             _ => all,
         };
         var bound = CollectionSync.SyncOrReplace(_rows, shown, r => r.Track, (a, b) => a.SameAs(b));
@@ -124,12 +171,13 @@ public sealed partial class FetchPage : Page
     private async void OnSync(object sender, RoutedEventArgs e)
     {
         if (Svc.AutoFix.IsRunning) { Svc.AutoFix.Stop(); return; }
-        int pending = Svc.Library.Tracks.Count(t => t.IsCheckable && Svc.Library.SyncState(t) != 1);
-        if (pending == 0) { Notifier.Show("All songs are complete"); return; }
-        int edited = Svc.Library.Tracks.Count(t => t.IsCheckable && Svc.Library.SyncState(t) == -1);
-        if (!await TrackActions.Confirm("Fetch for the whole library?",
-                $"{pending:N0} songs will be updated with online metadata, album art, artist images and lyrics." +
-                (edited > 0 ? $" This includes {edited:N0} songs you edited; your changes to them will be replaced." : ""), "Fetch")) return;
+        var rows = Svc.Library.Tracks.Where(t => t.IsCheckable).Select(t => new SourceRow(t)).Where(r => r.Status != FetchStatus.Complete).ToList();
+        if (rows.Count == 0) { Notifier.Show("All songs are complete"); return; }
+        int notFound = rows.Count(r => r.Status == FetchStatus.NotFound), edited = rows.Count(r => r.Status == FetchStatus.Edited);
+        var detail = $"{rows.Count:N0} songs aren't complete and will be looked up again for metadata, album art, artist images and lyrics.";
+        if (notFound > 0) detail += $" {notFound:N0} of them were looked up before and had items the online sources didn't have.";
+        if (edited > 0) detail += $" This includes {edited:N0} songs edited by hand; those changes will be replaced.";
+        if (!await TrackActions.Confirm("Fetch for the whole library?", detail, "Fetch")) return;
         await Svc.AutoFix.SyncAsync();
     }
 

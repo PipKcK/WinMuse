@@ -11,8 +11,8 @@
         <!-- One status cell: icon + label, colored by state. -->
         <DataTemplate x:Key="StatusCell" x:DataType="local:SourceStatus">
             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind Tooltip}">
-                <FontIcon Glyph="{x:Bind Glyph}" FontSize="13" Foreground="{x:Bind Brush}" />
-                <TextBlock Text="{x:Bind Label}" Foreground="{x:Bind Brush}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <FontIcon Glyph="{x:Bind Glyph}" FontSize="13" Foreground="{x:Bind IconBrush}" />
+                <TextBlock Text="{x:Bind Label}" Foreground="{x:Bind TextBrush}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
@@ -26,9 +26,11 @@
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <ComboBox x:Name="FilterBox" SelectionChanged="OnFilterChanged" MinWidth="170" VerticalAlignment="Center">
                     <x:String>All songs</x:String>
-                    <x:String>Incomplete</x:String>
-                    <x:String>Edited by you</x:String>
                     <x:String>Complete</x:String>
+                    <x:String>Pending</x:String>
+                    <x:String>Not found online</x:String>
+                    <x:String>Edited by hand</x:String>
+                    <x:String>Skipped</x:String>
                 </ComboBox>
                 <Button x:Name="SyncButton" AutomationProperties.Name="Fetch" Style="{StaticResource PillButtonStyle}" Click="OnSync">
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xEBD3;" FontSize="14" /><TextBlock x:Name="SyncText" Text="Fetch" /></StackPanel>
@@ -89,8 +91,9 @@
                         <ContentPresenter Grid.Column="2" Content="{x:Bind AlbumArt}" ContentTemplate="{StaticResource StatusCell}" VerticalAlignment="Center" />
                         <ContentPresenter Grid.Column="3" Content="{x:Bind ArtistImage}" ContentTemplate="{StaticResource StatusCell}" VerticalAlignment="Center" />
                         <ContentPresenter Grid.Column="4" Content="{x:Bind Lyrics}" ContentTemplate="{StaticResource StatusCell}" VerticalAlignment="Center" />
-                        <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{x:Bind FlagBackground}">
-                            <TextBlock Text="{x:Bind FlagText}" FontSize="11" FontWeight="SemiBold" Foreground="{x:Bind FlagForeground}" />
+                        <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{x:Bind StatusBackground}"
+                                ToolTipService.ToolTip="{x:Bind StatusTooltip}">
+                            <TextBlock Text="{x:Bind StatusText}" FontSize="11" FontWeight="SemiBold" Foreground="{x:Bind StatusForeground}" TextTrimming="CharacterEllipsis" />
                         </Border>
                         <Button Grid.Column="6" Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEBD3;" FontSize="14" Click="OnSyncRow"
                                 IsEnabled="{x:Bind CanSync}" ToolTipService.ToolTip="{x:Bind SyncTooltip}" AutomationProperties.Name="Fetch this song" />
