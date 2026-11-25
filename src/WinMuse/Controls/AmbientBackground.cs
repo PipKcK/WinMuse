@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
+using WinMuse.Helpers;
 
 namespace WinMuse.Controls;
 
@@ -44,8 +45,8 @@ public sealed class AmbientBackground : Grid
     public AmbientBackground()
     {
         IsHitTestVisible = false;
-        Loaded += (_, _) => Build();
-        Unloaded += (_, _) => Teardown();
+        Loaded += (_, _) => { Build(); WindowActivity.Changed += ApplyPause; };
+        Unloaded += (_, _) => { WindowActivity.Changed -= ApplyPause; Teardown(); };
         SizeChanged += (_, _) => Layout();
     }
 
@@ -128,6 +129,22 @@ public sealed class AmbientBackground : Grid
             scale.IterationBehavior = AnimationIterationBehavior.Forever;
             v.StartAnimation("Scale", scale);
         }
+        ApplyPause();
+    }
+
+    /// <summary>
+    /// The drift keeps going while music is paused; it only holds still while the window is minimized (nobody sees
+    /// it, and it would keep the app drawing). It carries on from the same place when the window comes back.
+    /// </summary>
+    private void ApplyPause()
+    {
+        if (!_animate) return;
+        foreach (var (v, _, _) in _blobs)
+            foreach (var prop in new[] { "Offset", "Scale" })
+                if (v.TryGetAnimationController(prop) is { } ctl)
+                {
+                    if (WindowActivity.IsMinimized) ctl.Pause(); else ctl.Resume();
+                }
     }
 
     public void SetPalette(Color[] palette, bool animate = true)

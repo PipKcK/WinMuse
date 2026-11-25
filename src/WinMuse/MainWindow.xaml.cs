@@ -78,6 +78,8 @@ public sealed partial class MainWindow : Window
 
         Notifier.Raised += ShowToast;
         AppWindow.Closing += OnClosing;
+        // Minimized: moving effects stop drawing (see WindowActivity).
+        AppWindow.Changed += (s, _) => WindowActivity.SetMinimized(s.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized });
     }
 
     private void CenterOnScreen()

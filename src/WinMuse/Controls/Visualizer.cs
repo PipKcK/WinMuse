@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
+using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services;
 
@@ -34,18 +35,33 @@ public sealed class Visualizer : Grid
         set
         {
             _active = value;
-            if (value && IsLoaded) Start(); else Stop();
+            _settled = false;
+            UpdateLoop();
         }
     }
     private bool _active;
+    /// <summary>Music is paused and the bars have come to rest: nothing moves, so nothing is drawn until music plays.</summary>
+    private bool _settled;
     /// <summary>Average of the lowest bands from the last frame (0..1); drives the artwork "pulse".</summary>
     public float BassLevel { get; private set; }
 
     public Visualizer()
     {
         IsHitTestVisible = false;
-        Loaded += (_, _) => { Build(); if (_active) Start(); };
-        Unloaded += (_, _) => { Stop(); Teardown(); };
+        Loaded += (_, _) =>
+        {
+            Build();
+            WindowActivity.Changed += UpdateLoop;
+            Svc.Player.PropertyChanged += OnPlayerChanged;
+            UpdateLoop();
+        };
+        Unloaded += (_, _) =>
+        {
+            WindowActivity.Changed -= UpdateLoop;
+            Svc.Player.PropertyChanged -= OnPlayerChanged;
+            Stop();
+            Teardown();
+        };
         // Now Playing starts hidden (zero size), so the bars are created on the first real size.
         SizeChanged += (_, e) => { if (e.NewSize.Width > 0 && e.NewSize.Height > 0) Rebuild(); };
     }
@@ -110,6 +126,22 @@ public sealed class Visualizer : Grid
         _shapes = null;
     }
 
+    private void OnPlayerChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(PlaybackService.IsPlaying)) return;
+        if (Svc.Player.IsPlaying) _settled = false;
+        UpdateLoop();
+    }
+
+    /// <summary>
+    /// The per-frame loop runs only while it shows something: active, on screen, the window not minimized, and music
+    /// playing (after a pause, until the bars have fallen).
+    /// </summary>
+    private void UpdateLoop()
+    {
+        if (_active && IsLoaded && !WindowActivity.IsMinimized && !_settled) Start(); else Stop();
+    }
+
     private void Start()
     {
         if (_rendering) return;
@@ -129,6 +161,7 @@ public sealed class Visualizer : Grid
         if (_shapes == null || _bars.Count == 0 || Visibility != Visibility.Visible || !IsActive) return;
         var player = Svc.Player;
         player.Spectrum.GetBands(_levels, player.IsPlaying);
+        if (!player.IsPlaying && _levels.All(l => l < 0.002f)) { _settled = true; Stop(); } // drawn at rest once more below
         BassLevel = (_levels[0] + _levels[1] + _levels[2] + _levels[3]) / 4f;
 
         float w = (float)ActualWidth, h = (float)ActualHeight;
