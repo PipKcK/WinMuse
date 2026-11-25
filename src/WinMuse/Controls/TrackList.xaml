@@ -110,10 +110,10 @@
                         <Grid Grid.Column="3" Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEB51;" FontSize="14" Click="OnStarClick"
                                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                    Visibility="{x:Bind helpers:Conv.Hide(IsFavorite), Mode=OneWay}" ToolTipService.ToolTip="Add to Favorite" AutomationProperties.Name="Add to Favorite" />
+                                    Visibility="{x:Bind helpers:Conv.Hide(IsFavorite), Mode=OneWay}" ToolTipService.ToolTip="Add to Favorites" AutomationProperties.Name="Add to Favorites" />
                             <Button Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEB52;" FontSize="14" Click="OnStarClick"
                                     Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Visibility="{x:Bind IsFavorite, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Remove from Favorite" AutomationProperties.Name="Remove from Favorite" />
+                                    ToolTipService.ToolTip="Remove from Favorites" AutomationProperties.Name="Remove from Favorites" />
                         </Grid>
 
                         <TextBlock Grid.Column="4" Text="{x:Bind DisplayArtist, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />

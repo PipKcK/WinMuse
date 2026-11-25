@@ -168,7 +168,7 @@
 
             <!-- Quick picks -->
             <StackPanel x:Name="QuickSection" Visibility="Collapsed">
-                <TextBlock Text="Quick Access" Style="{StaticResource SectionTitleStyle}" />
+                <TextBlock Text="Quick access" Style="{StaticResource SectionTitleStyle}" />
                 <!-- A plain ItemsControl (no virtualization or inner ScrollViewer): up to 10 tiles nested in the page scroller.
                      A virtualizing GridView here made UI Automation tree walks hang intermittently.
                      QuickGrid fits 2-5 columns to the width and shows at most 2 rows. -->

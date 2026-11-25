@@ -60,10 +60,12 @@ public sealed partial class ArtistDetailPage : Page
         bool fav = Svc.Favorites.IsFavoriteArtist(_artist.Name);
         FavoriteButton.Content = fav ? "" : "";
         FavoriteButton.Foreground = fav ? ThemeRes.Brush("AccentTextFillColorPrimaryBrush", this) : ThemeRes.Brush("TextFillColorPrimaryBrush", this);
-        ToolTipService.SetToolTip(FavoriteButton, fav ? "Remove from Favorite" : "Add to Favorite (listed first on Artists)");
+        ToolTipService.SetToolTip(FavoriteButton, fav ? "Remove from Favorites" : "Add to Favorites (listed first on Artists)");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(FavoriteButton, fav ? "Remove from Favorites" : "Add to Favorites");
         bool pinned = Svc.Favorites.IsPinned(FavoritesService.Key(_artist));
         PinButton.Content = pinned ? "\uE77A" : "\uE718";
         ToolTipService.SetToolTip(PinButton, pinned ? "Unpin from Quick access" : "Pin to Quick access");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(PinButton, pinned ? "Unpin from Quick access" : "Pin to Quick access");
     }
 
     private void OnFavorite(object sender, RoutedEventArgs e)

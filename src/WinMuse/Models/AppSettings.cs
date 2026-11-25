@@ -55,7 +55,7 @@ public sealed class AppSettings
     public GreetingStyle GreetingStyle { get; set; } = GreetingStyle.Banner;
 
     // Favorites and Quick access
-    /// <summary>The playlist that holds favorite songs ("Favorite"); created on the first star.</summary>
+    /// <summary>The playlist that holds favorite songs ("Favorites"); created on the first heart.</summary>
     public long FavoritesPlaylistId { get; set; }
     public List<string> FavoriteArtists { get; set; } = new();
     /// <summary>Items pinned to Quick access, in pin order: "song:&lt;path&gt;" or "artist:&lt;name&gt;".</summary>

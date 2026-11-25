@@ -136,7 +136,8 @@ public sealed partial class PlayerBar : UserControl
         bool fav = t?.IsFavorite == true;
         StarButton.Content = fav ? "" : "";
         StarButton.Foreground = fav ? ThemeRes.Brush("AccentTextFillColorPrimaryBrush", this) : ThemeRes.Brush("TextFillColorSecondaryBrush", this);
-        ToolTipService.SetToolTip(StarButton, fav ? "Remove from Favorite" : "Add to Favorite");
+        ToolTipService.SetToolTip(StarButton, fav ? "Remove from Favorites" : "Add to Favorites");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(StarButton, fav ? "Remove from Favorites" : "Add to Favorites");
     }
 
     private async void OnSkipMissing(object sender, RoutedEventArgs e) => await Player.SkipMissingAsync();

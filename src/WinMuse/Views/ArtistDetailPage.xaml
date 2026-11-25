@@ -28,7 +28,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE8B1;" FontSize="14" /><TextBlock Text="Shuffle" /></StackPanel>
                             </Button>
                             <Button Style="{StaticResource GhostPillButtonStyle}" Click="OnAllSongs" Content="All songs" />
-                            <Button x:Name="FavoriteButton" Style="{StaticResource IconButtonStyle}" Content="&#xEB51;" Click="OnFavorite" AutomationProperties.Name="Favorite" />
+                            <Button x:Name="FavoriteButton" Style="{StaticResource IconButtonStyle}" Content="&#xEB51;" Click="OnFavorite" AutomationProperties.Name="Add to Favorites" />
                             <Button x:Name="PinButton" Style="{StaticResource IconButtonStyle}" Content="&#xE718;" Click="OnPin" AutomationProperties.Name="Pin to Quick access" />
                             <Button Style="{StaticResource IconButtonStyle}" Content="&#xE70F;" Click="OnEdit" ToolTipService.ToolTip="Edit artist" AutomationProperties.Name="Edit artist" />
                         </StackPanel>

@@ -52,7 +52,7 @@
                         <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}"
                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center" />
                         <Button x:Name="StarButton" Grid.Column="1" Style="{StaticResource IconButtonStyle}" Width="26" Height="26" FontSize="13" Content="&#xEB51;"
-                                Click="OnStar" Visibility="Collapsed" ToolTipService.ToolTip="Add to Favorite" AutomationProperties.Name="Favorite" />
+                                Click="OnStar" Visibility="Collapsed" ToolTipService.ToolTip="Add to Favorites" AutomationProperties.Name="Add to Favorites" />
                     </Grid>
                     <HyperlinkButton Padding="0" Click="OnArtistClick" AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                         <HyperlinkButton.Resources>

@@ -26,7 +26,7 @@ public sealed class QuickEntry
 
     public string BadgeGlyph => IsPinned ? "" : IsFavorite ? "" : "";
     public Visibility BadgeVisibility => IsPinned || IsFavorite ? Visibility.Visible : Visibility.Collapsed;
-    public string BadgeTip => IsPinned ? "Pinned" : "Favorite";
+    public string BadgeTip => IsPinned ? "Pinned to Quick access" : "In Favorites";
 
     /// <summary>What screen readers announce for the tile (WinUI names list items from ToString).</summary>
     public override string ToString() => IsPinned || IsFavorite ? $"{Title}, {Subtitle}, {BadgeTip}" : $"{Title}, {Subtitle}";

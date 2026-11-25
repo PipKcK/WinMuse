@@ -57,7 +57,7 @@ public sealed class Track : ObservableObject
     public bool IsChecked { get => _isChecked; set { if (SetProperty(ref _isChecked, value)) Services.SelectionService.OnTrackChecked(this, value); } }
 
     private bool _isFavorite;
-    /// <summary>In the "Favorite" playlist (kept up to date by FavoritesService).</summary>
+    /// <summary>In the "Favorites" playlist (kept up to date by FavoritesService).</summary>
     public bool IsFavorite { get => _isFavorite; set => SetProperty(ref _isFavorite, value); }
 
     private bool _isPlaying;

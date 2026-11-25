@@ -3,13 +3,15 @@ using WinMuse.Models;
 namespace WinMuse.Services;
 
 /// <summary>
-/// Favorites and Quick access pins. A favorite song is a song in the "Favorite" playlist (an ordinary playlist the
+/// Favorites and Quick access pins. A favorite song is a song in the "Favorites" playlist (an ordinary playlist the
 /// user can also edit); favorite artists are listed first on the Artists page. Pinned songs and artists always lead
 /// Quick access on Home, before favorites.
 /// </summary>
 public sealed class FavoritesService
 {
-    public const string PlaylistName = "Favorite";
+    public const string PlaylistName = "Favorites";
+    /// <summary>The playlist's name before it became "Favorites" (renamed on first use; see RefreshFlags).</summary>
+    private const string OldPlaylistName = "Favorite";
     public const int MaxQuickAccess = 10;
     private readonly SettingsService _settings;
     private readonly LibraryService _library;
@@ -27,10 +29,11 @@ public sealed class FavoritesService
 
     // ---------------- Songs ----------------
 
-    /// <summary>The "Favorite" playlist: the one remembered by ID, else an existing playlist with that name.</summary>
+    /// <summary>The "Favorites" playlist: the one remembered by ID, else an existing playlist with that name (or its old name).</summary>
     public Playlist? Playlist =>
         _library.Playlists.FirstOrDefault(p => p.Id == _settings.Current.FavoritesPlaylistId && !p.IsSmart)
-        ?? _library.Playlists.FirstOrDefault(p => !p.IsSmart && string.Equals(p.Name, PlaylistName, StringComparison.OrdinalIgnoreCase));
+        ?? _library.Playlists.FirstOrDefault(p => !p.IsSmart && string.Equals(p.Name, PlaylistName, StringComparison.OrdinalIgnoreCase))
+        ?? _library.Playlists.FirstOrDefault(p => !p.IsSmart && string.Equals(p.Name, OldPlaylistName, StringComparison.Ordinal));
 
     public void SetFavorite(IEnumerable<Track> tracks, bool favorite)
     {
@@ -59,6 +62,8 @@ public sealed class FavoritesService
     {
         // Favorites used to be stars: playlists created then still say so.
         if (Playlist is { Description: "Songs you marked with a star." } old) { old.Description = Description; _library.UpdatePlaylist(old); }
+        // It used to be called "Favorite". A name the user chose is kept.
+        if (Playlist is { Name: OldPlaylistName } named) { named.Name = PlaylistName; _library.UpdatePlaylist(named); }
         var set = Playlist?.Tracks.ToHashSet() ?? new HashSet<Track>();
         foreach (var t in _library.Tracks)
         {
@@ -122,7 +127,7 @@ public sealed class FavoritesService
         // Quick access holds 10 tiles: at most 10 pins (favorites fill the rest).
         if (pinned && _settings.Current.QuickAccessPins.Count >= MaxQuickAccess)
         {
-            Notifier.Show("Quick Access is full", $"Up to {MaxQuickAccess} items can be pinned. Unpin one first.");
+            Notifier.Show("Quick access is full", $"Up to {MaxQuickAccess} items can be pinned. Unpin one first.");
             return;
         }
         _settings.Set(nameof(AppSettings.QuickAccessPins), s =>

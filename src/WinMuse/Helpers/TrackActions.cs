@@ -48,7 +48,7 @@ public static class TrackActions
         {
             var key = FavoritesService.Key(single);
             bool pinned = Svc.Favorites.IsPinned(key);
-            menu.SecondaryCommands.Add(Row(new MenuAction(pinned ? "Unpin from Quick Access" : "Pin to Quick Access", pinned ? "\uE77A" : "\uE718", () => Svc.Favorites.SetPinned(key, !pinned))));
+            menu.SecondaryCommands.Add(Row(new MenuAction(pinned ? "Unpin from Quick access" : "Pin to Quick access", pinned ? "\uE77A" : "\uE718", () => Svc.Favorites.SetPinned(key, !pinned))));
 
             // Go to: a drop-down with the album and the artist(s).
             var go = new MenuFlyout { Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.RightEdgeAlignedTop };
@@ -185,7 +185,7 @@ public static class TrackActions
         menu.Items.Add(Item("Add to queue", "\uE8FD", () => { Svc.Player.AddToQueue(artist.Tracks); Notifier.Show("Added to queue: " + Count(artist.Tracks)); }));
         menu.Items.Add(new MenuFlyoutSeparator());
         bool favorite = Svc.Favorites.IsFavoriteArtist(artist.Name);
-        menu.Items.Add(Item(favorite ? "Remove from Favorite" : "Add to Favorite", favorite ? "" : "", () => Svc.Favorites.SetFavoriteArtist(artist.Name, !favorite)));
+        menu.Items.Add(Item(favorite ? "Remove from Favorites" : "Add to Favorites", favorite ? "" : "", () => Svc.Favorites.SetFavoriteArtist(artist.Name, !favorite)));
         var key = FavoritesService.Key(artist);
         bool pinned = Svc.Favorites.IsPinned(key);
         menu.Items.Add(Item(pinned ? "Unpin from Quick access" : "Pin to Quick access", pinned ? "\uE77A" : "\uE718", () => Svc.Favorites.SetPinned(key, !pinned)));
