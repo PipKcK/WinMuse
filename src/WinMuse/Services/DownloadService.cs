@@ -15,7 +15,8 @@ public sealed record DownloadResult(bool Success, string Code, string Message, L
 /// <summary>
 /// Downloads songs with mdown.exe: <c>mdown.exe "&lt;url&gt;" --secret &lt;secret file&gt;</c>. mdown saves into its current
 /// folder, so it runs inside the destination folder; audio files that appear there are added to the library and
-/// checked right away. The secret file the user uploads is kept in the app's data folder and used for every download.
+/// checked right away. Downloading needs two files from the user, both kept in the app's data folder (so they survive
+/// app updates): the downloader (mdown.exe) and the secret file, used for every download.
 /// </summary>
 public sealed class DownloadService
 {
@@ -29,9 +30,41 @@ public sealed class DownloadService
         _settings = settings; _library = library; _autoFix = autoFix;
     }
 
-    /// <summary>Where mdown.exe goes: the Tools folder next to WinMuse.exe (the app folder itself also works).</summary>
-    public static string ToolFolder => Path.Combine(AppContext.BaseDirectory, "Tools");
-    public static string? ToolPath => new[] { Path.Combine(ToolFolder, ToolName), Path.Combine(AppContext.BaseDirectory, ToolName) }.FirstOrDefault(File.Exists);
+    /// <summary>Where the downloader the user adds is kept: the Tools folder in the app's data folder.</summary>
+    public static string ToolFolder => Path.Combine(AppPaths.DataDir, "Tools");
+    private static string AddedToolPath => Path.Combine(ToolFolder, ToolName);
+
+    /// <summary>
+    /// The downloader: the one the user added, or one placed next to the app (a Tools folder beside WinMuse.exe, or the
+    /// app folder itself). Null when there is none.
+    /// </summary>
+    public static string? ToolPath => new[] { AddedToolPath, Path.Combine(AppContext.BaseDirectory, "Tools", ToolName), Path.Combine(AppContext.BaseDirectory, ToolName) }
+        .FirstOrDefault(File.Exists);
+    public static bool HasTool => ToolPath != null;
+    /// <summary>True when the downloader in use is the one added on the Download page (it can be removed there).</summary>
+    public static bool ToolIsAdded => File.Exists(AddedToolPath);
+    public static DateTime? ToolUpdated => ToolPath is { } p ? File.GetLastWriteTime(p) : null;
+
+    /// <summary>Copies the chosen mdown.exe into the app's data folder; it replaces the previous one.</summary>
+    public void SetTool(string sourceFile)
+    {
+        if (!string.Equals(Path.GetExtension(sourceFile), ".exe", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("The downloader must be a program (.exe).");
+        Directory.CreateDirectory(ToolFolder);
+        File.Copy(sourceFile, AddedToolPath, overwrite: true);
+        File.SetLastWriteTime(AddedToolPath, DateTime.Now);
+    }
+
+    public void RemoveTool()
+    {
+        if (File.Exists(AddedToolPath)) File.Delete(AddedToolPath);
+    }
+
+    /// <summary>Both files are in place, so downloads can run.</summary>
+    public bool IsReady => HasTool && HasSecret;
+
+    /// <summary>The link as it can be passed to the downloader (http or https only), or null.</summary>
+    public static string? CleanUrl(string text) => WebLink.Clean(text);
 
     public static string SecretPath => Path.Combine(AppPaths.DataDir, "download-secret.txt");
     public bool HasSecret => File.Exists(SecretPath);
@@ -55,12 +88,13 @@ public sealed class DownloadService
     /// <summary>Runs mdown.exe for one URL. Lines it prints are reported through <paramref name="progress"/>.</summary>
     public async Task<DownloadResult> RunAsync(string url, string folder, IProgress<string>? progress, CancellationToken ct)
     {
-        url = url.Trim();
-        if (url.Length == 0) return Fail("NO_URL", "Enter the URL of the song to download.");
-        if (ToolPath is not { } tool) return Fail("MDOWN_NOT_FOUND", $"{ToolName} was not found. Place it in {ToolFolder}.");
-        if (!HasSecret) return Fail("NO_SECRET_FILE", "Upload your secret file before downloading.");
+        if (url.Trim().Length == 0) return Fail("NO_URL", "Paste the link of the song to download.");
+        if (CleanUrl(url) is not { } link) return Fail("INVALID_URL", "The link isn't a web address. Paste a link that starts with https://.");
+        url = link;
+        if (ToolPath is not { } tool) return Fail("MDOWN_NOT_FOUND", $"The downloader isn't added. Add {ToolName} on the Download page.");
+        if (!HasSecret) return Fail("NO_SECRET_FILE", "The secret file isn't added. Add it on the Download page.");
         try { Directory.CreateDirectory(folder); }
-        catch (Exception ex) { return Fail("FOLDER_UNAVAILABLE", $"The folder {folder} can't be used: {ex.Message}"); }
+        catch (Exception ex) { return Fail("FOLDER_UNAVAILABLE", $"The folder {folder} can't be used. {ErrorText.Logged(ex)}"); }
 
         var before = Snapshot(folder);
         var psi = new ProcessStartInfo(tool)
@@ -88,7 +122,7 @@ public sealed class DownloadService
         }
         catch (Exception ex)
         {
-            return Fail("MDOWN_START_FAILED", $"{ToolName} could not be started: {ex.Message}");
+            return Fail("MDOWN_START_FAILED", $"The downloader couldn't be started. {ErrorText.Logged(ex)}");
         }
         p.BeginOutputReadLine();
         p.BeginErrorReadLine();
@@ -108,10 +142,10 @@ public sealed class DownloadService
         if (p.ExitCode != 0)
         {
             var reason = errors.ToString().Trim() is { Length: > 0 } err ? LastLines(err, 3) : LastLines(log, 3);
-            return new DownloadResult(false, $"Exit code {p.ExitCode}", string.IsNullOrEmpty(reason) ? $"{ToolName} reported an error." : reason, files, log);
+            return new DownloadResult(false, $"Exit code {p.ExitCode}", string.IsNullOrEmpty(reason) ? "The downloader reported an error." : reason, files, log);
         }
         if (files.Count == 0)
-            return new DownloadResult(false, "NO_NEW_FILES", $"{ToolName} finished, but no new audio file appeared in {folder}.", files, log);
+            return new DownloadResult(false, "NO_NEW_FILES", $"The downloader finished, but no new audio file appeared in {folder}.", files, log);
         return new DownloadResult(true, "OK", files.Count == 1 ? Path.GetFileName(files[0]) : $"{files.Count} songs", files, log);
 
         static DownloadResult Fail(string code, string message) => new(false, code, message, new List<string>(), "");

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -41,8 +42,7 @@ public sealed partial class DownloadPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         FolderBox.Text = FolderRun.Text = Svc.Download.DefaultFolder;
-        RefreshTool();
-        RefreshSecret();
+        RefreshSetup();
         RefreshButton();
         HistoryHeader.Visibility = s_history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         Effects.EntranceSlide(Root, 20);
@@ -50,28 +50,58 @@ public sealed partial class DownloadPage : Page
 
     private bool IsRunning => _cts != null;
 
-    private void RefreshTool()
+    /// <summary>The two files downloading needs: each row shows whether it is there, with Add, Replace and Remove.</summary>
+    private void RefreshSetup()
     {
-        ToolMissingBar.IsOpen = DownloadService.ToolPath == null;
-        ToolMissingBar.Message = $"Place {DownloadService.ToolName} in {DownloadService.ToolFolder}.";
+        var tool = DownloadService.ToolUpdated;
+        ToolText.Text = tool is { } t
+            ? (DownloadService.ToolIsAdded ? $"{DownloadService.ToolName} · added {t:d MMM yyyy, HH:mm}" : $"{DownloadService.ToolName} · installed with the app")
+            : $"Choose the {DownloadService.ToolName} file you were given.";
+        ToolButtonText.Text = tool == null ? "Add" : "Replace";
+        AutomationProperties.SetName(ToolButton, tool == null ? "Add downloader" : "Replace downloader");
+        RemoveToolButton.Visibility = DownloadService.ToolIsAdded ? Visibility.Visible : Visibility.Collapsed;
+        SetBadge(ToolBadge, ToolBadgeIcon, ToolBadgeText, tool != null);
+
+        var secret = Svc.Download.SecretUpdated;
+        SecretText.Text = secret is { } d
+            ? $"Added {d:d MMM yyyy, HH:mm}. Used for every download."
+            : "Choose the secret file you were given.";
+        SecretButtonText.Text = secret == null ? "Add" : "Replace";
+        AutomationProperties.SetName(SecretButton, secret == null ? "Add secret file" : "Replace secret file");
+        RemoveSecretButton.Visibility = secret == null ? Visibility.Collapsed : Visibility.Visible;
+        SetBadge(SecretBadge, SecretBadgeIcon, SecretBadgeText, secret != null);
+
+        SetupText.Text = Svc.Download.IsReady
+            ? "Both files are in place. They are kept in the app's data folder."
+            : "Downloading needs both files below. They are kept in the app's data folder.";
+        RefreshButton();
     }
 
-    private void RefreshSecret()
+    private static void SetBadge(Border badge, FontIcon icon, TextBlock text, bool ready)
     {
-        var updated = Svc.Download.SecretUpdated;
-        SecretText.Text = updated is { } d
-            ? $"Uploaded {d:d MMM yyyy, HH:mm}. Used for every download until you replace it."
-            : "Required for downloading. Upload the secret file you were given; it is used for every download.";
-        SecretButtonText.Text = updated == null ? "Upload" : "Replace";
-        RemoveSecretButton.Visibility = updated == null ? Visibility.Collapsed : Visibility.Visible;
+        badge.Background = ThemeRes.Brush(ready ? "SystemFillColorSuccessBackgroundBrush" : "SubtleFillColorSecondaryBrush");
+        icon.Glyph = ready ? "" : "";
+        icon.Foreground = ThemeRes.Brush(ready ? "SystemFillColorSuccessBrush" : "SystemFillColorCautionBrush");
+        text.Text = ready ? "Ready" : "Required";
+        text.Foreground = ThemeRes.Brush("TextFillColorPrimaryBrush");
     }
 
     private void RefreshButton()
     {
-        DownloadButton.IsEnabled = !IsRunning && UrlBox.Text.Trim().Length > 0;
+        var text = UrlBox.Text.Trim();
+        bool valid = DownloadService.CleanUrl(text) != null;
+        DownloadButton.IsEnabled = !IsRunning && valid && Svc.Download.IsReady;
         CancelButton.Visibility = IsRunning ? Visibility.Visible : Visibility.Collapsed;
         HintText.Visibility = IsRunning ? Visibility.Collapsed : Visibility.Visible;
         ProgressPanel.Visibility = IsRunning ? Visibility.Visible : Visibility.Collapsed;
+
+        bool warn = !Svc.Download.IsReady || (text.Length > 0 && !valid);
+        HintIcon.Glyph = warn ? "" : "";
+        HintIcon.Foreground = ThemeRes.Brush(warn ? "SystemFillColorCautionBrush" : "TextFillColorSecondaryBrush");
+        HintLabel.Text = !Svc.Download.IsReady
+            ? (DownloadService.HasTool || Svc.Download.HasSecret ? "Add the remaining file under Setup to start downloading." : "Add the downloader and the secret file under Setup to start downloading.")
+            : text.Length > 0 && !valid ? "This isn't a web link. Paste a link that starts with https://."
+            : "Downloaded songs join your library, and their details, album art and lyrics are fetched automatically.";
     }
 
     private void OnUrlChanged(object sender, TextChangedEventArgs e) => RefreshButton();
@@ -88,35 +118,49 @@ public sealed partial class DownloadPage : Page
         Svc.Settings.Set(nameof(AppSettings.DownloadFolder), s => s.DownloadFolder = folder);
     }
 
+    private async void OnChooseTool(object sender, RoutedEventArgs e)
+    {
+        if (await Pickers.PickFileAsync(".exe") is not { } file) return;
+        try
+        {
+            Svc.Download.SetTool(file);
+            Notifier.Success("Downloader added", Svc.Download.IsReady ? "You can download songs now." : "Add the secret file to start downloading.");
+        }
+        catch (Exception ex) { Notifier.Error("Unable to add the downloader", ex); }
+        RefreshSetup();
+    }
+
+    private async void OnRemoveTool(object sender, RoutedEventArgs e)
+    {
+        if (!await TrackActions.Confirm("Remove the downloader?", "Downloads won't work until you add it again.", "Remove")) return;
+        try { Svc.Download.RemoveTool(); } catch (Exception ex) { Notifier.Error("Unable to remove the downloader", ex); }
+        RefreshSetup();
+    }
+
     private async void OnUploadSecret(object sender, RoutedEventArgs e)
     {
         if (await Pickers.PickFileAsync("*") is not { } file) return;
         try
         {
             Svc.Download.SetSecret(file);
-            Notifier.Show("Secret file uploaded", "It will be used for every download.");
+            Notifier.Success("Secret file added", Svc.Download.IsReady ? "You can download songs now." : "Add the downloader to start downloading.");
         }
-        catch (Exception ex) { ShowError(new DownloadResult(false, "SECRET_COPY_FAILED", $"The secret file could not be saved: {ex.Message}", new(), "")); }
-        RefreshSecret();
+        catch (Exception ex) { Notifier.Error("Unable to add the secret file", ex); }
+        RefreshSetup();
     }
 
     private async void OnRemoveSecret(object sender, RoutedEventArgs e)
     {
-        if (!await TrackActions.Confirm("Remove secret file?", "Downloads won't work until you upload it again.", "Remove")) return;
-        try { Svc.Download.RemoveSecret(); } catch (Exception ex) { Notifier.Error("Unable to remove the secret file", ex.Message); }
-        RefreshSecret();
-    }
-
-    private void OnOpenToolFolder(object sender, RoutedEventArgs e)
-    {
-        Directory.CreateDirectory(DownloadService.ToolFolder);
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(DownloadService.ToolFolder) { UseShellExecute = true });
+        if (!await TrackActions.Confirm("Remove the secret file?", "Downloads won't work until you add it again.", "Remove")) return;
+        try { Svc.Download.RemoveSecret(); } catch (Exception ex) { Notifier.Error("Unable to remove the secret file", ex); }
+        RefreshSetup();
     }
 
     private async void OnDownload(object sender, RoutedEventArgs e)
     {
         if (IsRunning) return;
-        RefreshTool();
+        RefreshSetup();
+        if (!DownloadButton.IsEnabled) return;
         var url = UrlBox.Text.Trim();
         var folder = FolderBox.Text;
         HideError();
@@ -134,7 +178,7 @@ public sealed partial class DownloadPage : Page
             var result = await Svc.Download.RunAsync(url, folder, progress, _cts.Token);
             if (!result.Success)
             {
-                Mark(entry, "", "SystemFillColorCriticalBrush", $"Failed · {result.Code}");
+                Mark(entry, "", "SystemFillColorCriticalBrush", "Failed · " + FirstLine(result.Message));
                 ShowError(result);
                 // A failed run can still leave complete files behind; add them.
                 if (result.Files.Count > 0) await Svc.Download.ImportAsync(folder, result.Files);
@@ -155,8 +199,8 @@ public sealed partial class DownloadPage : Page
         catch (Exception ex)
         {
             AppPaths.Log("Download failed: " + ex);
-            var result = new DownloadResult(false, "UNEXPECTED_ERROR", ex.Message, new(), ex.ToString());
-            Mark(entry, "", "SystemFillColorCriticalBrush", $"Failed · {result.Code}");
+            var result = new DownloadResult(false, "UNEXPECTED_ERROR", ErrorText.Describe(ex), new(), ex.ToString());
+            Mark(entry, "", "SystemFillColorCriticalBrush", "Failed · " + FirstLine(result.Message));
             ShowError(result);
         }
         finally
@@ -168,6 +212,8 @@ public sealed partial class DownloadPage : Page
     }
 
     private void OnCancel(object sender, RoutedEventArgs e) => _cts?.Cancel();
+
+    private static string FirstLine(string text) => text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "";
 
     private static void Mark(DownloadEntry entry, string glyph, string brush, string status)
     {
