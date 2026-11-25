@@ -103,4 +103,26 @@ public class DatabaseTests
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), $"5000 tracks took {sw.Elapsed.TotalSeconds:0.0} s");
         Assert.True(Db.LoadTracks().Count >= 5000);
     }
+
+    // A missing song keeps its row and playlist places.
+    [Fact]
+    public void MissingSince_RoundTrips()
+    {
+        var t = new Track { Path = $@"C:\db-test\{Guid.NewGuid():N}.mp3", Title = "Gone", MissingSince = 1_800_000_000 };
+        Db.UpsertTracks(new[] { t });
+        Assert.Equal(1_800_000_000, Db.LoadTracks().Single(x => x.Id == t.Id).MissingSince);
+        t.MissingSince = 0;
+        Db.UpsertTracks(new[] { t });
+        Assert.Equal(0, Db.LoadTracks().Single(x => x.Id == t.Id).MissingSince);
+    }
+
+    [Fact]
+    public void GetPlaylistItems_InOrder()
+    {
+        var p = new Playlist { Name = "Order " + Guid.NewGuid().ToString("N"), CreatedUtc = 1 };
+        Db.SavePlaylist(p);
+        Db.SetPlaylistItems(p.Id, new long[] { 5, 3, 9 });
+        Assert.Equal(new long[] { 5, 3, 9 }, Db.GetPlaylistItems(p.Id));
+        Db.DeletePlaylist(p.Id);
+    }
 }
