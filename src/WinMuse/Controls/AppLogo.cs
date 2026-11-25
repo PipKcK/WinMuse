@@ -30,15 +30,15 @@ public sealed class AppLogo : UserControl
         Content = new Viewbox { Child = _canvas, Stretch = Stretch.Uniform };
         IsTabStop = false;
         Build();
-        void OnAccent(object? s, PropertyChangedEventArgs e) { if (e.PropertyName == nameof(ThemeService.Accent)) DispatcherQueue.TryEnqueue(Recolor); }
-        Loaded += (_, _) => { Svc.Theme.PropertyChanged += OnAccent; Recolor(); };
+        void OnAccent(object? s, PropertyChangedEventArgs e) { if (e.PropertyName == nameof(ThemeService.Accent)) DispatcherQueue.TryEnqueue(() => Recolor(animate: true)); }
+        Loaded += (_, _) => { Svc.Theme.PropertyChanged += OnAccent; Recolor(animate: false); };
         Unloaded += (_, _) => Svc.Theme.PropertyChanged -= OnAccent;
     }
 
     public AppLogoStyle LogoStyle
     {
         get => _style;
-        set { if (_style == value) return; _style = value; Build(); Recolor(); }
+        set { if (_style == value) return; _style = value; Build(); Recolor(animate: false); }
     }
 
     private LinearGradientBrush Gradient(string from, string to)
@@ -118,8 +118,11 @@ public sealed class AppLogo : UserControl
         _canvas.Children.Add(group);
     }
 
-    /// <summary>Re-hues every color to the accent, keeping each one's lightness (and its saturation relative to the design's).</summary>
-    private void Recolor()
+    /// <summary>
+    /// Re-hues every color to the accent, keeping each one's lightness (and its saturation relative to the design's).
+    /// An accent change (a new song's album art, a new custom color) blends over the same time as the rest of the app.
+    /// </summary>
+    private void Recolor(bool animate)
     {
         var (h, s, _) = ColorKit.ToHsl(Svc.Theme.Accent);
         double satScale = Math.Clamp(s / BaseSat, 0.25, 2.2);
@@ -128,7 +131,9 @@ public sealed class AppLogo : UserControl
             var (ch, cs, cl) = ColorKit.ToHsl(c);
             return ColorKit.FromHsl(h + (ch - BaseHue), Math.Clamp(cs * satScale, 0, 1), cl);
         }
-        foreach (var (stop, original) in _stops) stop.Color = Map(original);
-        foreach (var (brush, original) in _solids) brush.Color = Map(original);
+        foreach (var (stop, original) in _stops)
+            if (animate) ColorTween.To(stop, Map(original)); else stop.Color = Map(original);
+        foreach (var (brush, original) in _solids)
+            if (animate) ColorTween.To(brush, Map(original)); else brush.Color = Map(original);
     }
 }
