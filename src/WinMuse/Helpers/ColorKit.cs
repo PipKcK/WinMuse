@@ -80,10 +80,33 @@ public static class ColorKit
     /// <summary>Deterministic pleasant gradient pair for a string (placeholder art).</summary>
     public static (Color a, Color b) GradientFor(string? key)
     {
-        var hash = (uint)(key ?? "").GetHashCode(StringComparison.OrdinalIgnoreCase);
+        // A stable hash (FNV-1a), so a name keeps its colors from one launch to the next (.NET's string hash changes per run).
+        uint hash = 2166136261;
+        foreach (var ch in (key ?? "").ToLowerInvariant()) hash = (hash ^ ch) * 16777619;
         var hue = hash % 360;
         return (FromHsl(hue, 0.62, 0.55), FromHsl(hue + 40, 0.7, 0.42));
     }
+
+    /// <summary>WCAG relative luminance (0 = black, 1 = white).</summary>
+    public static double Luminance(Color c)
+    {
+        static double Lin(byte v) { var x = v / 255.0; return x <= 0.03928 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4); }
+        return 0.2126 * Lin(c.R) + 0.7152 * Lin(c.G) + 0.0722 * Lin(c.B);
+    }
+
+    /// <summary>WCAG contrast ratio between two colors (1 to 21).</summary>
+    public static double Contrast(Color a, Color b)
+    {
+        double la = Luminance(a), lb = Luminance(b);
+        return (Math.Max(la, lb) + 0.05) / (Math.Min(la, lb) + 0.05);
+    }
+
+    /// <summary>Near-black used for text on light backgrounds.</summary>
+    public static readonly Color DarkText = Color.FromArgb(255, 0x1C, 0x1C, 0x1C);
+
+    /// <summary>True when dark text reads better than white on this background (higher contrast wins).</summary>
+    public static bool PrefersDarkText(Color background) =>
+        Contrast(DarkText, background) > Contrast(Color.FromArgb(255, 255, 255, 255), background);
 
     private static readonly Dictionary<string, Color[]> PaletteCache = new();
 

@@ -50,6 +50,14 @@ public sealed class Genre
     public string? Art4 => ArtPaths.ElementAtOrDefault(3);
     public string Summary => $"{Tracks.Count} {(Tracks.Count == 1 ? "song" : "songs")}";
 
+    /// <summary>
+    /// Text colors for the genre tile: dark on light tiles (yellow, green, cyan) and white on dark ones, picked from
+    /// the tile color behind the text (the start of its gradient) for the higher contrast.
+    /// </summary>
+    private bool DarkText => Helpers.ColorKit.PrefersDarkText(Helpers.ColorKit.GradientFor(Name).a);
+    public Microsoft.UI.Xaml.Media.Brush TitleBrush => new Microsoft.UI.Xaml.Media.SolidColorBrush(DarkText ? Helpers.ColorKit.DarkText : Microsoft.UI.Colors.White);
+    public Microsoft.UI.Xaml.Media.Brush SubtitleBrush => new Microsoft.UI.Xaml.Media.SolidColorBrush(DarkText ? Helpers.ColorKit.WithAlpha(Helpers.ColorKit.DarkText, 0xD0) : Helpers.ColorKit.WithAlpha(Microsoft.UI.Colors.White, 0xE0));
+
     /// <summary>What screen readers announce for the genre tile (WinUI names list items from ToString).</summary>
     public override string ToString() => $"{Name}, {Summary}";
 }

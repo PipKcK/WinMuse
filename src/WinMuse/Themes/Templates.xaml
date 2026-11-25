@@ -114,8 +114,8 @@
                 <controls:ArtImage Source="{x:Bind Art1}" Seed="{x:Bind Name}" DecodeSize="110" />
             </Grid>
             <StackPanel Margin="16,14" VerticalAlignment="Top">
-                <TextBlock Text="{x:Bind Name}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis" MaxWidth="150" />
-                <TextBlock Text="{x:Bind Summary}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="#CCFFFFFF" />
+                <TextBlock Text="{x:Bind Name}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" Foreground="{x:Bind TitleBrush}" TextTrimming="CharacterEllipsis" MaxWidth="150" />
+                <TextBlock Text="{x:Bind Summary}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{x:Bind SubtitleBrush}" />
             </StackPanel>
         </Grid>
     </DataTemplate>
