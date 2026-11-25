@@ -4,7 +4,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:tk="using:CommunityToolkit.WinUI.Controls"
-    xmlns:controls="using:WinMuse.Controls">
+    xmlns:controls="using:WinMuse.Controls"
+    xmlns:helpers="using:WinMuse.Helpers">
 
     <Page.Resources>
         <Style x:Key="GroupHeader" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
@@ -356,17 +357,80 @@
                 <Button Content="Open data folder" Click="OnOpenData" />
                 <tk:SettingsExpander.Items>
                         <tk:SettingsCard Header="Supported formats" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8A5;" /></tk:SettingsCard.HeaderIcon>
                             <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, WMA, APE, WavPack, Musepack, TTA, TAK, DSD, AC-3, E-AC-3, DTS, TrueHD, MKA, WebM, AMR, CAF and other formats supported by FFmpeg." />
                         </tk:SettingsCard>
                         <tk:SettingsCard Header="Keyboard shortcuts" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE765;" /></tk:SettingsCard.HeaderIcon>
                             <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       Text="Space or Ctrl+P: Play/Pause · Ctrl+Right: Next · Ctrl+Left: Previous · Ctrl+Up/Down: Volume · Ctrl+S: Shuffle · Ctrl+R: Repeat · Ctrl+F: Search · Ctrl+M: Mini player · F11: Now Playing · Esc: Close" />
+                                       Text="Space or Ctrl+P: Play/Pause · Ctrl+Right: Next · Ctrl+Left: Previous · Ctrl+Up/Down: Volume · Ctrl+S: Shuffle · Ctrl+R: Repeat · Ctrl+F: Search · Ctrl+M: Mini player · F11: Now Playing · Esc: Close Now Playing or end a selection" />
                         </tk:SettingsCard>
-                        <tk:SettingsCard Header="Third-party components" ContentAlignment="Vertical" HorizontalContentAlignment="Left">
-                            <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       Text="FFmpeg (LGPL), NAudio, TagLib#, MusicBrainz, Cover Art Archive, AcoustID and Chromaprint, LRCLIB." />
+                        <tk:SettingsCard Header="License" Description="No license has been chosen for Music yet. Until one is added, all rights are reserved. The components below keep their own licenses.">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8D7;" /></tk:SettingsCard.HeaderIcon>
                         </tk:SettingsCard>
+                        <tk:SettingsCard Header="Source code" Description="The project on GitHub.">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE943;" /></tk:SettingsCard.HeaderIcon>
+                            <HyperlinkButton x:Name="SourceLink" Content="Open on GitHub" />
+                        </tk:SettingsCard>
+                        <tk:SettingsCard Header="Report a problem" Description="Describe what happened and attach the log. The log lists what the app did, including the paths of song files, so look through it before you share it.">
+                            <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBE8;" /></tk:SettingsCard.HeaderIcon>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Open log" Click="OnOpenLog" />
+                                <HyperlinkButton x:Name="IssuesLink" Content="Report on GitHub" />
+                            </StackPanel>
+                        </tk:SettingsCard>
+                </tk:SettingsExpander.Items>
+            </tk:SettingsExpander>
+            <tk:SettingsExpander Header="Credits" Description="The open-source components Music is built with, and the online services it gets song details, covers, photos and lyrics from.">
+                <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE716;" /></tk:SettingsExpander.HeaderIcon>
+                <tk:SettingsExpander.Items>
+                    <tk:SettingsCard Header="Built with" ContentAlignment="Vertical" HorizontalContentAlignment="Stretch">
+                        <ItemsControl x:Name="ComponentCredits" IsTabStop="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="helpers:Credit">
+                                    <Grid ColumnSpacing="16" Padding="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="3*" />
+                                            <ColumnDefinition Width="1.5*" />
+                                        </Grid.ColumnDefinitions>
+                                        <HyperlinkButton Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top" NavigateUri="{x:Bind Link}"
+                                                         ToolTipService.ToolTip="{x:Bind Url}" AutomationProperties.Name="{x:Bind Name}">
+                                            <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                        </HyperlinkButton>
+                                        <TextBlock Grid.Column="1" Text="{x:Bind Use}" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,1,0,0"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock Grid.Column="2" Text="{x:Bind License}" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,1,0,0"
+                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="Online services" Description="Thanks to the people who run and fill these services. Each one is only asked when a song needs it." ContentAlignment="Vertical" HorizontalContentAlignment="Stretch">
+                        <ItemsControl x:Name="ServiceCredits" IsTabStop="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="helpers:Credit">
+                                    <Grid ColumnSpacing="16" Padding="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="3*" />
+                                            <ColumnDefinition Width="1.5*" />
+                                        </Grid.ColumnDefinitions>
+                                        <HyperlinkButton Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top" NavigateUri="{x:Bind Link}"
+                                                         ToolTipService.ToolTip="{x:Bind Url}" AutomationProperties.Name="{x:Bind Name}">
+                                            <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                        </HyperlinkButton>
+                                        <TextBlock Grid.Column="1" Text="{x:Bind Use}" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,1,0,0"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock Grid.Column="2" Text="{x:Bind License}" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,1,0,0"
+                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </tk:SettingsCard>
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
         </StackPanel>

@@ -23,6 +23,10 @@ public sealed partial class SettingsPage : Page
     public SettingsPage()
     {
         InitializeComponent();
+        ComponentCredits.ItemsSource = Credits.Components;
+        ServiceCredits.ItemsSource = Credits.Services;
+        SourceLink.NavigateUri = new Uri(Credits.SourceUrl);
+        IssuesLink.NavigateUri = new Uri(Credits.IssuesUrl);
         UpdateLogoButtons();
         foreach (var hex in Swatches)
         {
@@ -446,6 +450,8 @@ public sealed partial class SettingsPage : Page
         FixAllText.Text = total > 0 ? $"{done + 1:N0} of {total:N0}" : "";
     }
 
+
+    private void OnOpenLog(object sender, RoutedEventArgs e) => Notifier.OpenLog.Run();
 
     private void OnOpenData(object sender, RoutedEventArgs e)
     {
