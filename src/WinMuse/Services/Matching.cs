@@ -140,6 +140,8 @@ public static partial class Matching
     public static string Normalize(string? s)
     {
         if (string.IsNullOrEmpty(s)) return "";
+        // "Forever & Ever" and "Forever and Ever" are the same title.
+        s = s.Replace("&", "and");
         var sb = new StringBuilder();
         foreach (var ch in s.Normalize(NormalizationForm.FormD))
             if (char.IsLetterOrDigit(ch)) sb.Append(char.ToLowerInvariant(ch));

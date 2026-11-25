@@ -71,9 +71,54 @@ public sealed class AutoFixService
                 _new.Clear();
                 var basis = _sync ? _library.Tracks.Where(t => _library.SyncState(t) != 1)
                           : auto ? fresh.Where(t => !t.AutoFixed && _library.Tracks.Contains(t)) : Enumerable.Empty<Track>();
-                var pending = new Queue<Track>(_redo.ToList().Concat(basis.Where(t => t.IsCheckable && !_redo.Contains(t))));
-                int total = pending.Count, done = 0, busyCount = 0;
+                var queue = _redo.ToList().Concat(basis.Where(t => t.IsCheckable && !_redo.Contains(t))).ToList();
+                // Songs of one album (same folder, same album label) are handled together, so the album can be decided as a whole.
+                var pending = new Queue<List<Track>>(queue.GroupBy(AlbumGroup).Select(g => g.ToList()));
+                int total = queue.Count, done = 0, busyCount = 0;
                 bool offline = false;
+                // Fewer songs at once while music plays: each one is decoded to fingerprint it, which competes with playback.
+                int workers = Svc.Player.IsPlaying ? 2 : Parallelism;
+                using var gate = new SemaphoreSlim(workers);
+
+                // One step for one song. False: the song is finished for this run (failed, skipped, or stopped).
+                async Task<bool> Step(Track t, Func<Task> work)
+                {
+                    try
+                    {
+                        await gate.WaitAsync(token);
+                        try { if (offline) return false; await work(); return true; }
+                        finally { gate.Release(); }
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                    catch (ServiceBusyException ex)
+                    {
+                        AppPaths.Log($"Retrying later ({ex.Service} busy): {t.DisplayTitle}");
+                        busyCount++;
+                    }
+                    catch (HttpRequestException ex) when (ex.HttpRequestError is HttpRequestError.NameResolutionError or HttpRequestError.ConnectionError)
+                    {
+                        // Offline: keep songs pending and try again next time.
+                        AppPaths.Log("Automatic metadata paused (offline): " + ex.Message);
+                        offline = true;
+                    }
+                    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+                    {
+                        // One slow or failing service: the song stays pending and is retried on the next run.
+                        AppPaths.Log($"Automatic metadata skipped {t.DisplayTitle}: {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppPaths.Log($"Automatic metadata failed for {t.Path}: {ex.Message}");
+                        _library.SetAutoFixed(new[] { t }, true);
+                    }
+                    return false;
+                }
+
+                void Finished()
+                {
+                    done++;
+                    Progress?.Invoke(Math.Min(done, total - 1), total, null);
+                }
 
                 // Workers share the queue. They run on the UI thread's context, so the queue and counters need no locks;
                 // the work itself (network, fingerprinting, tag writing) happens asynchronously in parallel.
@@ -81,44 +126,43 @@ public sealed class AutoFixService
                 {
                     while (pending.Count > 0 && !offline && !token.IsCancellationRequested)
                     {
-                        var t = pending.Dequeue();
-                        if (!_sync && t.AutoFixed && !_redo.Contains(t)) { done++; continue; } // edited by the user meanwhile
-                        Progress?.Invoke(done, total, t.DisplayTitle);
-                        try
+                        var album = pending.Dequeue();
+                        var songs = new List<Track>();
+                        foreach (var t in album)
                         {
-                            await ProcessAsync(t, artTried, token);
-                            _library.SetAutoFixed(new[] { t }, true);
+                            if (!_sync && t.AutoFixed && !_redo.Contains(t)) done++; // edited by the user meanwhile
+                            else songs.Add(t);
                         }
-                        catch (OperationCanceledException) when (token.IsCancellationRequested) { return; }
-                        catch (ServiceBusyException ex)
+                        if (songs.Count == 0) continue;
+                        var labelBefore = songs[0].Album;
+                        var siblings = Siblings(songs);
+
+                        // 1. Each song is identified online.
+                        var found = new Dictionary<Track, Identified>();
+                        await Task.WhenAll(songs.Select(async t =>
                         {
-                            AppPaths.Log($"Retrying later ({ex.Service} busy): {t.DisplayTitle}");
-                            busyCount++;
-                        }
-                        catch (HttpRequestException ex) when (ex.HttpRequestError is HttpRequestError.NameResolutionError or HttpRequestError.ConnectionError)
+                            if (await Step(t, async () => { Progress?.Invoke(done, total, t.DisplayTitle); found[t] = await IdentifyAsync(t, token); })) return;
+                            Finished();
+                        }));
+                        if (token.IsCancellationRequested) return;
+
+                        // 2. The songs agree on one album.
+                        if (_settings.Current.MatchWholeAlbums)
                         {
-                            // Offline: keep songs pending and try again next time.
-                            AppPaths.Log("Automatic metadata paused (offline): " + ex.Message);
-                            offline = true;
+                            try { await AgreeOnAlbumAsync(found, songs, siblings, labelBefore); }
+                            catch (Exception ex) { AppPaths.Log($"Album agreement failed for \"{labelBefore}\": {ex.Message}"); }
                         }
-                        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+
+                        // 3. Artist photos, album art and lyrics, now that the album is settled.
+                        await Task.WhenAll(songs.Where(found.ContainsKey).Select(async t =>
                         {
-                            // One slow or failing service: the song stays pending and is retried on the next run.
-                            AppPaths.Log($"Automatic metadata skipped {t.DisplayTitle}: {ex.Message}");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppPaths.Log($"Automatic metadata failed for {t.Path}: {ex.Message}");
-                            _library.SetAutoFixed(new[] { t }, true);
-                        }
-                        done++;
-                        Progress?.Invoke(Math.Min(done, total - 1), total, null);
+                            if (await Step(t, () => CompleteAsync(t, found[t], artTried, token))) _library.SetAutoFixed(new[] { t }, true);
+                            Finished();
+                        }));
                     }
                 }
 
-                // Fewer workers while music plays: each one decodes songs to fingerprint them, which competes with playback.
-                int workers = Svc.Player.IsPlaying ? 2 : Parallelism;
-                await Task.WhenAll(Enumerable.Range(0, Math.Min(workers, Math.Max(1, total))).Select(_ => Worker()));
+                await Task.WhenAll(Enumerable.Range(0, Math.Min(workers, Math.Max(1, pending.Count))).Select(_ => Worker()));
                 if (offline || token.IsCancellationRequested)
                 {
                     // Offline: the new songs stay queued for the next run. Stopped: forgotten (Stop is final).
@@ -186,10 +230,73 @@ public sealed class AutoFixService
         _cts = new CancellationTokenSource();
     }
 
-    private async Task ProcessAsync(Track t, HashSet<string> artTried, CancellationToken ct)
+    /// <summary>What identifying a song found: the match applied (null: none), everything else found, and whether it
+    /// was a single-song sync.</summary>
+    private sealed record Identified(MetadataCandidate? Match, IReadOnlyList<MetadataCandidate> Candidates, bool Redo);
+
+    /// <summary>Songs handled together: same folder and same album label. A song without an album label is on its own.</summary>
+    private static string AlbumGroup(Track t) => string.IsNullOrWhiteSpace(t.Album)
+        ? "#" + t.Id
+        : (Path.GetDirectoryName(t.Path) ?? "").ToLowerInvariant() + "\u001e" + t.AlbumKey;
+
+    /// <summary>Songs of the same album (folder and label) already in the library and not being processed: they vote too.</summary>
+    private List<Track> Siblings(List<Track> songs)
+    {
+        if (string.IsNullOrWhiteSpace(songs[0].Album)) return new();
+        var key = AlbumGroup(songs[0]);
+        var set = songs.ToHashSet();
+        return _library.Tracks.Where(x => !set.Contains(x) && AlbumGroup(x) == key).ToList();
+    }
+
+    /// <summary>
+    /// Gives the songs of one album the same album name, album artist, year and genre (see <see cref="AlbumAgreement"/>).
+    /// Songs that couldn't be looked up this time (a service was busy) and siblings vote with the label they have.
+    /// Songs you edited are never changed.
+    /// </summary>
+    private async Task AgreeOnAlbumAsync(Dictionary<Track, Identified> found, List<Track> songs, List<Track> siblings, string? labelBefore)
+    {
+        if (!found.Values.Any(f => f.Match != null)) return; // nothing was matched: nothing to agree on
+        var members = found.Select(kv => new AlbumMember(kv.Key, kv.Value.Match, kv.Value.Candidates, kv.Value.Match != null))
+            .Concat(songs.Where(t => !found.ContainsKey(t) && _library.Tracks.Contains(t)).Concat(siblings)
+                .Select(t => new AlbumMember(t, null, Array.Empty<MetadataCandidate>(), false))).ToList();
+        if (AlbumAgreement.Decide(members, labelBefore) is not { } d) return;
+
+        int changed = 0;
+        foreach (var t in d.Songs)
+        {
+            if (t.MetaState == ItemState.EditedByUser) continue;
+            var e = new TagEdit();
+            bool any = false;
+            if (d.Releases.TryGetValue(t, out var on))
+            {
+                if (on.TrackNumber > 0 && on.TrackNumber != t.TrackNumber) { e.TrackNumber = on.TrackNumber; any = true; }
+                if (on.TrackCount > 0 && on.TrackCount != t.TrackCount) { e.TrackCount = on.TrackCount; any = true; }
+                if (on.DiscNumber > 0 && on.DiscNumber != t.DiscNumber) { e.DiscNumber = on.DiscNumber; any = true; }
+            }
+            if (!string.Equals(t.Album, d.Album, StringComparison.Ordinal)) { e.Album = d.Album; any = true; }
+            if (d.AlbumArtist != null && !string.Equals(t.AlbumArtist, d.AlbumArtist, StringComparison.Ordinal)) { e.AlbumArtist = d.AlbumArtist; any = true; }
+            if (d.Year > 0 && t.Year != d.Year) { e.Year = d.Year; any = true; }
+            if (d.Genre != null && !string.Equals(t.Genre, d.Genre, StringComparison.Ordinal)) { e.Genre = d.Genre; any = true; }
+            if (!any) continue;
+
+            var keyBefore = t.AlbumKey;
+            var state = t.MetaState;
+            await _metadata.ApplyAsync(new[] { t }, e, markReviewed: found.ContainsKey(t));
+            // A song that wasn't found online keeps saying so: only its album details were aligned.
+            if (state != ItemState.Downloaded) { t.MetaState = state; _library.SaveStates(new[] { t }); }
+            _metadata.DropStaleArt(t, keyBefore);
+            changed++;
+        }
+        if (changed > 0)
+            AppPaths.Log($"Album agreement: \"{d.Album}\" ({d.Year}) for {d.Songs.Count} songs, {changed} changed, was \"{labelBefore}\"");
+    }
+
+    /// <summary>Identifies the song online and applies the match, genre included (step 1 of processing a song).</summary>
+    private async Task<Identified> IdentifyAsync(Track t, CancellationToken ct)
     {
         var s = _settings.Current;
         MetadataCandidate? match = null;
+        IReadOnlyList<MetadataCandidate> candidates = Array.Empty<MetadataCandidate>();
         bool redo = _redo.Remove(t);
         var albumBefore = t.AlbumKey;
 
@@ -198,7 +305,7 @@ public sealed class AutoFixService
         if (doMeta)
         {
             string? fpError = null, busy = null;
-            var candidates = await _metadata.IdentifyAsync(t, null, null, ct, allowFingerprint: !_fingerprintRejected, fingerprintError: e => fpError = e,
+            candidates = await _metadata.IdentifyAsync(t, null, null, ct, allowFingerprint: !_fingerprintRejected, fingerprintError: e => fpError = e,
                 stopWhenConfident: true, serviceBusy: svc => busy ??= svc);
             if (!_fingerprintRejected && fpError != null && fpError.Contains("rejected"))
             {
@@ -225,6 +332,14 @@ public sealed class AutoFixService
             if (await _metadata.ResolveGenreAsync(t, match, ct) is { } genre)
                 await _metadata.ApplyAsync(new[] { t }, new TagEdit { Genre = genre });
         }
+        return new Identified(match, candidates, redo);
+    }
+
+    /// <summary>Artist photos, album art and lyrics (step 2, once the album is settled).</summary>
+    private async Task CompleteAsync(Track t, Identified found, HashSet<string> artTried, CancellationToken ct)
+    {
+        var s = _settings.Current;
+        var (match, _, redo) = found;
 
         // Artist photo: one per artist; an artist that already has one is never looked up again for another song
         // (Sync still replaces photos you chose, as it does with every edit).

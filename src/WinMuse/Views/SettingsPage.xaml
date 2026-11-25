@@ -343,6 +343,10 @@
                     <x:String>None</x:String>
                 </ComboBox>
             </tk:SettingsCard>
+            <tk:SettingsCard Header="Match whole albums" Description="Songs of one album (same folder and album label) are matched to the same release, so the album stays together. Off: each song is matched on its own, as before.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE93C;" /></tk:SettingsCard.HeaderIcon>
+                <ToggleSwitch x:Name="WholeAlbumsToggle" Toggled="OnWholeAlbumsToggled" />
+            </tk:SettingsCard>
             <tk:SettingsCard Header="Show all Home rows" Description="Shows rows that wait for listening history. Long Time No Play appears by itself after a week of use and 15 different songs played.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE80F;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AllHomeRowsToggle" Toggled="OnAllHomeRowsToggled" />

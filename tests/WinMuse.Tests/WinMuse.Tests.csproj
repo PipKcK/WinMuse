@@ -41,6 +41,7 @@
     <Compile Include="..\..\src\WinMuse\Helpers\ErrorText.cs" Link="App\ErrorText.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\ColorKit.cs" Link="App\ColorKit.cs" />
     <Compile Include="..\..\src\WinMuse\Services\Matching.cs" Link="App\Matching.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\AlbumAgreement.cs" Link="App\AlbumAgreement.cs" />
     <Compile Include="..\..\src\WinMuse\Services\LibraryDatabase.cs" Link="App\LibraryDatabase.cs" />
     <Compile Include="..\..\src\WinMuse\Models\Track.cs" Link="App\Track.cs" />
     <Compile Include="..\..\src\WinMuse\Models\Playlist.cs" Link="App\Playlist.cs" />

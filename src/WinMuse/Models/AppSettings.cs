@@ -100,6 +100,9 @@ public sealed class AppSettings
     public bool AutoFixMetadata { get; set; } = true;
     public bool AutoFetchArt { get; set; } = true;
     public bool AutoFetchLyrics { get; set; } = true;
+    /// <summary>Songs of one album (same folder and album label) are matched to the same release. Debug option, so the
+    /// older one-song-at-a-time matching can be compared.</summary>
+    public bool MatchWholeAlbums { get; set; } = true;
     public string? AcoustIdApiKey { get; set; }
     public string? YouTubeApiKey { get; set; }
     public string? LastFmApiKey { get; set; }
