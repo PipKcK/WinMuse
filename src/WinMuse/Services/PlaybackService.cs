@@ -33,6 +33,10 @@ public sealed partial class PlaybackService : ObservableObject
     [ObservableProperty] public partial RepeatMode Repeat { get; set; }
     [ObservableProperty] public partial double Volume { get; set; }
     [ObservableProperty] public partial bool IsMuted { get; set; }
+    /// <summary>The current song's file has gone missing (moved, renamed or deleted): the player bar says so and skips it.</summary>
+    [ObservableProperty] public partial bool CurrentMissing { get; private set; }
+    /// <summary>Seconds until a missing current song is skipped.</summary>
+    [ObservableProperty] public partial int MissingCountdown { get; private set; }
 
     public AudioEngine Engine => _engine;
     public SpectrumAnalyzer Spectrum => _engine.Pipeline.Spectrum;
@@ -60,17 +64,75 @@ public sealed partial class PlaybackService : ObservableObject
         Repeat = s.Repeat;
         Queue.CollectionChanged += OnQueueChanged;
         library.TracksRemoved += ForgetRemoved;
+        // A missing song whose file came back (same song, same ID) plays on.
+        library.Changed += () =>
+        {
+            if (CurrentMissing && CurrentTrack is { } t && _library.Tracks.Any(x => x.Id == t.Id)) EndMissing();
+        };
     }
 
     /// <summary>
     /// Songs that left the library leave the queue too (the Queue badge and Up next stop counting them). The song
-    /// playing now stays until playback moves on, so it isn't cut off.
+    /// playing now stays in the player bar, marked missing, and is skipped after a short countdown.
     /// </summary>
     private void ForgetRemoved(IReadOnlyCollection<Track> removed)
     {
         var set = removed as ISet<Track> ?? removed.ToHashSet();
+        // Its file is gone (not just removed from the library): say so, and skip it after a short countdown.
+        if (CurrentTrack != null && set.Contains(CurrentTrack) && !CurrentMissing && !File.Exists(CurrentTrack.Path)) StartMissing();
         var indices = Queue.Select((t, i) => (t, i)).Where(x => set.Contains(x.t) && !ReferenceEquals(x.t, CurrentTrack)).Select(x => x.i).ToList();
         if (indices.Count > 0) RemoveFromQueue(indices);
+    }
+
+    // ---------------- A missing current song ----------------
+
+    private const int MissingSkipSeconds = 5;
+    private DispatcherQueueTimer? _missingTimer;
+
+    /// <summary>The playing (or loaded) song's file is gone: count down, then skip it (see <see cref="SkipMissingAsync"/>).</summary>
+    private void StartMissing()
+    {
+        AppPaths.Log($"Current song missing: {CurrentTrack?.Path}");
+        MissingCountdown = MissingSkipSeconds;
+        CurrentMissing = true;
+        _missingTimer ??= CreateMissingTimer();
+        _missingTimer.Start();
+    }
+
+    private DispatcherQueueTimer CreateMissingTimer()
+    {
+        var timer = App.UI.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(1);
+        timer.Tick += async (_, _) =>
+        {
+            if (--MissingCountdown <= 0) await SkipMissingAsync();
+        };
+        return timer;
+    }
+
+    private void EndMissing()
+    {
+        _missingTimer?.Stop();
+        CurrentMissing = false;
+        MissingCountdown = 0;
+    }
+
+    /// <summary>
+    /// Leaves the missing song: it leaves the queue, and the next song is loaded, playing if music was playing.
+    /// At the end of the queue the player is cleared.
+    /// </summary>
+    public async Task SkipMissingAsync()
+    {
+        if (!CurrentMissing) return;
+        EndMissing();
+        var missing = CurrentTrack;
+        AppPaths.Log("Skipped the missing song: " + missing?.Path);
+        int index = CurrentIndex;
+        bool wasPlaying = IsPlaying;
+        if (missing != null && index >= 0 && index < Queue.Count && ReferenceEquals(Queue[index], missing)) RemoveFromQueue(new[] { index });
+        if (index >= 0 && index < Queue.Count) await PlayIndexAsync(index, autoplay: wasPlaying);
+        else if (Repeat == RepeatMode.All && Queue.Count > 0) await PlayIndexAsync(0, autoplay: wasPlaying);
+        else Stop();
     }
 
     public void Initialize()
@@ -299,6 +361,7 @@ public sealed partial class PlaybackService : ObservableObject
         }
         if (version != _loadVersion) { dec.Dispose(); return; }
 
+        EndMissing();
         _engine.Pipeline.SetCurrent(dec);
         CurrentIndex = index;
         CurrentTrack = track;
@@ -414,6 +477,7 @@ public sealed partial class PlaybackService : ObservableObject
 
     public void Stop()
     {
+        EndMissing();
         _loadVersion++;
         _engine.Pause();
         _engine.Pipeline.SetCurrent(null);
@@ -520,6 +584,7 @@ public sealed partial class PlaybackService : ObservableObject
         int idx = AutoNextIndex();
         if (idx < 0 || idx >= Queue.Count || Queue[idx] != track) idx = track != null ? Queue.IndexOf(track) : -1;
         if (idx < 0) return;
+        if (!ReferenceEquals(CurrentTrack, track)) EndMissing(); // moved on from a missing song
         CurrentIndex = idx;
         if (CurrentTrack == track) TrackChanged?.Invoke(track); // repeat-one: same track restarted
         CurrentTrack = track;

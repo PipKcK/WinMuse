@@ -139,6 +139,8 @@ public sealed partial class PlayerBar : UserControl
         ToolTipService.SetToolTip(StarButton, fav ? "Remove from Favorite" : "Add to Favorite");
     }
 
+    private async void OnSkipMissing(object sender, RoutedEventArgs e) => await Player.SkipMissingAsync();
+
     private void OnStar(object sender, RoutedEventArgs e)
     {
         if (Player.CurrentTrack is { } t) Svc.Favorites.ToggleFavorite(t);

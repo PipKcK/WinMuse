@@ -33,8 +33,8 @@
                         ToolTipService.ToolTip="Open Now Playing" AutomationProperties.Name="Open Now Playing" local:Effects.HoverScale="1.06">
                     <Grid>
                         <local:ArtImage x:Name="Art" Width="60" Height="60" CornerRadius="8" DecodeSize="72"
-                                        Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
-                                        Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}" />
+                                        Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
+                                        Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" />
                         <Border x:Name="ArtHover" CornerRadius="8" Background="#66000000" Opacity="0">
                             <Border.OpacityTransition><ScalarTransition Duration="0:0:0.15" /></Border.OpacityTransition>
                             <FontIcon Glyph="&#xE70E;" Foreground="White" FontSize="16" />
@@ -49,12 +49,12 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}"
+                        <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}"
                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center" />
                         <Button x:Name="StarButton" Grid.Column="1" Style="{StaticResource IconButtonStyle}" Width="26" Height="26" FontSize="13" Content="&#xEB51;"
                                 Click="OnStar" Visibility="Collapsed" ToolTipService.ToolTip="Add to Favorite" AutomationProperties.Name="Favorite" />
                     </Grid>
-                    <HyperlinkButton Padding="0" Click="OnArtistClick" AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                    <HyperlinkButton Padding="0" Click="OnArtistClick" AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                         <HyperlinkButton.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.ThemeDictionaries>
@@ -69,13 +69,21 @@
                                 </ResourceDictionary.ThemeDictionaries>
                             </ResourceDictionary>
                         </HyperlinkButton.Resources>
-                        <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                        <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                     </HyperlinkButton>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border Visibility="{x:Bind helpers:Conv.HiRes(Player.CurrentTrack), Mode=OneWay}" Background="{StaticResource AccentGradientBrush}" CornerRadius="3" Padding="4,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind helpers:Conv.Hide(Player.CurrentMissing), Mode=OneWay}">
+                        <Border Visibility="{x:Bind helpers:Conv.HiRes(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Background="{StaticResource AccentGradientBrush}" CornerRadius="3" Padding="4,0">
                             <TextBlock Text="Hi-Res" FontSize="10" FontWeight="SemiBold" Foreground="White" />
                         </Border>
-                        <TextBlock Text="{x:Bind helpers:Conv.FormatOf(Player.CurrentTrack), Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{x:Bind helpers:Conv.FormatOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <!-- The song's file has gone missing: said here, with a Skip button that counts down to skipping it. -->
+                    <StackPanel x:Name="MissingPanel" Orientation="Horizontal" Spacing="6" Visibility="{x:Bind helpers:Conv.Show(Player.CurrentMissing), Mode=OneWay}">
+                        <FontIcon Glyph="&#xE7BA;" FontSize="11" Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="File missing" FontSize="11" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <HyperlinkButton x:Name="SkipMissingButton" Padding="2,0" MinHeight="0" FontSize="11" Click="OnSkipMissing" VerticalAlignment="Center"
+                                         Content="{x:Bind helpers:Conv.SkipText(Player.MissingCountdown), Mode=OneWay}"
+                                         AutomationProperties.Name="Skip the missing song" ToolTipService.ToolTip="Its file was moved, renamed or deleted. Skips by itself when the count reaches zero." />
                     </StackPanel>
                 </StackPanel>
             </Grid>

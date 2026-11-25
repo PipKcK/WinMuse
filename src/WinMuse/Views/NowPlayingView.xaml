@@ -106,16 +106,16 @@
                         <Grid x:Name="ArtHost" Width="440" Height="440">
                             <Border x:Name="ArtShadowHost" CornerRadius="16" />
                             <controls:ArtImage x:Name="BigArt" CornerRadius="16" DecodeSize="600"
-                                               Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
-                                               Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}" />
+                                               Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
+                                               Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" />
                         </Grid>
                     </Viewbox>
 
                     <StackPanel x:Name="TitleBlock" Grid.Row="1" Spacing="4">
-                        <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" FontWeight="Bold"
+                        <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" FontWeight="Bold"
                                    Foreground="{ThemeResource NowPlayingTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <HyperlinkButton AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Padding="0" Click="OnArtist" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
+                            <HyperlinkButton AutomationProperties.Name="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Padding="0" Click="OnArtist" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
                                 <HyperlinkButton.Resources>
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>
@@ -130,7 +130,7 @@
                                         </ResourceDictionary.ThemeDictionaries>
                                     </ResourceDictionary>
                                 </HyperlinkButton.Resources>
-                                <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
                             </HyperlinkButton>
                             <TextBlock Text="·" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
                             <HyperlinkButton x:Name="AlbumLink" Padding="0" Click="OnAlbum" Foreground="{ThemeResource NowPlayingSubtleTextBrush}">
@@ -152,10 +152,10 @@
                             </HyperlinkButton>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                            <Border Visibility="{x:Bind helpers:Conv.HiRes(Player.CurrentTrack), Mode=OneWay}" Background="{StaticResource AccentGradientBrush}" CornerRadius="4" Padding="6,1">
+                            <Border Visibility="{x:Bind helpers:Conv.HiRes(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Background="{StaticResource AccentGradientBrush}" CornerRadius="4" Padding="6,1">
                                 <TextBlock Text="Hi-Res Lossless" FontSize="11" FontWeight="SemiBold" Foreground="White" />
                             </Border>
-                            <TextBlock Text="{x:Bind helpers:Conv.FormatOf(Player.CurrentTrack), Mode=OneWay}" FontSize="12" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Bind helpers:Conv.FormatOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" FontSize="12" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
 
@@ -244,13 +244,13 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <controls:ArtImage Width="52" Height="52" CornerRadius="8" DecodeSize="120" Tapped="OnMiniArtTapped"
-                                   Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
-                                   Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}"
+                                   Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
+                                   Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
                                    ToolTipService.ToolTip="Show artwork" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                    <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}"
+                    <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}"
                                Foreground="{ThemeResource NowPlayingTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                    <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" FontSize="12"
+                    <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" FontSize="12"
                                Foreground="{ThemeResource NowPlayingSubtleTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">

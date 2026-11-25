@@ -10,8 +10,8 @@
     <Grid x:Name="Root">
         <!-- Album art washed into the background -->
         <controls:ArtImage x:Name="Backdrop" DecodeSize="10" Opacity="0.9"
-                           Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
-                           Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}" />
+                           Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
+                           Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" />
         <Rectangle Fill="{ThemeResource NowPlayingScrimBrush}" />
 
         <Grid x:Name="DragArea" Height="32" VerticalAlignment="Top" Background="Transparent" />
@@ -22,12 +22,12 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <controls:ArtImage x:Name="Art" Width="104" Height="104" CornerRadius="10" DecodeSize="128" VerticalAlignment="Center"
-                               Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack), Mode=OneWay}"
-                               Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack), Mode=OneWay}" />
+                               Source="{x:Bind helpers:Conv.ArtOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}"
+                               Seed="{x:Bind helpers:Conv.SeedOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" />
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15"
+                <TextBlock Text="{x:Bind helpers:Conv.TitleOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15"
                            Foreground="{ThemeResource NowPlayingTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack), Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"
+                <TextBlock Text="{x:Bind helpers:Conv.ArtistOf(Player.CurrentTrack, Player.HasTrack), Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource NowPlayingSubtleTextBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                 <ProgressBar Value="{x:Bind Player.Position, Mode=OneWay}" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" Margin="0,10,0,6" />
                 <StackPanel Orientation="Horizontal" Spacing="4">
