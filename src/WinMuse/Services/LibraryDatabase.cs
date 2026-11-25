@@ -12,7 +12,7 @@ public sealed class LibraryDatabase
 
     private const string TrackColumns =
         "Path, Title, Artist, AlbumArtist, Album, Genre, Year, TrackNumber, TrackCount, DiscNumber, Composer, Comment, Lyrics, Bpm, " +
-        "DurationMs, Bitrate, SampleRate, Channels, BitsPerSample, Codec, FileSize, ModifiedUtc, AddedUtc, PlayCount, LastPlayedUtc, Rating, ArtPath, EditedLocally, AutoFixed, MetaState, ArtState, LyricsState";
+        "DurationMs, Bitrate, SampleRate, Channels, BitsPerSample, Codec, FileSize, ModifiedUtc, AddedUtc, PlayCount, LastPlayedUtc, Rating, ArtPath, EditedLocally, AutoFixed, MetaState, ArtState, LyricsState, MissingSince";
 
     public LibraryDatabase()
     {
@@ -43,7 +43,7 @@ public sealed class LibraryDatabase
         // Migrations for databases created by earlier versions.
         var columns = c.Query<string>("SELECT name FROM pragma_table_info('Tracks')").ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (!columns.Contains("AutoFixed")) c.Execute("ALTER TABLE Tracks ADD COLUMN AutoFixed INTEGER DEFAULT 0");
-        foreach (var col in new[] { "MetaState", "ArtState", "LyricsState" })
+        foreach (var col in new[] { "MetaState", "ArtState", "LyricsState", "MissingSince" })
             if (!columns.Contains(col)) c.Execute($"ALTER TABLE Tracks ADD COLUMN {col} INTEGER DEFAULT 0");
         c.Execute("CREATE TABLE IF NOT EXISTS ArtistImages (Name TEXT PRIMARY KEY COLLATE NOCASE, Path TEXT, Tried INTEGER DEFAULT 0)");
         var artistColumns = c.Query<string>("SELECT name FROM pragma_table_info('ArtistImages')").ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -186,6 +186,12 @@ public sealed class LibraryDatabase
             p.Id = c.ExecuteScalar<long>("INSERT INTO Playlists (Name, Description, CreatedUtc, IsSmart, RulesJson, CoverPath) VALUES (@Name, @Description, @CreatedUtc, @IsSmart, @RulesJson, @CoverPath) RETURNING Id", p);
         else
             c.Execute("UPDATE Playlists SET Name=@Name, Description=@Description, IsSmart=@IsSmart, RulesJson=@RulesJson, CoverPath=@CoverPath WHERE Id=@Id", p);
+    }
+
+    public List<long> GetPlaylistItems(long playlistId)
+    {
+        using var c = Open();
+        return c.Query<long>("SELECT TrackId FROM PlaylistItems WHERE PlaylistId=@playlistId ORDER BY Position", new { playlistId }).ToList();
     }
 
     public void SetPlaylistItems(long playlistId, IEnumerable<long> trackIds)

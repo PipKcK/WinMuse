@@ -46,6 +46,12 @@ public sealed class Track : ObservableObject
     public int ArtState { get; set; }
     public int LyricsState { get; set; }
 
+    /// <summary>
+    /// When the file was last found missing (Unix seconds), 0 while it is there. A missing song is hidden but kept, with
+    /// its details, plays and playlist places, so it comes back as it was when the file (or its drive) returns.
+    /// </summary>
+    public long MissingSince { get; set; }
+
     private bool _isChecked;
     /// <summary>UI-only: checked in selection mode (shared across every song list).</summary>
     public bool IsChecked { get => _isChecked; set { if (SetProperty(ref _isChecked, value)) Services.SelectionService.OnTrackChecked(this, value); } }
