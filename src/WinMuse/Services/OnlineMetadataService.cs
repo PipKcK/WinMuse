@@ -237,7 +237,7 @@ public sealed partial class OnlineMetadataService
             return (false, string.IsNullOrEmpty(msg) ? "The API key was rejected." : $"The API key was rejected ({msg}).");
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { return (false, "Unable to reach AcoustID: " + ex.Message); }
+        catch (Exception ex) { return (false, "Unable to reach AcoustID. " + ErrorText.Logged(ex)); }
     }
 
     // ---------------- Cover Art Archive ----------------

@@ -103,7 +103,7 @@ public sealed partial class FetchDialog : ContentDialog
         catch (Exception ex)
         {
             BusyRing.IsActive = false;
-            StatusText.Text = "Unable to reach the metadata service: " + ex.Message;
+            StatusText.Text = "Unable to reach the metadata service. " + ErrorText.Logged(ex);
         }
     }
 
@@ -189,7 +189,7 @@ public sealed partial class FetchDialog : ContentDialog
             // Extras download in the background so the dialog closes immediately.
             if (art || artist || lyrics || genre) _ = DownloadExtrasAsync(t, c, art, artist, lyrics, genre);
         }
-        catch (Exception ex) { Notifier.Error("Unable to apply metadata", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to apply metadata", ex); }
         finally
         {
             if (Advance()) args.Cancel = true;

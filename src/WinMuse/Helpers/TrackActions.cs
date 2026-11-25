@@ -121,7 +121,7 @@ public static class TrackActions
     private static async Task Run(Func<Task> action)
     {
         try { await action(); }
-        catch (Exception ex) { Notifier.Error("Unable to complete the action", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to complete the action", ex); }
     }
 
     /// <summary>Menu for an album (Albums page): play, queue, playlist, edit, fetch, go to artist.</summary>
@@ -228,7 +228,7 @@ public static class TrackActions
         item.Click += async (_, _) =>
         {
             try { await action(); }
-            catch (Exception ex) { Notifier.Error("Unable to complete the action", ex.Message); }
+            catch (Exception ex) { Notifier.Error("Unable to complete the action", ex); }
         };
         return item;
     }

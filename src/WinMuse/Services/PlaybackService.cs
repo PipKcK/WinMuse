@@ -81,7 +81,7 @@ public sealed partial class PlaybackService : ObservableObject
         {
             IsPlaying = false;
             _engine.Pause();
-            PlaybackError?.Invoke("Audio output stopped: " + msg);
+            PlaybackError?.Invoke("Audio output stopped. " + msg);
         });
 
         _timer = App.UI.CreateTimer();
@@ -105,7 +105,7 @@ public sealed partial class PlaybackService : ObservableObject
         catch (Exception ex)
         {
             AppPaths.Log("Audio init failed: " + ex);
-            PlaybackError?.Invoke("Unable to open the audio device: " + ex.Message);
+            PlaybackError?.Invoke("Unable to open the audio device. " + ErrorText.Logged(ex));
         }
         var p = _engine.Pipeline;
         p.Advanced -= OnAdvanced; p.Advanced += OnAdvanced;
@@ -293,7 +293,7 @@ public sealed partial class PlaybackService : ObservableObject
         {
             AppPaths.Log($"Failed to open {track.Path}: {ex.Message}");
             if (version != _loadVersion) return;
-            PlaybackError?.Invoke($"Unable to play {track.DisplayTitle}: {ex.Message}");
+            PlaybackError?.Invoke($"Unable to play {track.DisplayTitle}: {ErrorText.Logged(ex)}");
             if (++_consecutiveFailures < 5 && autoplay && index + 1 < Queue.Count) await PlayIndexAsync(index + 1);
             return;
         }

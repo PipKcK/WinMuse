@@ -69,7 +69,7 @@ public sealed class EditAlbumDialog : ContentDialog
                 if (bytes != null) SetCover(bytes);
                 else Note("No cover was found online. Check the album and artist names.");
             }
-            catch (Exception ex) { Note("Fetch failed: " + ex.Message); }
+            catch (Exception ex) { Note("Fetch failed. " + ErrorText.Logged(ex)); }
             finally { fetch.IsEnabled = true; _busy.IsActive = false; }
         };
         var remove = new Button { Content = Label("", "Remove"), HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -139,7 +139,7 @@ public sealed class EditAlbumDialog : ContentDialog
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
             else Notifier.Success($"Album updated: {(name.Length > 0 ? name : _album.Title)}", SaveDestinationUi.SavedText(destination));
         }
-        catch (Exception ex) { Notifier.Error("Unable to update the album", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to update the album", ex); }
         finally { deferral.Complete(); }
     }
 }

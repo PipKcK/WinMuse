@@ -494,7 +494,7 @@ public sealed partial class LibraryService
                     Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(lrc, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
                 deleted.Add(t);
             }
-            catch (Exception ex) { errors.Add($"{t.FileName}: {ex.Message}"); }
+            catch (Exception ex) { errors.Add($"{t.FileName}: {ErrorText.Logged(ex)}"); }
         }
         Forget(deleted);
         return errors;

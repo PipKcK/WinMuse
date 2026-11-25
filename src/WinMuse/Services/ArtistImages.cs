@@ -179,7 +179,7 @@ public sealed partial class OnlineMetadataService
                 : (false, "The client ID or secret was rejected.");
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { return (false, "Unable to reach Spotify: " + ex.Message); }
+        catch (Exception ex) { return (false, "Unable to reach Spotify. " + ErrorText.Logged(ex)); }
     }
 
     public async Task<(bool ok, string message)> ValidateFanartKeyAsync(string apiKey, CancellationToken ct = default)
@@ -195,6 +195,6 @@ public sealed partial class OnlineMetadataService
                 : (false, $"Fanart.tv returned {(int)resp.StatusCode}.");
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { return (false, "Unable to reach Fanart.tv: " + ex.Message); }
+        catch (Exception ex) { return (false, "Unable to reach Fanart.tv. " + ErrorText.Logged(ex)); }
     }
 }

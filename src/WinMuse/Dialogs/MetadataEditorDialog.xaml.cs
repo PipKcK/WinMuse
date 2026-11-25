@@ -200,7 +200,7 @@ public sealed partial class MetadataEditorDialog : ContentDialog
             if (bytes != null) { await SetNewArt(bytes); ArtInfo.Text = "Album art found. Select Save to apply it."; }
             else ArtInfo.Text = "No album art was found. Verify the album and artist names, or run Fetch.";
         }
-        catch (Exception ex) { ArtInfo.Text = "Unable to search online: " + ex.Message; }
+        catch (Exception ex) { ArtInfo.Text = "Unable to search online. " + ErrorText.Logged(ex); }
         ArtProgress.IsActive = false;
     }
 
@@ -283,7 +283,7 @@ public sealed partial class MetadataEditorDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            Notifier.Error("Unable to save metadata", ex.Message);
+            Notifier.Error("Unable to save metadata", ex);
         }
         finally { deferral.Complete(); }
     }

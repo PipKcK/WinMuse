@@ -65,7 +65,7 @@ public sealed class EditArtistDialog : ContentDialog
                 if (await Svc.Metadata.DownloadArtistImageAsync(name, sample: artist.Tracks.FirstOrDefault()) is { } bytes) SetImage(bytes, chosen: false);
                 else { _photoNote.Text = "No image was found online."; _photoNote.Visibility = Visibility.Visible; }
             }
-            catch (Exception ex) { _photoNote.Text = "Download failed: " + ex.Message; _photoNote.Visibility = Visibility.Visible; }
+            catch (Exception ex) { _photoNote.Text = "Download failed. " + ErrorText.Logged(ex); _photoNote.Visibility = Visibility.Visible; }
             finally { download.IsEnabled = true; _photoBusy.IsActive = false; }
         };
         var photoBox = new Grid { Width = 132, Height = 132, Children = { _photo, _photoBusy } };
@@ -205,7 +205,7 @@ public sealed class EditArtistDialog : ContentDialog
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
             else Notifier.Success($"Artist updated: {name}", SaveDestinationUi.SavedText(destination));
         }
-        catch (Exception ex) { Notifier.Error("Unable to update the artist", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to update the artist", ex); }
         finally { deferral.Complete(); }
     }
 }

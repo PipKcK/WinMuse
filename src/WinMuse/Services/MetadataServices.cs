@@ -204,7 +204,7 @@ public sealed partial class MetadataEditService
                     }
                     catch (Exception ex)
                     {
-                        errors.Add($"{t.FileName}: {ex.Message} (saved to the library only)");
+                        errors.Add($"{t.FileName}: {ErrorText.Logged(ex).TrimEnd('.')} (saved to the library only)");
                     }
                 }
                 ApplyToTrack(t, edit);
@@ -369,7 +369,7 @@ public sealed partial class MetadataEditService
                 AppPaths.Log("Fingerprint lookup failed: " + ex.Message);
                 fingerprintError?.Invoke(ex.Message.Contains("invalid API key", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("client", StringComparison.OrdinalIgnoreCase)
                     ? "The AcoustID API key was rejected. Verify the key in Settings > API keys."
-                    : "Audio fingerprint lookup failed: " + ex.Message);
+                    : "Audio fingerprint lookup failed. " + ErrorText.Describe(ex));
                 progress?.Report("Fingerprint lookup failed. Searching by name…");
             }
         }

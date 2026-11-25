@@ -341,7 +341,7 @@ public sealed partial class OnlineMetadataService
             };
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { return (false, "Unable to reach YouTube: " + ex.Message); }
+        catch (Exception ex) { return (false, "Unable to reach YouTube. " + ErrorText.Logged(ex)); }
     }
 
     public async Task<(bool ok, string message)> ValidateLastFmKeyAsync(string apiKey, CancellationToken ct = default)
@@ -356,7 +356,7 @@ public sealed partial class OnlineMetadataService
             return (false, "The API key was rejected" + (msg != null ? $" ({msg})." : "."));
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { return (false, "Unable to reach Last.fm: " + ex.Message); }
+        catch (Exception ex) { return (false, "Unable to reach Last.fm. " + ErrorText.Logged(ex)); }
     }
 
     private static int Int(JsonElement e, string name) =>

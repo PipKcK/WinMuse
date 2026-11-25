@@ -176,7 +176,7 @@ public sealed class CreateAlbumDialog : ContentDialog
             else Notifier.Success($"Album created: {common.Album}", SaveDestinationUi.SavedText(destination));
             App.MainWindow.Navigate(typeof(Views.AlbumDetailPage), _selected[0].AlbumKey);
         }
-        catch (Exception ex) { Notifier.Error("Unable to create album", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to create album", ex); }
         finally { deferral.Complete(); }
     }
 }

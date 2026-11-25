@@ -123,7 +123,7 @@ public sealed class AudioEngine : IDisposable
         var now = DateTime.UtcNow;
         _recentErrors.Enqueue(now);
         while (_recentErrors.Count > 0 && now - _recentErrors.Peek() > TimeSpan.FromSeconds(10)) _recentErrors.Dequeue();
-        if (_recentErrors.Count > 3) { Fatal?.Invoke(e.Exception.Message); return; }
+        if (_recentErrors.Count > 3) { Fatal?.Invoke(Helpers.ErrorText.Describe(e.Exception)); return; }
         // Device unplugged / default changed: rebuild on the default device on a worker thread.
         Task.Run(() =>
         {

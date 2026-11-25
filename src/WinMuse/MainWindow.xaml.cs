@@ -489,7 +489,7 @@ public sealed partial class MainWindow : Window
 
     // ---------------- Notifications ----------------
 
-    private void ShowToast(string title, string? message, InfoBarSeverity severity)
+    private void ShowToast(string title, string? message, InfoBarSeverity severity, Notifier.ToastAction? action)
     {
         var bar = new InfoBar
         {
@@ -516,6 +516,12 @@ public sealed partial class MainWindow : Window
             After(TimeSpan.FromMilliseconds(220), () => Toasts.Children.Remove(wrap));
         }
         bar.CloseButtonClick += (_, _) => Close();
+        if (action != null)
+        {
+            var button = new Button { Content = action.Label };
+            button.Click += (_, _) => { Close(); action.Run(); };
+            bar.ActionButton = button;
+        }
         Toasts.Children.Add(wrap);
         while (Toasts.Children.Count > 3) Toasts.Children.RemoveAt(0);
         After(TimeSpan.FromMilliseconds(16), () => { wrap.Opacity = 1; wrap.Translation = System.Numerics.Vector3.Zero; });

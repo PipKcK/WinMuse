@@ -130,7 +130,7 @@ public sealed class EditGenreDialog : ContentDialog
             if (errors.Count > 0) Notifier.Error("Some files could not be updated", errors[0]);
             else Notifier.Success(_creating ? $"Genre created: {name}" : $"Genre updated: {name}", SaveDestinationUi.SavedText(destination));
         }
-        catch (Exception ex) { Notifier.Error("Unable to update the genre", ex.Message); }
+        catch (Exception ex) { Notifier.Error("Unable to update the genre", ex); }
         finally { deferral.Complete(); }
     }
 }

@@ -90,7 +90,7 @@ public sealed class ApiKeyField : UserControl
         _verify.IsEnabled = false;
         (bool ok, string message) result;
         try { result = PairValidator != null ? await PairValidator(key, secret) : await Validator!(key); }
-        catch (Exception ex) { result = (false, ex.Message); }
+        catch (Exception ex) { result = (false, ErrorText.Logged(ex)); }
         if (version != _version) return; // a newer check started
         _ring.IsActive = false;
         _verify.IsEnabled = true;
