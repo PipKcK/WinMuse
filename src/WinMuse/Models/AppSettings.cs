@@ -107,6 +107,12 @@ public sealed class AppSettings
     /// <summary>The first-launch API key dialog was shown (saved or skipped).</summary>
     public bool ApiKeysPrompted { get; set; }
 
+    /// <summary>
+    /// The settings file was damaged with no working copy, so the library folders are the defaults rather than the
+    /// user's. Songs outside them are kept (as missing) instead of removed, until a folder is removed in Settings.
+    /// </summary>
+    public bool LibraryFoldersLost { get; set; }
+
     /// <summary>Settings format: older files are upgraded once to new defaults (see SettingsService).</summary>
     public int SettingsVersion { get; set; }
 

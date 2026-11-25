@@ -83,7 +83,7 @@ public sealed class DownloadService
     }
 
     public string DefaultFolder =>
-        _settings.Current.DownloadFolder ?? _settings.Current.MusicFolders.FirstOrDefault() ?? Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        _settings.Current.DownloadFolder ?? _settings.Current.MusicFolders.FirstOrDefault() ?? AppPaths.MusicFolder;
 
     /// <summary>Runs mdown.exe for one URL. Lines it prints are reported through <paramref name="progress"/>.</summary>
     public async Task<DownloadResult> RunAsync(string url, string folder, IProgress<string>? progress, CancellationToken ct)

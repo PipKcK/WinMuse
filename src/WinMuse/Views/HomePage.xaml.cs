@@ -163,7 +163,7 @@ public sealed partial class HomePage : Page
             : hasFolders && lib.IsScanning ? "Scanning library…" : "Your library is empty";
         ShuffleAllButton.IsEnabled = hasMusic;
         Welcome.Visibility = !hasMusic && !lib.IsScanning ? Visibility.Visible : Visibility.Collapsed;
-        var musicFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        var musicFolder = AppPaths.MusicFolder;
         bool musicAdded = Svc.Settings.Current.MusicFolders.Contains(musicFolder, StringComparer.OrdinalIgnoreCase);
         WelcomeTitle.Text = hasFolders ? "No Songs Found" : "Set Up Your Library";
         WelcomeText.Text = hasFolders
@@ -637,7 +637,7 @@ public sealed partial class HomePage : Page
 
     private async void OnUseMusicFolder(object sender, RoutedEventArgs e)
     {
-        var music = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        var music = AppPaths.MusicFolder;
         if (Svc.Settings.Current.MusicFolders.Contains(music, StringComparer.OrdinalIgnoreCase))
         {
             try { System.Diagnostics.Process.Start("explorer.exe", $"\"{music}\""); } catch { }

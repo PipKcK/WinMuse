@@ -369,15 +369,18 @@ public sealed partial class LibraryService
         string? RootOf(string path) => roots.FirstOrDefault(r => IsUnder(path, r));
 
         // Gone since the last scan: kept while inside a library folder (moved, or missing for now); otherwise (the
-        // folder was removed in Settings) removed for good.
+        // folder was removed in Settings) removed for good. After the settings file was lost, the folder list is the
+        // default one, not the user's: every song is kept as missing (for 30 days) until the folders are set again.
+        bool foldersLost = _settings.Current.LibraryFoldersLost;
         var gone = existing.Values.Where(t => !seen.Contains(t.Path)).ToList();
-        var deleted = gone.Where(t => RootOf(t.Path) == null).ToList();
-        var goneInLibrary = gone.Where(t => RootOf(t.Path) != null).ToList();
+        var deleted = foldersLost ? new List<Track>() : gone.Where(t => RootOf(t.Path) == null).ToList();
+        var goneInLibrary = foldersLost ? gone : gone.Where(t => RootOf(t.Path) != null).ToList();
 
         var purged = missing.Where(t =>
         {
             var root = RootOf(t.Path);
-            return root == null || (now - t.MissingSince > KeepMissingSeconds && Directory.Exists(root));
+            if (root == null) return !foldersLost || now - t.MissingSince > KeepMissingSeconds;
+            return now - t.MissingSince > KeepMissingSeconds && Directory.Exists(root);
         }).ToHashSet();
 
         // Missing songs found again: at the same path first, then moved within the library unchanged.
@@ -513,7 +516,8 @@ public sealed partial class LibraryService
 
     public async Task RemoveFolderAsync(string folder)
     {
-        _settings.Set(nameof(AppSettings.MusicFolders), s => s.MusicFolders.RemoveAll(f => string.Equals(f, folder, StringComparison.OrdinalIgnoreCase)));
+        // Removing a folder is a deliberate choice about the library: songs outside the folders may go for good again.
+        _settings.Set(nameof(AppSettings.MusicFolders), s => { s.MusicFolders.RemoveAll(f => string.Equals(f, folder, StringComparison.OrdinalIgnoreCase)); s.LibraryFoldersLost = false; });
         StartWatching();
         await ScanAsync();
     }

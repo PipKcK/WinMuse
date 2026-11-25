@@ -9,10 +9,20 @@ public static class AppPaths
     public static string DataDir { get; } = Ensure(Environment.GetEnvironmentVariable("WINMUSE_DATA_DIR") is { Length: > 0 } custom
         ? custom
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinMuse"));
+    /// <summary>
+    /// The Windows Music folder: the default library folder. WINMUSE_MUSIC_DIR replaces it in tests, so a test run never
+    /// reads the real one.
+    /// </summary>
+    public static string MusicFolder =>
+        Environment.GetEnvironmentVariable("WINMUSE_MUSIC_DIR") is { Length: > 0 } custom ? custom : Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
     public static string ArtDir { get; } = Ensure(Path.Combine(DataDir, "Artwork"));
     public static string LyricsDir { get; } = Ensure(Path.Combine(DataDir, "Lyrics"));
     public static string DatabasePath => Path.Combine(DataDir, "library.db");
     public static string SettingsPath => Path.Combine(DataDir, "settings.json");
+    /// <summary>The last settings file that read correctly (see SettingsService).</summary>
+    public static string SettingsBackupPath => Path.Combine(DataDir, "settings.backup.json");
+    /// <summary>The most recent damaged settings file, kept for a bug report.</summary>
+    public static string SettingsDamagedPath => Path.Combine(DataDir, "settings.damaged.json");
     public static string LogPath => Path.Combine(DataDir, "log.txt");
     public static string FFmpegDir => Path.Combine(AppContext.BaseDirectory, "ffmpeg");
     public static string AssetsDir => Path.Combine(AppContext.BaseDirectory, "Assets");

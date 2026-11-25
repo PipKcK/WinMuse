@@ -525,7 +525,7 @@ public sealed partial class MainWindow : Window
         Toasts.Children.Add(wrap);
         while (Toasts.Children.Count > 3) Toasts.Children.RemoveAt(0);
         After(TimeSpan.FromMilliseconds(16), () => { wrap.Opacity = 1; wrap.Translation = System.Numerics.Vector3.Zero; });
-        After(TimeSpan.FromSeconds(severity == InfoBarSeverity.Error ? 8 : 4), Close);
+        After(TimeSpan.FromSeconds(severity is InfoBarSeverity.Error or InfoBarSeverity.Warning ? 8 : 4), Close); // problems stay longer
     }
 
     // Timers are kept here until they fire: a timer held only in a local variable can be collected first, which is
