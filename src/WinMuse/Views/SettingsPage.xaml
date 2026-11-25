@@ -39,7 +39,7 @@
                 </StackPanel>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Removed songs" Description="Songs removed from the library are hidden but stay on your PC. Restore brings them back.">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE738;" /></tk:SettingsCard.HeaderIcon>
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE777;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock x:Name="RemovedText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <Button x:Name="RestoreButton" Content="Restore" Click="OnRestoreRemoved" />
@@ -48,7 +48,8 @@
 
             <!-- ================= Appearance ================= -->
             <TextBlock Text="Appearance" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsCard Header="App icon" Description="The logo at the top left. Rings and Simple take on the accent color; App icon shows the app's own icon as it is.">
+            <tk:SettingsCard Header="Title bar logo" Description="The logo at the top left. Rings and Simple take on the accent color; App icon shows the app's own icon as it is.">
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xECAA;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <ToggleButton x:Name="LogoRings" Click="OnLogoStyle" Tag="Rings" Padding="10,6" AutomationProperties.Name="Rings">
                         <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Rings" /><TextBlock Text="Rings" VerticalAlignment="Center" /></StackPanel>
@@ -142,7 +143,7 @@
             </tk:SettingsExpander>
 
             <tk:SettingsCard Header="Card style" Description="Look of the album and song cards in the rows on Home. Glass: frosted and see-through. Smoke: deep, half-transparent black. Slate: cool blue-gray. Elevated: lighter, so cards seem to float. Outline: no fill, just an edge.">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8A9;" /></tk:SettingsCard.HeaderIcon>
                 <ComboBox x:Name="CardColorBox" SelectionChanged="OnCardColorChanged" MinWidth="180">
                     <x:String>Neutral gray</x:String>
                     <x:String>Glass</x:String>
@@ -168,7 +169,7 @@
 
             <!-- ================= Playback ================= -->
             <TextBlock Text="Playback" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsCard Header="Output device" x:Name="DeviceCard">
+            <tk:SettingsCard Header="Output device" x:Name="DeviceCard" Description="Speakers or headphones that play the music.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7F5;" /></tk:SettingsCard.HeaderIcon>
                 <ComboBox x:Name="DeviceBox" SelectionChanged="OnDeviceChanged" MinWidth="240" DisplayMemberPath="Name" />
             </tk:SettingsCard>
@@ -188,7 +189,7 @@
                 </StackPanel>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Output format" x:Name="PipelineCard">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE9E9;" /></tk:SettingsCard.HeaderIcon>
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8D6;" /></tk:SettingsCard.HeaderIcon>
                 <TextBlock x:Name="PipelineText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360" />
             </tk:SettingsCard>
 
@@ -203,7 +204,7 @@
                 <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Automatic album art" Description="Download missing album art from Cover Art Archive.">
-                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8B9;" /></tk:SettingsCard.HeaderIcon>
+                <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEB9F;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoArtToggle" Toggled="OnAutoArtToggled" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Fetch" Description="Download metadata, album art, artist images and lyrics for every song that is incomplete or was edited by you. Complete songs are skipped. Edits you made are replaced.">
