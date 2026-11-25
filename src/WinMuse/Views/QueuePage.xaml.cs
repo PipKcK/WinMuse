@@ -21,6 +21,7 @@ public sealed partial class QueuePage : Page
         Tracks.DeleteRequested += idx => player.RemoveFromQueue(idx);
         Tracks.ExtraMenuItems = (_, idx) => new[] { new MenuAction("Remove from queue", "", () => player.RemoveFromQueue(idx)) };
         player.Queue.CollectionChanged += (_, _) => UpdateSummary();
+        player.TrackChanged += _ => DispatcherQueue.TryEnqueue(UpdateSummary);
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -33,7 +34,11 @@ public sealed partial class QueuePage : Page
     private void UpdateSummary()
     {
         var q = Svc.Player.Queue;
-        SummaryText.Text = $"{q.Count} songs · {Format.LongTime(TimeSpan.FromMilliseconds(q.Sum(t => t.DurationMs)))}";
+        SummaryText.Text = $"{q.Count} {(q.Count == 1 ? "song" : "songs")} · {Format.LongTime(TimeSpan.FromMilliseconds(q.Sum(t => t.DurationMs)))}";
+        // Nothing to jump to, save or clear in an empty queue; Clear keeps the current song, so it needs another one.
+        JumpButton.IsEnabled = Svc.Player.CurrentTrack != null && q.Count > 0;
+        SaveButton.IsEnabled = q.Count > 0;
+        ClearButton.IsEnabled = q.Count > (Svc.Player.CurrentTrack != null ? 1 : 0);
     }
 
     private void OnJump(object sender, RoutedEventArgs e) => Tracks.ScrollToPlaying();

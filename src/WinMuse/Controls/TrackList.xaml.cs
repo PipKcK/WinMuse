@@ -34,10 +34,21 @@ public sealed partial class TrackList : UserControl
         set { List.CanReorderItems = value; List.CanDragItems = value; List.AllowDrop = value; }
     }
 
+    private bool _showHeader = true;
+
+    /// <summary>Whether the column header is shown (it is hidden anyway while the list is empty).</summary>
     public bool ShowHeader
     {
-        get => Header.Visibility == Visibility.Visible;
-        set => Header.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+        get => _showHeader;
+        set { _showHeader = value; UpdateEmptyState(); }
+    }
+
+    /// <summary>An empty list shows its message without column headers above it.</summary>
+    private void UpdateEmptyState()
+    {
+        bool empty = Items.Count == 0;
+        EmptyState.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        Header.Visibility = _showHeader && !empty ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -89,7 +100,7 @@ public sealed partial class TrackList : UserControl
             _boundExternally = false;
             List.ItemsSource = Items;
         }
-        EmptyState.Visibility = Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateEmptyState();
         ApplyColumnsEverywhere();
     }
 
@@ -101,8 +112,8 @@ public sealed partial class TrackList : UserControl
         _boundExternally = true;
         Items = source;
         List.ItemsSource = source;
-        EmptyState.Visibility = source.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        source.CollectionChanged += (_, _) => EmptyState.Visibility = source.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateEmptyState();
+        source.CollectionChanged += (_, _) => UpdateEmptyState();
     }
 
     /// <summary>The songs an action applies to: the checked ones in Select mode, otherwise the selected row.</summary>
