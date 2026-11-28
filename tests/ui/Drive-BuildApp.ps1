@@ -1,12 +1,16 @@
 # Drives tools\Build-App.ps1 without mouse or keyboard: fields are set with WM_SETTEXT and buttons pressed with
 # BM_CLICK on their window handles, so it works while the PC is in use.
-#   .\Drive-BuildApp.ps1 -Name "Music Test" -Color "#1DB954" -InstallDir C:\Temp\MusicTest [-Register] [-InstallerDir C:\Temp\Dist]
+#   .\Drive-BuildApp.ps1 -Name "Music Test" -Color "#1DB954" -InstallDir C:\Temp\MusicTest [-Register] [-InstallerDir C:\Temp\Dist [-SetupFormat msi]]
+#   -KeepIcon builds with the current icon instead of -Color (src\WinMuse\Assets is left as it is when the name is
+#   also unchanged).
 param(
     [string]$Name = 'Music Test',
     [string]$Color = '#1DB954',
+    [switch]$KeepIcon,
     [string]$InstallDir = (Join-Path $env:TEMP 'WinMuseBuildTest'),
     [switch]$Register,
-    [string]$InstallerDir = '',      # set: also tick "Create installer" and save it here
+    [string]$InstallerDir = '',      # set: also tick "Create setup file" and save it here
+    [ValidateSet('exe', 'msi')] [string]$SetupFormat = 'exe',
     [int]$TimeoutSec = 1200
 )
 $ErrorActionPreference = 'Stop'
@@ -28,11 +32,11 @@ $tool = Join-Path $PSScriptRoot '..\..\tools\Build-App.ps1'
 # Known starting choices (the tool opens with the last build's), kept apart from the developer's own last build.
 $env:WINMUSE_BUILD_RECORD = Join-Path $env:TEMP 'WinMuseBuildTest-last-build.json'
 @{ Name = $Name; Arch = $(if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }); Launch = $true; Register = $false; InstallDir = ''
-   Desktop = $false; Apps = $true; OpenWith = $true; Installer = $false; ShareDir = '' } | ConvertTo-Json | Set-Content -Encoding UTF8 $env:WINMUSE_BUILD_RECORD
+   Desktop = $false; Apps = $true; OpenWith = $true; Installer = $false; SetupFormat = $SetupFormat; ShareDir = '' } | ConvertTo-Json | Set-Content -Encoding UTF8 $env:WINMUSE_BUILD_RECORD
 $p = Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tool`"" -PassThru
 $deadline = (Get-Date).AddSeconds(40)
-do { Start-Sleep 1; $p.Refresh() } until ($p.MainWindowTitle -eq 'Build Music' -or (Get-Date) -gt $deadline)
-if ($p.MainWindowTitle -ne 'Build Music') { throw 'Build-App window did not open' }
+do { Start-Sleep 1; $p.Refresh() } until ($p.MainWindowTitle -eq 'Build WinMuse' -or (Get-Date) -gt $deadline)
+if ($p.MainWindowTitle -ne 'Build WinMuse') { throw 'Build-App window did not open' }
 Start-Sleep 4  # first preview render
 $root = [System.Windows.Automation.AutomationElement]::FromHandle($p.MainWindowHandle)
 function All { $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) }
@@ -52,7 +56,7 @@ $installBox = [IntPtr]$edits[3].Current.NativeWindowHandle
 $shareBox = [IntPtr]$edits[4].Current.NativeWindowHandle
 $logBox = [IntPtr]$edits[-1].Current.NativeWindowHandle
 SetText $nameBox $Name
-SetText $colorBox $Color; Click 'Custom color'
+if (-not $KeepIcon) { SetText $colorBox $Color; Click 'Custom color' }
 if ($Register) {
     Click 'Install for current user'
     SetText $installBox $InstallDir

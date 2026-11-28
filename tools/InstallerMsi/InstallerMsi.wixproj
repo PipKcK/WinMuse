@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <!-- The shareable Windows Installer package (tools\Make-Installer.ps1 -Format msi builds it). WiX Toolset 5 comes
+       from NuGet during the build, so nothing has to be installed first.
+       DefinesFile: a .wxi written by Make-Installer.ps1 with the app's name, version, files and images. -->
+  <PropertyGroup>
+    <OutputName>Setup</OutputName>
+    <DefineConstants>DefinesFile=$(DefinesFile)</DefineConstants>
+    <!-- Per-user packages install into the user profile with one component per file (WiX's <Files> harvesting).
+         ICE38/ICE64/ICE91 ask for per-machine conventions (registry key paths, RemoveFolder rows) that don't apply. -->
+    <!-- ICE03/ICE60: some bundled DLLs list resource languages the validator rejects; Windows Installer itself ignores them.
+         ICE61: installing the same version again replaces the installed copy, on purpose (each rebuild). -->
+    <SuppressIces>ICE38;ICE64;ICE91;ICE03;ICE60;ICE61</SuppressIces>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+</Project>

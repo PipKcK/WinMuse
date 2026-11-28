@@ -225,7 +225,14 @@ Or open `WinMuse.sln` and press <kbd>F5</kbd> with the **x64** (or **ARM64**) pl
 - **Architecture**: Automatic, x64 or ARM64.
 - **Installation** (optional): Start menu shortcut, desktop shortcut, an entry in Settings → Apps with an
   uninstaller, and "Open with" for audio files.
-- **Setup file**: a single self-contained `<Name> Setup.exe` you can share with anyone (`tools/Make-Installer.ps1`).
+- **Setup file**: a single self-contained file you can share with anyone (`tools/Make-Installer.ps1`), in either format:
+  - **Setup program (.exe)**: `<Name> Setup.exe`, a small setup window; `/silent` installs without it.
+  - **Windows Installer package (.msi)**: `<Name> Setup.msi`, the standard Windows setup wizard. It also works with
+    `msiexec`, Group Policy and Intune (`msiexec /i "<Name> Setup.msi" /qn DESKTOPSHORTCUT=1`). Built with
+    [WiX Toolset](https://wixtoolset.org) 5 (`tools/InstallerMsi`), which the build downloads from NuGet.
+
+  Both install for the current user without administrator rights. A newer setup file with the same name replaces the
+  copy an older one installed.
 - **Developer hints**: explains every option. Set `$DeveloperHints = $false` at the top of the script to remove the
   button for a release.
 

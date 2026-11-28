@@ -1,4 +1,4 @@
-﻿# Build Music (WinMuse) with your own name and icon, and optionally install it as a Windows app.
+﻿# Build WinMuse (the Music app) with your own name and icon, and optionally install it as a Windows app.
 #
 #   Right-click > Run with PowerShell, or:  powershell -ExecutionPolicy Bypass -File tools\Build-App.ps1
 #
@@ -13,8 +13,8 @@
 #   Architecture  Automatic (this PC), x64 or ARM64.
 #   Installation  copies the app to an install folder and adds a Start menu shortcut, optionally a desktop shortcut,
 #                 an entry in Settings > Apps (with an uninstaller) and "Open with" for audio files.
-#   Setup file    also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one file to share that installs the app on
-#                 another PC, with everything it needs included.
+#   Setup file    also makes "<Name> Setup.exe" or "<Name> Setup.msi" (tools\Make-Installer.ps1): one file to share
+#                 that installs the app on another PC, with everything it needs included.
 #
 # The exe stays WinMuse.exe and your library/settings stay in %LocalAppData%\WinMuse whatever the name.
 # SVG icons are drawn with Microsoft Edge (installed with Windows 11) in headless mode.
@@ -168,7 +168,7 @@ function Find-PreviousBuild {
     $name = if ($brand -and $brand.Name) { [string]$brand.Name } else { 'Music' }
     $found = [pscustomobject]@{
         Name = $name; Arch = $native; Launch = $true; Register = $false; InstallDir = ''; Desktop = $false; Apps = $true
-        OpenWith = $true; Installer = $false; ShareDir = [Environment]::GetFolderPath('Desktop')
+        OpenWith = $true; Installer = $false; SetupFormat = 'exe'; ShareDir = [Environment]::GetFolderPath('Desktop')
     }
     # Installed by this tool: listed in Settings > Apps, with its Uninstall.ps1 next to the exe.
     $installed = @(Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' -ErrorAction SilentlyContinue |
@@ -220,7 +220,7 @@ if (-not $Status) { $Previous = $null }
 # ---------------------------------------------------------------- window
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = 'Build Music'
+$form.Text = 'Build WinMuse'
 $form.StartPosition = 'CenterScreen'
 $form.Font = New-Object System.Drawing.Font('Segoe UI', 9.5)
 $form.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 252)
@@ -331,14 +331,17 @@ $gReg.Controls.AddRange(@($chkRegister, $txtInstall, $btnInstall, $chkDesktop, $
 $y += 144
 
 # ---- Setup file to share
-$gShare = Add-Group 'Setup file' $y 88
+$gShare = Add-Group 'Setup file' $y 120
 $chkInstaller = New-Control CheckBox 'Create setup file' 16 28
-Add-Label $gShare 'Save to' 220 31 70 | Out-Null
-$txtShare = New-Control TextBox ([Environment]::GetFolderPath('Desktop')) 300 28 310 26
-$btnShare = New-Control Button 'Browse…' 616 27 80 28
-Add-Label $gShare 'Unsigned. Windows SmartScreen may show a warning when it runs on another PC.' 36 58 660 20 -Dim | Out-Null
-$gShare.Controls.AddRange(@($chkInstaller, $txtShare, $btnShare))
-$y += 96
+Add-Label $gShare 'Format' 220 31 70 | Out-Null
+$cmbFormat = New-Control ComboBox '' 300 28 310 26; $cmbFormat.DropDownStyle = 'DropDownList'
+[void]$cmbFormat.Items.Add('Setup program (.exe)'); [void]$cmbFormat.Items.Add('Windows Installer package (.msi)'); $cmbFormat.SelectedIndex = 0
+Add-Label $gShare 'Save to' 220 63 70 | Out-Null
+$txtShare = New-Control TextBox ([Environment]::GetFolderPath('Desktop')) 300 60 310 26
+$btnShare = New-Control Button 'Browse…' 616 59 80 28
+Add-Label $gShare 'Unsigned. Windows SmartScreen may show a warning when it runs on another PC.' 36 92 660 20 -Dim | Out-Null
+$gShare.Controls.AddRange(@($chkInstaller, $cmbFormat, $txtShare, $btnShare))
+$y += 128
 
 # ---- Output + buttons
 $log = New-Object System.Windows.Forms.TextBox
@@ -389,7 +392,8 @@ if ($DeveloperHints) {
             'Uninstall…' = 'Removes the copy in Location, its shortcuts and its registry entries. The library and settings are kept.'
         }
         'Setup file' = [ordered]@{
-            'Create setup file' = 'Also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one self-contained file that installs the app on another PC with nothing else needed. ARM64 builds add "(ARM64)" to the file name. Takes a few minutes.'
+            'Create setup file' = 'Also makes "<Name> Setup.exe" or "<Name> Setup.msi" (tools\Make-Installer.ps1): one self-contained file that installs the app on another PC with nothing else needed. ARM64 builds add "(ARM64)" to the file name. Takes a few minutes.'
+            'Format' = 'Setup program (.exe): a small setup window (tools\Installer); "/silent" installs without it. Windows Installer package (.msi): the standard Windows setup wizard (tools\InstallerMsi, built with WiX Toolset 5, downloaded from NuGet on first use); also works with msiexec, Group Policy and Intune. Both install for the current user without administrator rights and add the same shortcuts, "Open with" and Settings > Apps entry. Installing a newer setup file of the same name replaces the copy the older one installed.'
             'Unsigned' = 'The file has no code signature, so SmartScreen on other PCs asks first: More info > Run anyway.'
         }
     }
@@ -431,7 +435,8 @@ Update-InstallDefault
 
 function Update-RegisterEnabled { foreach ($c in $txtInstall, $btnInstall, $chkDesktop, $chkApps, $chkOpenWith) { $c.Enabled = $chkRegister.Checked } }
 $chkRegister.Add_CheckedChanged({ Update-RegisterEnabled }); Update-RegisterEnabled
-function Update-ShareEnabled { foreach ($c in $txtShare, $btnShare) { $c.Enabled = $chkInstaller.Checked } }
+function Get-SetupFormat { if ($cmbFormat.SelectedIndex -eq 1) { 'msi' } else { 'exe' } }
+function Update-ShareEnabled { foreach ($c in $cmbFormat, $txtShare, $btnShare) { $c.Enabled = $chkInstaller.Checked } }
 $chkInstaller.Add_CheckedChanged({ Update-ShareEnabled }); Update-ShareEnabled
 
 function Get-ColorOrNull { try { return [System.Drawing.ColorTranslator]::FromHtml($txtColor.Text.Trim()) } catch { return $null } }
@@ -445,6 +450,7 @@ function Set-Choices($prev) {
     if ($prev.InstallDir) { $txtInstall.Text = [string]$prev.InstallDir; $txtInstall.Tag = 'edited' }
     $chkDesktop.Checked = [bool]$prev.Desktop; $chkApps.Checked = [bool]$prev.Apps; $chkOpenWith.Checked = [bool]$prev.OpenWith
     $chkInstaller.Checked = [bool]$prev.Installer
+    $cmbFormat.SelectedIndex = if ($prev.SetupFormat -eq 'msi') { 1 } else { 0 }
     if ($prev.ShareDir) { $txtShare.Text = [string]$prev.ShareDir }
     $rbCurrent.Checked = $true
 }
@@ -453,7 +459,7 @@ function Save-Choices([string]$arch) {
     $record = [ordered]@{
         Name = $txtName.Text.Trim(); Arch = $arch; Launch = $chkLaunch.Checked; Register = $chkRegister.Checked
         InstallDir = $txtInstall.Text.Trim(); Desktop = $chkDesktop.Checked; Apps = $chkApps.Checked; OpenWith = $chkOpenWith.Checked
-        Installer = $chkInstaller.Checked; ShareDir = $txtShare.Text.Trim(); Version = $AppVersion; BuiltAt = (Get-Date).ToString('o')
+        Installer = $chkInstaller.Checked; SetupFormat = (Get-SetupFormat); ShareDir = $txtShare.Text.Trim(); Version = $AppVersion; BuiltAt = (Get-Date).ToString('o')
     }
     try {
         New-Item -ItemType Directory -Force (Split-Path $RecordPath) | Out-Null
@@ -693,10 +699,11 @@ $timer.Add_Tick({
                 # Second step, in the background like the build: publish self-contained, zip, wrap in the installer.
                 # Built for the architecture chosen above; ARM64 installers say so in their name (they don't run on Intel/AMD PCs).
                 $suffix = if ($state.Arch -eq 'ARM64') { ' (ARM64)' } else { '' }
-                $state.Setup = Join-Path $txtShare.Text.Trim() "$($state.Name) Setup$suffix.exe"
+                $format = Get-SetupFormat
+                $state.Setup = Join-Path $txtShare.Text.Trim() "$($state.Name) Setup$suffix.$format"
                 $setupLog = Join-Path $Work 'installer.log'; Set-Content $setupLog ''
                 $script = Join-Path $PSScriptRoot 'Make-Installer.ps1'
-                $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Name `"$($state.Name -replace '"', '')`" -Arch $($state.Arch) -Out `"$($state.Setup)`" > `"$setupLog`" 2>&1"
+                $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Name `"$($state.Name -replace '"', '')`" -Arch $($state.Arch) -Format $format -Out `"$($state.Setup)`" > `"$setupLog`" 2>&1"
                 Write-Log 'Creating setup file… This can take several minutes.'
                 $state.Process = Start-Process cmd.exe -ArgumentList '/c', $cmd -PassThru -WindowStyle Hidden
                 $state.Log = $setupLog; $state.Read = 0; $state.Phase = 'installer'

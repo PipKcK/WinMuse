@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "<Name> Setup.msi": installs the app for the current user (no administrator rights) with the same registration
+     as "<Name> Setup.exe" (tools\Installer): Start menu shortcut, optional desktop shortcut, "Open with" for audio
+     files and an entry in Settings > Apps. Uninstalling keeps the library and settings (%LocalAppData%\WinMuse).
+     Installing a newer build, or the same version again, replaces the installed copy. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <?include $(var.DefinesFile) ?>
+
+  <Package Name="$(var.AppName)" Manufacturer="WinMuse" Version="$(var.AppVersion)" UpgradeCode="$(var.UpgradeCode)"
+           Scope="perUser" Compressed="yes" Language="1033">
+    <SummaryInformation Description="$(var.AppName) Setup" />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPNOREPAIR" Value="1" />   <!-- ARPNOMODIFY: set by WixUI_InstallDir -->
+
+    <!-- Options (also for msiexec /qn: DESKTOPSHORTCUT=1, OPENWITH=""). -->
+    <Property Id="DESKTOPSHORTCUT" Secure="yes" />
+    <Property Id="OPENWITH" Value="1" Secure="yes" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="$(var.AppName)" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="App" Title="$(var.AppName)" AllowAbsent="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+      <ComponentRef Id="OpenWith" />
+    </Feature>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.AppFiles)\**" />
+    </ComponentGroup>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut">
+        <Shortcut Id="StartMenu" Name="$(var.AppName)" Description="$(var.AppName)" Target="[INSTALLFOLDER]WinMuse.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\WinMuse\Setup\$(var.RegKey)" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Condition="DESKTOPSHORTCUT">
+        <Shortcut Id="Desktop" Name="$(var.AppName)" Description="$(var.AppName)" Target="[INSTALLFOLDER]WinMuse.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\WinMuse\Setup\$(var.RegKey)" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Offered under "Open with" for audio files; the default apps are not changed. -->
+    <Component Id="OpenWith" Directory="INSTALLFOLDER" Condition="OPENWITH">
+      <RegistryKey Root="HKCU" Key="Software\Classes\Applications\WinMuse.exe">
+        <RegistryValue Name="FriendlyAppName" Type="string" Value="$(var.AppNameFormatted)" KeyPath="yes" />
+        <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]WinMuse.exe&quot; &quot;%1&quot;" />
+        <?foreach Ext in .mp3;.flac;.m4a;.aac;.ogg;.opus;.wav;.aiff;.aif;.wma;.ape;.wv;.dsf;.dff;.mka ?>
+        <RegistryValue Key="SupportedTypes" Name="$(Ext)" Type="string" Value="" />
+        <?endforeach ?>
+      </RegistryKey>
+      <?foreach Ext in .mp3;.flac;.m4a;.aac;.ogg;.opus;.wav;.aiff;.aif;.wma;.ape;.wv;.dsf;.dff;.mka ?>
+      <RegistryKey Root="HKCU" Key="Software\Classes\$(Ext)\OpenWithList\WinMuse.exe" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes" />
+      <?endforeach ?>
+    </Component>
+
+    <!-- Wizard: Welcome, install folder, options, install, finish (with "Open <Name>"). No license page. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <UIRef Id="OptionsDlg" />
+    <UI>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="5" Condition="NOT Installed" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="5" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID=&quot;1&quot;" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5" Condition="NOT Installed" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.BannerBmp)" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.DialogBmp)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open $(var.AppName)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]WinMuse.exe&quot;" Return="asyncNoWait" />
+  </Package>
+</Wix>
