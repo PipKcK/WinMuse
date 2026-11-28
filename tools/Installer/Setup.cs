@@ -24,7 +24,7 @@ internal sealed class Setup
 
     public Setup(Dictionary<string, string> ini)
     {
-        Name = ini.TryGetValue("Name", out var n) && n.Length > 0 ? n : "Music";
+        Name = ini.TryGetValue("Name", out var n) && n.Length > 0 ? n : "Music Player";
         RegKey = ini.TryGetValue("RegKey", out var k) && k.Length > 0 ? k : "WinMuse-" + new string(Name.Where(char.IsLetterOrDigit).ToArray());
         Version = ini.TryGetValue("Version", out var v) ? v : "1.0.0";
         Arch = ini.TryGetValue("Arch", out var a) ? a : "x64";

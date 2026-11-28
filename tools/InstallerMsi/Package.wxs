@@ -15,6 +15,8 @@
     <Icon Id="AppIcon.ico" SourceFile="$(var.IconFile)" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
     <Property Id="ARPNOREPAIR" Value="1" />   <!-- ARPNOMODIFY: set by WixUI_InstallDir -->
+    <!-- The install folder, as Settings > Apps and tools\Build-App.ps1 (Uninstall) read it. -->
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" />
 
     <!-- Options (also for msiexec /qn: DESKTOPSHORTCUT=1, OPENWITH=""). -->
     <Property Id="DESKTOPSHORTCUT" Secure="yes" />

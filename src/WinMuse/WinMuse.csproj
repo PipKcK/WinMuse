@@ -23,10 +23,10 @@
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <NoWarn>$(NoWarn);CA1416;MVVMTK0045;CS8618;CS8602;CS8604</NoWarn>
 
-    <!-- Internal identity is WinMuse; everything user-facing says "Music". -->
-    <Product>Music</Product>
-    <AssemblyTitle>Music</AssemblyTitle>
-    <Description>Music</Description>
+    <!-- Internal identity is WinMuse; everything user-facing says "Music Player" (or the name set with tools\Build-App.ps1). -->
+    <Product>Music Player</Product>
+    <AssemblyTitle>Music Player</AssemblyTitle>
+    <Description>Music Player</Description>
     <Company>WinMuse</Company>
     <Version>1.0.0</Version>
   </PropertyGroup>

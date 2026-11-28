@@ -5,7 +5,7 @@ namespace WinMuse.Helpers;
 
 /// <summary>
 /// The app's name and default logo, from Assets\Branding.json (written by tools\Build-App.ps1). Without the file the
-/// app is "Music" with the Rings logo.
+/// app is "Music Player" with the Rings logo.
 /// </summary>
 public static class Branding
 {
@@ -14,7 +14,7 @@ public static class Branding
     private static readonly Data Loaded = Load();
 
     /// <summary>The name shown in the title bar, window titles and the mini player.</summary>
-    public static string Name => string.IsNullOrWhiteSpace(Loaded.Name) ? "Music" : Loaded.Name!.Trim();
+    public static string Name => string.IsNullOrWhiteSpace(Loaded.Name) ? "Music Player" : Loaded.Name!.Trim();
 
     /// <summary>The logo used until one is picked in Settings.</summary>
     public static AppLogoStyle DefaultLogo => Enum.TryParse<AppLogoStyle>(Loaded.Logo, true, out var s) ? s : AppLogoStyle.Rings;

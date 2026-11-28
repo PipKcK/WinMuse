@@ -6,7 +6,7 @@
 # builds the current source again with them and updates the installed copy: the quick way to try each change.
 #
 # Choices (the "Developer hints" button shows the same in the window):
-#   Name          shown in the title bar, window titles, Start menu and Apps list (default "Music").
+#   Name          shown in the title bar, window titles, Start menu and Apps list (default "Music Player").
 #   Icon          the current icon (kept as it is), one of the bundled designs (tools\icons\*.svg), any color (the
 #                 Purple design recolored to it), or your own image (.svg, .png, .jpg, .ico).
 #   Title bar logo  follows the accent color (Rings design) or shows the icon exactly as it is.
@@ -31,9 +31,12 @@ $DeveloperHints = $true
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Project = Join-Path $Root 'src\WinMuse\WinMuse.csproj'
-# The app's version comes from <Version> in the project (also stamped on the exe and shown in Settings > About).
-$AppVersion = ([xml](Get-Content -Raw $Project)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+. (Join-Path $PSScriptRoot 'Shared.ps1')
+$DefaultName = 'Music Player'
+$AppVersion = Get-AppVersion $Root
 if (-not $AppVersion) { $AppVersion = '0.0.0' }
+# The app's data folder (library, playlists, settings), as the app finds it: WINMUSE_DATA_DIR replaces it in tests.
+$DataDir = if ($env:WINMUSE_DATA_DIR) { $env:WINMUSE_DATA_DIR } else { Join-Path $env:LOCALAPPDATA 'WinMuse' }
 $Assets = Join-Path $Root 'src\WinMuse\Assets'
 $IconDir = Join-Path $PSScriptRoot 'icons'
 $Work = Join-Path $env:TEMP 'WinMuse-Build'
@@ -165,7 +168,7 @@ function Find-PreviousBuild {
     }
     $native = Get-NativeArch
     $brand = Get-Branding
-    $name = if ($brand -and $brand.Name) { [string]$brand.Name } else { 'Music' }
+    $name = if ($brand -and $brand.Name) { [string]$brand.Name } else { $DefaultName }
     $found = [pscustomobject]@{
         Name = $name; Arch = $native; Launch = $true; Register = $false; InstallDir = ''; Desktop = $false; Apps = $true
         OpenWith = $true; Installer = $false; SetupFormat = 'exe'; ShareDir = [Environment]::GetFolderPath('Desktop')
@@ -266,10 +269,10 @@ $y = 12
 # ---- Current build (only when the app has been built before)
 if ($Previous) {
     $gCurrent = Add-Group 'Current build' $y 96
-    Add-Label $gCurrent $Status.Title 16 26 500 22 -Bold | Out-Null
+    $lblTitle = Add-Label $gCurrent $Status.Title 16 26 500 22 -Bold
     $lblWhere = Add-Label $gCurrent $Status.Where 16 50 510 20 -Dim; $lblWhere.AutoEllipsis = $true
     $tips = New-Object System.Windows.Forms.ToolTip; $tips.SetToolTip($lblWhere, $Status.Where)   # the whole path
-    Add-Label $gCurrent $Status.When 16 70 510 20 -Dim | Out-Null
+    $lblWhen = Add-Label $gCurrent $Status.When 16 70 510 20 -Dim
     $btnRebuild = New-Control Button $(if ($Previous.Register) { 'Rebuild and update' } else { 'Rebuild' }) 540 34 156 36
     Set-Primary $btnRebuild
     $gCurrent.Controls.Add($btnRebuild)
@@ -279,7 +282,7 @@ if ($Previous) {
 # ---- App
 $gApp = Add-Group 'App' $y 64
 Add-Label $gApp 'Name' 16 30 100 | Out-Null
-$txtName = New-Control TextBox 'Music' 130 27 300 26
+$txtName = New-Control TextBox $DefaultName 130 27 300 26
 $gApp.Controls.Add($txtName)
 $y += 72
 
@@ -389,7 +392,7 @@ if ($DeveloperHints) {
             'Desktop shortcut' = 'Also adds a shortcut on the desktop.'
             'List in Settings > Apps' = 'Adds an entry in Settings > Apps with Uninstall. Uninstalling keeps the library and settings.'
             'Add to "Open with" for audio files' = 'Offers the app under "Open with" for 15 audio formats. Default apps are not changed.'
-            'Uninstall…' = 'Removes the copy in Location, its shortcuts and its registry entries. The library and settings are kept.'
+            'Uninstall…' = 'Opens a choice of three. Uninstall: removes the app installed in Location (by this tool or a .exe setup file) or by the .msi made for this name, with its shortcuts and Settings > Apps entry; the library and settings are kept. Uninstall and delete app data: also deletes %LocalAppData%\WinMuse (library, playlists, settings, artwork, lyrics, log), after a second confirmation; music files are never touched. Clean up build files: deletes every project''s bin and obj folders, %TEMP%\WinMuse-Build and the downloaded FFmpeg libraries in external; the next build restores them. Running copies that would be affected are closed first, after asking.'
         }
         'Setup file' = [ordered]@{
             'Create setup file' = 'Also makes "<Name> Setup.exe" or "<Name> Setup.msi" (tools\Make-Installer.ps1): one self-contained file that installs the app on another PC with nothing else needed. ARM64 builds add "(ARM64)" to the file name. Takes a few minutes.'
@@ -428,7 +431,7 @@ if ($DeveloperHints) {
 # ---------------------------------------------------------------- behaviour
 
 function Get-SafeName { ($txtName.Text.Trim() -replace '[^\w\- ]', '').Trim() }
-function Update-InstallDefault { if (-not $txtInstall.Tag) { $txtInstall.Text = Join-Path $env:LOCALAPPDATA ("Programs\" + $(if (Get-SafeName) { Get-SafeName } else { 'Music' })) } }
+function Update-InstallDefault { if (-not $txtInstall.Tag) { $txtInstall.Text = Join-Path $env:LOCALAPPDATA ("Programs\" + $(if (Get-SafeName) { Get-SafeName } else { $DefaultName })) } }
 $txtInstall.Add_TextChanged({ if ($txtInstall.Focused) { $txtInstall.Tag = 'edited' } })
 $txtName.Add_TextChanged({ Update-InstallDefault })
 Update-InstallDefault
@@ -534,8 +537,6 @@ $btnClose.Add_Click({ $form.Close() })
 
 # ---- Registration
 
-function Get-RegKeyName { 'WinMuse-' + ((Get-SafeName) -replace ' ', '') }
-
 function New-Shortcut([string]$lnk, [string]$target, [string]$name) {
     $ws = New-Object -ComObject WScript.Shell
     $s = $ws.CreateShortcut($lnk); $s.TargetPath = $target; $s.WorkingDirectory = Split-Path $target
@@ -571,13 +572,13 @@ if (`$PSCommandPath -like "`$dir*") { `$t = Join-Path `$env:TEMP 'WinMuse-Uninst
 Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { `$_.Path -like "`$dir*" } | Stop-Process -Force
 Start-Sleep -Milliseconds 800
 Remove-Item -Force -ErrorAction SilentlyContinue '$startMenu', '$desktopLnk'
-Remove-Item -Recurse -Force -ErrorAction SilentlyContinue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$(Get-RegKeyName)', '$classes'
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$(Get-AppRegKey $name)', '$classes'
 foreach (`$t in '$($AudioTypes -join "','")') { Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "HKCU:\Software\Classes\`$t\OpenWithList\WinMuse.exe" }
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `$dir
 "@ | Set-Content -Encoding UTF8 $uninstall
 
     if ($chkApps.Checked) {
-        $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$(Get-RegKeyName)"
+        $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$(Get-AppRegKey $name)"
         New-Item -Force $key | Out-Null
         $size = [int]((Get-ChildItem $installDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
         $props = @{
@@ -590,13 +591,224 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `$dir
     }
 }
 
+# ---- Uninstall and clean up
+
+function Get-FolderSize([string[]]$paths) {
+    $sum = 0L
+    foreach ($p in $paths) {
+        if (Test-Path $p) { $sum += [long](Get-ChildItem $p -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum }
+    }
+    return $sum
+}
+
+function Format-Size([long]$bytes) {
+    if ($bytes -ge 1GB) { return '{0:N1} GB' -f ($bytes / 1GB) }
+    if ($bytes -ge 1MB) { return '{0:N0} MB' -f ($bytes / 1MB) }
+    return '{0:N0} KB' -f [math]::Max(1, [math]::Ceiling($bytes / 1KB))
+}
+
+# Folders only needed to build the app: each project's bin and obj, this tool's temporary files and the downloaded
+# FFmpeg libraries. The next build creates them again.
+function Get-BuildFolders {
+    $projects = Get-ChildItem (Join-Path $Root 'src'), (Join-Path $Root 'tests'), (Join-Path $Root 'tools') -Recurse -File -Include '*.csproj', '*.wixproj' -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' }
+    $folders = foreach ($p in $projects) { Join-Path $p.DirectoryName 'bin'; Join-Path $p.DirectoryName 'obj' }
+    $folders = @($folders) + @($Work, (Join-Path $Root 'external\ffmpeg'), (Join-Path $Root 'external\ffmpeg-arm64'))
+    return @($folders | Where-Object { Test-Path $_ } | Select-Object -Unique)
+}
+
+# The Windows Installer package installed for an app name (found by the upgrade code made from the name), or $null.
+function Find-MsiProduct([string]$name) {
+    try {
+        $msi = New-Object -ComObject WindowsInstaller.Installer
+        $codes = @($msi.GetType().InvokeMember('RelatedProducts', 'GetProperty', $null, $msi, @(Get-MsiUpgradeCode $name)))
+        foreach ($code in $codes) {
+            $location = try { [string]$msi.GetType().InvokeMember('ProductInfo', 'GetProperty', $null, $msi, @($code, 'InstallLocation')) } catch { '' }
+            return [pscustomobject]@{ Code = [string]$code; Dir = $location.TrimEnd('\') }
+        }
+    } catch {}
+    return $null
+}
+
+# The installed app this window can remove: the copy in Location (installed by this tool or by a .exe setup file), or
+# the .msi installed for the name. $null when there is none.
+function Find-Installation {
+    $dir = $txtInstall.Text.Trim().TrimEnd('\')
+    if ($dir -and (Test-Path (Join-Path $dir 'Uninstall.ps1'))) { return [pscustomobject]@{ Kind = 'Tool'; Dir = $dir } }
+    if ($dir -and (Test-Path (Join-Path $dir 'Uninstall.exe')) -and (Test-Path (Join-Path $dir 'setup.ini'))) { return [pscustomobject]@{ Kind = 'Setup'; Dir = $dir } }
+    $product = Find-MsiProduct $txtName.Text.Trim()
+    if ($product) { return [pscustomobject]@{ Kind = 'Msi'; Dir = $product.Dir; Code = $product.Code } }
+    return $null
+}
+
+# Closes the copies of the app that would hold files open, after asking. $false when the user declines.
+function Close-RunningApp([scriptblock]$filter, [string]$reason) {
+    $running = @(Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -and (& $filter $_.Path) })
+    if ($running.Count -eq 0) { return $true }
+    $answer = [System.Windows.Forms.MessageBox]::Show("The app is running. Close it to $reason`?", 'Uninstall', 'OKCancel', 'Question')
+    if ($answer -ne 'OK') { return $false }
+    foreach ($p in $running) { $p.CloseMainWindow() | Out-Null }
+    foreach ($p in $running) { if (-not $p.WaitForExit(4000)) { $p | Stop-Process -Force -ErrorAction SilentlyContinue } }
+    Start-Sleep -Milliseconds 500
+    return $true
+}
+
+function Wait-FolderRemoved([string]$dir, [int]$seconds = 30) {
+    $deadline = (Get-Date).AddSeconds($seconds)
+    while ($dir -and (Test-Path $dir) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 300; [System.Windows.Forms.Application]::DoEvents() }
+}
+
+function Invoke-Uninstall($inst) {
+    switch ($inst.Kind) {
+        'Tool' {
+            Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$(Join-Path $inst.Dir 'Uninstall.ps1')`"" -WindowStyle Hidden -Wait
+            Wait-FolderRemoved $inst.Dir
+        }
+        'Setup' {
+            Start-Process (Join-Path $inst.Dir 'Uninstall.exe') '/silent' -Wait
+            Wait-FolderRemoved $inst.Dir
+        }
+        'Msi' {
+            $p = Start-Process msiexec.exe "/x $($inst.Code) /qn /norestart" -Wait -PassThru
+            if ($p.ExitCode -notin 0, 3010) { throw "Windows Installer could not remove the app (error $($p.ExitCode))." }
+        }
+    }
+    if ($inst.Dir -and (Test-Path (Join-Path $inst.Dir 'WinMuse.exe'))) { throw "The app could not be removed from $($inst.Dir)." }
+}
+
+# Deletes folders, reporting what could not be deleted (a file in use) instead of stopping at the first one.
+function Remove-Folders([string[]]$folders) {
+    $failed = @()
+    foreach ($f in $folders) {
+        Remove-Item -Recurse -Force -LiteralPath $f -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $f) { $failed += $f }
+    }
+    return $failed
+}
+
+# The Current build panel after something was removed: what is left of the last build.
+function Update-CurrentBuild {
+    if (-not $Previous) { return }
+    $s = Get-BuildStatus $Previous
+    if ($s) {
+        $lblTitle.Text = $s.Title; $lblWhere.Text = $s.Where; $lblWhen.Text = $s.When; $tips.SetToolTip($lblWhere, $s.Where)
+    } else {
+        $lblTitle.Text = [string]$Previous.Name
+        $lblWhere.Text = 'Not on this PC anymore. Rebuild to build it again with the same choices.'; $tips.SetToolTip($lblWhere, '')
+        $lblWhen.Text = ''
+    }
+}
+
+# The Uninstall window: one of three choices, each saying exactly what it removes and what it keeps.
+function Show-UninstallDialog {
+    $name = $txtName.Text.Trim(); if (-not $name) { $name = $DefaultName }
+    $inst = Find-Installation
+    $hasData = Test-Path $DataDir
+    $buildFolders = Get-BuildFolders
+    $outputExe = Join-Path (Get-OutputDir $(if ($cmbArch.SelectedIndex -eq 0) { $native } else { [string]$cmbArch.SelectedItem })) 'WinMuse.exe'
+
+    $d = New-Object System.Windows.Forms.Form
+    $d.Text = 'Uninstall'; $d.StartPosition = 'CenterParent'; $d.FormBorderStyle = 'FixedDialog'
+    $d.MinimizeBox = $false; $d.MaximizeBox = $false; $d.ShowInTaskbar = $false; $d.ShowIcon = $false
+    $d.Font = $form.Font; $d.BackColor = $form.BackColor; $d.ClientSize = New-Object System.Drawing.Size(580, 436)
+    Add-Label $d 'Choose what to remove' 24 18 520 26 -Bold | Out-Null
+
+    $choices = @(
+        @{
+            Title = "Uninstall $name"
+            Text = if ($inst) { 'Removes the app, its shortcuts and its entry in Settings > Apps. Your library, playlists and settings are kept.' }
+                   else { "$name is not installed in the location set under Installation." }
+            Where = if ($inst -and $inst.Dir) { $inst.Dir } elseif ($inst) { 'Installed with the Windows Installer package' } else { '' }
+            Enabled = [bool]$inst; Button = 'Uninstall'
+        }
+        @{
+            Title = if ($inst) { 'Uninstall and delete app data' } else { 'Delete app data' }
+            Text = if ($hasData) { "$(if ($inst) { 'Also deletes' } else { 'Deletes' }) your library, playlists, settings, play history, artwork and lyrics ($(Format-Size (Get-FolderSize $DataDir))). Your music files are not touched." }
+                   else { 'There is no app data on this PC.' }
+            Where = if ($hasData) { $DataDir } else { '' }
+            Enabled = [bool]($inst -or $hasData); Button = if ($inst) { 'Uninstall and delete' } else { 'Delete' }
+        }
+        @{
+            Title = 'Clean up build files'
+            Text = if ($buildFolders.Count) {
+                       "Deletes build output, temporary files and downloaded libraries ($(Format-Size (Get-FolderSize $buildFolders))). The source code is kept; the next build takes longer." +
+                       $(if (-not $inst -and (Test-Path $outputExe)) { ' The app is not installed, so its only built copy is removed too.' } else { ' The installed app is not affected.' })
+                   } else { 'There are no build files to remove.' }
+            Where = if ($buildFolders.Count) { "$Root" } else { '' }
+            Enabled = [bool]$buildFolders.Count; Button = 'Clean up'
+        }
+    )
+
+    $btnOk = New-Control Button '' 356 388 116 34; Set-Primary $btnOk
+    $btnCancel = New-Control Button 'Cancel' 480 388 76 34
+    $pathTips = New-Object System.Windows.Forms.ToolTip
+    $btnOk.DialogResult = 'OK'; $btnCancel.DialogResult = 'Cancel'
+    $d.AcceptButton = $btnOk; $d.CancelButton = $btnCancel
+
+    $radios = @()
+    $y = 60
+    foreach ($c in $choices) {
+        $rb = New-Control RadioButton $c.Title 24 $y
+        $rb.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 10); $rb.Enabled = $c.Enabled; $rb.Tag = $c.Button
+        $rb.Add_CheckedChanged({ if ($this.Checked) { $btnOk.Text = $this.Tag } })
+        $d.Controls.Add($rb); $radios += $rb
+        $desc = Add-Label $d $c.Text 44 ($y + 28) 512 40 -Dim
+        if (-not $c.Enabled) { $desc.ForeColor = [System.Drawing.Color]::FromArgb(150, 150, 158) }
+        if ($c.Where) {
+            $loc = Add-Label $d "Location: $($c.Where)" 44 ($y + 70) 512 20 -Dim
+            $loc.AutoEllipsis = $true; $loc.Font = New-Object System.Drawing.Font('Segoe UI', 8.5); $pathTips.SetToolTip($loc, $c.Where)
+        }
+        $y += 104
+    }
+    $d.Controls.AddRange(@($btnOk, $btnCancel))
+    $first = $radios | Where-Object { $_.Enabled } | Select-Object -First 1
+    if ($first) { $first.Checked = $true } else { $btnOk.Text = 'Uninstall'; $btnOk.Enabled = $false; $btnOk.BackColor = [System.Drawing.Color]::FromArgb(190, 190, 198) }
+
+    if ($d.ShowDialog($form) -ne 'OK') { return $null }
+    return [pscustomobject]@{ Choice = [array]::IndexOf($radios, ($radios | Where-Object { $_.Checked })); Installation = $inst; Name = $name; BuildFolders = $buildFolders }
+}
+
 $btnUninstall.Add_Click({
-    $dir = $txtInstall.Text.Trim()
-    $u = Join-Path $dir 'Uninstall.ps1'
-    if (-not (Test-Path $u)) { [System.Windows.Forms.MessageBox]::Show("No installation was found in:`n$dir", 'Uninstall', 'OK', 'Information') | Out-Null; return }
-    if ([System.Windows.Forms.MessageBox]::Show("Uninstall the app from this location?`n$dir`n`nThe library and settings are kept.", 'Uninstall', 'YesNo', 'Question') -ne 'Yes') { return }
-    Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$u`"" -WindowStyle Hidden -Wait
-    Write-Log "Uninstalled from $dir"
+    $pick = Show-UninstallDialog
+    if (-not $pick) { return }
+    $inst = $pick.Installation
+    $log.Clear()
+    try {
+        Set-Busy $true
+        if ($pick.Choice -eq 1) {
+            $confirm = [System.Windows.Forms.MessageBox]::Show("Permanently delete your library, playlists and settings?`n`nThis cannot be undone. Your music files are not touched.",
+                'Delete app data', 'YesNo', 'Warning', 'Button2')
+            if ($confirm -ne 'Yes') { return }
+        }
+        # Copies of the app that would hold the files open: the installed one, any (they all use the data), or the build output.
+        $installDir = if ($inst -and $inst.Dir) { "$($inst.Dir)\*" } else { '*' }
+        $closed = switch ($pick.Choice) {
+            0 { Close-RunningApp { param($p) $p -like $installDir } 'uninstall it' }
+            1 { Close-RunningApp { param($p) $true } 'delete its data' }
+            2 { Close-RunningApp { param($p) $p -like "$Root\*" } 'remove its build files' }
+        }
+        if (-not $closed) { return }
+        if ($pick.Choice -in 0, 1 -and $inst) {
+            Write-Log "Uninstalling $($pick.Name)…"; [System.Windows.Forms.Application]::DoEvents()
+            Invoke-Uninstall $inst
+            Write-Log "Uninstalled $($pick.Name)$(if ($inst.Dir) { " from $($inst.Dir)" })."
+        }
+        if ($pick.Choice -eq 1 -and (Test-Path $DataDir)) {
+            Write-Log 'Deleting app data…'; [System.Windows.Forms.Application]::DoEvents()
+            if (Remove-Folders @($DataDir)) { throw "Some app data could not be deleted. Close any program using $DataDir and try again." }
+            Write-Log "Deleted app data ($DataDir)."
+        }
+        if ($pick.Choice -eq 2) {
+            Write-Log 'Removing build files…'; [System.Windows.Forms.Application]::DoEvents()
+            $size = Get-FolderSize $pick.BuildFolders
+            $left = @(Remove-Folders $pick.BuildFolders)
+            New-Item -ItemType Directory -Force $Work | Out-Null   # this window keeps its temporary files there
+            Write-Log "Removed $(Format-Size ($size - (Get-FolderSize $left))) of build files."
+            foreach ($f in $left) { Write-Log "Could not remove (in use): $f" }
+        }
+        Write-Log 'Completed.'
+    } catch { Write-Log ('Error: ' + $_.Exception.Message) }
+    finally { Set-Busy $false; Update-CurrentBuild }
 })
 
 # ---- Build (runs dotnet in the background; a timer follows its output so the window stays responsive)

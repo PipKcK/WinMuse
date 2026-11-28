@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:WinMuse.Controls"
     xmlns:views="using:WinMuse.Views"
-    Title="Music">
+    Title="Music Player">
 
     <Grid x:Name="RootGrid" KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.RowDefinitions>
@@ -62,7 +62,7 @@
                 <!-- The logo, in the accent color (Settings > Appearance > App icon). -->
                 <!-- Nudged down: centered on the "Music" text's letters rather than its line box. -->
                 <controls:AppLogo x:Name="TitleLogo" Width="20" Height="20" Margin="0,2,0,0" />
-                <TextBlock x:Name="AppNameText" Text="Music" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
+                <TextBlock x:Name="AppNameText" Text="Music Player" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
                 <StackPanel x:Name="ScanIndicator" Orientation="Horizontal" Spacing="8" Visibility="Collapsed" Margin="8,0,0,0">
                     <ProgressRing IsActive="True" Width="12" Height="12" />
                     <TextBlock x:Name="ScanText" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />

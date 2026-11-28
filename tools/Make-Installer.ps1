@@ -3,14 +3,14 @@
 #   msi  "<Name> Setup.msi": a Windows Installer package (tools\InstallerMsi, built with WiX Toolset 5 from NuGet),
 #        which also suits msiexec, Group Policy and Intune.
 #
-#   powershell -ExecutionPolicy Bypass -File tools\Make-Installer.ps1 -Name "Music" -Arch x64 [-Format msi] [-Out "C:\Users\me\Desktop\Music Setup.msi"]
+#   powershell -ExecutionPolicy Bypass -File tools\Make-Installer.ps1 -Name "Music Player" -Arch x64 [-Format msi] [-Out "C:\Users\me\Desktop\Music Player Setup.msi"]
 #
 # The app is published self-contained (the .NET runtime and Windows App SDK travel with it, so the other PC needs
 # nothing installed first). Both formats install it for the current user without administrator rights, with Start
 # menu/desktop shortcuts, "Open with" and an entry in Settings > Apps (with Uninstall).
 # Uses the icon and name already written to src\WinMuse\Assets by Build-App.ps1 (or the defaults).
 param(
-    [string]$Name = 'Music',
+    [string]$Name = 'Music Player',
     [ValidateSet('x64', 'ARM64')] [string]$Arch = 'x64',
     [ValidateSet('exe', 'msi')] [string]$Format = 'exe',
     [string]$Out = '',      # empty: "<Name> Setup.<Format>" on the desktop
@@ -18,8 +18,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
+. (Join-Path $PSScriptRoot 'Shared.ps1')
 if (-not $Version) {
-    $Version = ([xml](Get-Content -Raw (Join-Path $Root 'src\WinMuse\WinMuse.csproj'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+    $Version = Get-AppVersion $Root
     if (-not $Version) { throw 'No <Version> found in src\WinMuse\WinMuse.csproj.' }
 }
 if (-not $Out) { $Out = Join-Path ([Environment]::GetFolderPath('Desktop')) "$Name Setup.$Format" }
@@ -29,7 +30,7 @@ $rid = "win-$($Arch.ToLower())"
 $quoted = '"' + ($Name -replace '"', '') + '"'
 $icon = Join-Path $Root 'src\WinMuse\Assets\AppIcon.ico'
 # Identifies this app (by name) in Settings > Apps, so a newer setup file replaces the copy an older one installed.
-$regKey = 'WinMuse-' + (($Name -replace '[^\w\- ]', '') -replace ' ', '')
+$regKey = Get-AppRegKey $Name
 $utf8 = New-Object Text.UTF8Encoding $false
 
 function Step([string]$text) { Write-Output $text }
@@ -41,8 +42,10 @@ New-Item -ItemType Directory -Force $Work | Out-Null
 & (Join-Path $PSScriptRoot 'Get-FFmpeg.ps1') -Arch $Arch.ToLower()
 
 Step "Publishing a self-contained copy for $Arch (includes the .NET runtime)…"
+# ContinuousIntegrationBuild: deterministic output whose debug info names source files relative to the repository,
+# not by this PC's folders.
 & dotnet publish (Join-Path $Root 'src\WinMuse\WinMuse.csproj') -c Release -p:Platform=$Arch -r $rid --self-contained true `
-    -p:WindowsAppSDKSelfContained=true "-p:Product=$quoted" "-p:AssemblyTitle=$quoted" "-p:Description=$quoted" -o $publish -nologo -v:minimal
+    -p:WindowsAppSDKSelfContained=true -p:ContinuousIntegrationBuild=true "-p:Product=$quoted" "-p:AssemblyTitle=$quoted" "-p:Description=$quoted" -o $publish -nologo -v:minimal
 if ($LASTEXITCODE -ne 0) { throw 'Publishing the app failed.' }
 if (-not (Test-Path (Join-Path $publish 'WinMuse.exe'))) { throw 'The published app is missing WinMuse.exe.' }
 
@@ -126,9 +129,7 @@ if ($Format -eq 'exe') {
     $logo.Dispose()
 
     # Name, version and paths for Package.wxs (a preprocessor include, so any name works without escaping for MSBuild).
-    $hash = [Security.Cryptography.MD5]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes("WinMuse.Msi.$regKey"))
-    $hash[6] = ($hash[6] -band 0x0F) -bor 0x30; $hash[8] = ($hash[8] -band 0x3F) -bor 0x80   # name-based GUID (RFC 4122 v3)
-    $upgradeCode = (New-Object Guid (, $hash)).ToString('B').ToUpper()
+    $upgradeCode = Get-MsiUpgradeCode $Name
     $safeName = $Name -replace '\$', ''
     $defines = @(
         '<?xml version="1.0" encoding="utf-8"?>', '<Include>'
