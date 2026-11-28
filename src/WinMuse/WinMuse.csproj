@@ -77,8 +77,11 @@
   <!-- Fetch FFmpeg automatically on first build if it is missing. -->
   <Target Name="EnsureFFmpeg" BeforeTargets="BeforeBuild" Condition="!Exists('$(MSBuildThisFileDirectory)$(FFmpegDir)\avcodec-62.dll')">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\tools\Get-FFmpeg.ps1&quot; -Arch $(FFmpegArch)" />
+    <!-- The files didn't exist when the project was read, so add them now. Metadata is qualified with the item name:
+         an unqualified %(Filename) inside a target would apply to every None item, not just these. -->
     <ItemGroup>
-      <None Include="$(FFmpegFiles)" Link="ffmpeg\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+      <_DownloadedFFmpeg Include="$(FFmpegFiles)" />
+      <None Include="@(_DownloadedFFmpeg)" Link="ffmpeg\%(_DownloadedFFmpeg.Filename)%(_DownloadedFFmpeg.Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
   </Target>
 </Project>
