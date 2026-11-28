@@ -144,8 +144,8 @@ public sealed class FavoritesService
         var list = new List<object>();
         foreach (var key in _settings.Current.QuickAccessPins)
         {
-            if (key.StartsWith("song:") && _library.GetByPath(key[5..]) is { } t) list.Add(t);
-            else if (key.StartsWith("artist:") && _library.FindArtist(key[7..]) is { } a) list.Add(a);
+            if (key.StartsWith("song:", StringComparison.Ordinal) && _library.GetByPath(key[5..]) is { } t) list.Add(t);
+            else if (key.StartsWith("artist:", StringComparison.Ordinal) && _library.FindArtist(key[7..]) is { } a) list.Add(a);
         }
         return list;
     }

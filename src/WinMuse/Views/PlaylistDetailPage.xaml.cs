@@ -66,7 +66,6 @@ public sealed partial class PlaylistDetailPage : Page
         Cover.Source = p.Art1; Cover.Seed = p.Name;
         Mosaic.Visibility = p.IsMosaic ? Visibility.Visible : Visibility.Collapsed;
         M1.Source = p.Art1; M2.Source = p.Art2; M3.Source = p.Art3; M4.Source = p.Art4;
-        var (a, _) = ColorKit.GradientFor(p.Name);
         Stop1.Color = Svc.Theme.Accent;
         Tracks.Reorderable = Editable;
         Tracks.Sortable = !Editable;

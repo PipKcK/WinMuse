@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);CA1416;CS8618;CS8602;CS8604;MVVMTK0045</NoWarn>
+    <NoWarn>$(NoWarn);CA1416;MVVMTK0045</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +41,7 @@
     <Compile Include="..\..\src\WinMuse\Helpers\ErrorText.cs" Link="App\ErrorText.cs" />
     <Compile Include="..\..\src\WinMuse\Helpers\ColorKit.cs" Link="App\ColorKit.cs" />
     <Compile Include="..\..\src\WinMuse\Services\Matching.cs" Link="App\Matching.cs" />
+    <Compile Include="..\..\src\WinMuse\Services\Genres.cs" Link="App\Genres.cs" />
     <Compile Include="..\..\src\WinMuse\Services\AlbumAgreement.cs" Link="App\AlbumAgreement.cs" />
     <Compile Include="..\..\src\WinMuse\Services\MovedSongs.cs" Link="App\MovedSongs.cs" />
     <Compile Include="..\..\src\WinMuse\Services\LibraryDatabase.cs" Link="App\LibraryDatabase.cs" />

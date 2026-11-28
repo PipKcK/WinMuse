@@ -106,12 +106,12 @@ public sealed class ArtImage : UserControl
     }
 
     /// <summary>Never asks for more room than it is given (a cropped cover must not widen its card).</summary>
-    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size available)
+    protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size availableSize)
     {
-        var desired = base.MeasureOverride(available);
+        var desired = base.MeasureOverride(availableSize);
         return new Windows.Foundation.Size(
-            double.IsInfinity(available.Width) ? desired.Width : Math.Min(desired.Width, available.Width),
-            double.IsInfinity(available.Height) ? desired.Height : Math.Min(desired.Height, available.Height));
+            double.IsInfinity(availableSize.Width) ? desired.Width : Math.Min(desired.Width, availableSize.Width),
+            double.IsInfinity(availableSize.Height) ? desired.Height : Math.Min(desired.Height, availableSize.Height));
     }
 
     private void UpdatePlaceholder()

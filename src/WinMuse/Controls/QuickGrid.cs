@@ -1,4 +1,3 @@
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Foundation;
 
@@ -22,9 +21,9 @@ public sealed class QuickGrid : Panel
     private int Columns(double width) => Math.Clamp((int)((width + Spacing) / (MinItemWidth + Spacing)), MinColumns, MaxColumns);
     private double ItemWidth(double width, int cols) => Math.Max(0, (width - Spacing * (cols - 1)) / cols);
 
-    protected override Size MeasureOverride(Size available)
+    protected override Size MeasureOverride(Size availableSize)
     {
-        var width = double.IsInfinity(available.Width) ? MinItemWidth * MinColumns + Spacing : available.Width;
+        var width = double.IsInfinity(availableSize.Width) ? MinItemWidth * MinColumns + Spacing : availableSize.Width;
         int cols = Columns(width);
         var size = new Size(ItemWidth(width, cols), ItemHeight);
         int visible = Math.Min(Children.Count, MaxItems);

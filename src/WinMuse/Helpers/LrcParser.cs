@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using WinMuse.Models;
 
@@ -21,7 +22,7 @@ public static partial class LrcParser
         {
             var line = raw.Trim();
             var om = OffsetTag().Match(line);
-            if (om.Success) { long.TryParse(om.Groups[1].Value, out offsetMs); continue; }
+            if (om.Success) { offsetMs = long.TryParse(om.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var o) ? o : 0; continue; }
 
             var matches = TimeTag().Matches(line);
             if (matches.Count == 0) continue;
@@ -30,10 +31,10 @@ public static partial class LrcParser
             content = Regex.Replace(content, @"<\d+:\d+(?:\.\d+)?>", "").Trim();
             foreach (Match m in matches)
             {
-                var min = int.Parse(m.Groups[1].Value);
-                var sec = int.Parse(m.Groups[2].Value);
+                var min = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                var sec = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
                 var frac = m.Groups[3].Success ? m.Groups[3].Value : "0";
-                var ms = frac.Length switch { 1 => int.Parse(frac) * 100, 2 => int.Parse(frac) * 10, _ => int.Parse(frac[..3]) };
+                var ms = frac.Length switch { 1 => int.Parse(frac, CultureInfo.InvariantCulture) * 100, 2 => int.Parse(frac, CultureInfo.InvariantCulture) * 10, _ => int.Parse(frac[..3], CultureInfo.InvariantCulture) };
                 var t = TimeSpan.FromMilliseconds(Math.Max(0, (min * 60 + sec) * 1000L + ms - offsetMs));
                 lines.Add(new LyricLine(t, content));
             }

@@ -1,4 +1,3 @@
-﻿using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -7,7 +6,6 @@ using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services;
 using WinMuse.Services.Audio;
-using WinMuse.Views;
 
 namespace WinMuse.Controls;
 

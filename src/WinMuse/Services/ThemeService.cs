@@ -167,7 +167,7 @@ public sealed partial class ThemeService : ObservableObject
                 var key = target switch
                 {
                     "SelectedText" => "AccentFillColorSelectedTextBackgroundBrush",
-                    _ when target.StartsWith("Text") => $"AccentTextFillColor{target[4..]}Brush",
+                    _ when target.StartsWith("Text", StringComparison.Ordinal) => $"AccentTextFillColor{target[4..]}Brush",
                     _ => $"AccentFillColor{target}Brush",
                 };
                 if (rd.TryGetValue(key, out var brush)) rd[alias] = brush;
@@ -193,7 +193,7 @@ public sealed partial class ThemeService : ObservableObject
     {
         var res = Application.Current.Resources;
         var dark = IsDark;
-        var (h, sat, l) = ColorKit.ToHsl(c);
+        var (h, sat, _) = ColorKit.ToHsl(c);
         sat = Math.Max(sat, 0.3);
         var tuned = s_adjust(c, dark);
 

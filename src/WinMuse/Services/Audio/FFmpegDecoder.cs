@@ -183,10 +183,14 @@ public sealed unsafe class FFmpegDecoder : IDisposable
         Array.Copy(src, 0, ring, end, first);
         if (n > first) Array.Copy(src, first, ring, 0, n - first);
         _ringCount += n;
+#if DEBUG
         _primed = true;
+#endif
     }
 
-    private bool _primed; // the ring has been filled at least once (running dry after that is an underrun)
+#if DEBUG
+    private bool _primed; // the ring has been filled at least once (running dry after that is an underrun); Debug log only
+#endif
 
     private int RingRead(float[] dst, int offset, int count)
     {
@@ -253,7 +257,13 @@ public sealed unsafe class FFmpegDecoder : IDisposable
         {
             if (_disposed) return;
             SeekDecoder(position);
-            lock (_ringLock) { _ringStart = _ringCount = 0; _primed = false; }
+            lock (_ringLock)
+            {
+                _ringStart = _ringCount = 0;
+#if DEBUG
+                _primed = false;
+#endif
+            }
         }
         _wake.Set();
     }

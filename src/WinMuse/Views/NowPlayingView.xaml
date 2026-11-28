@@ -190,7 +190,7 @@
                 <!-- Right: lyrics / queue / details -->
                 <Grid x:Name="RightPanel" Grid.Column="1">
                     <Grid x:Name="LyricsPanel">
-                        <ScrollViewer x:Name="LyricsScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled" ViewChanged="OnLyricsScrolled">
+                        <ScrollViewer x:Name="LyricsScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled">
                             <StackPanel x:Name="LyricsLines" Spacing="18" Padding="0,180,24,260" />
                         </ScrollViewer>
                         <StackPanel x:Name="LyricsEmpty" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14" Visibility="Collapsed">

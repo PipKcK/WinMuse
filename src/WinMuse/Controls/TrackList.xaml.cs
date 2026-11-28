@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.System;
@@ -143,7 +142,7 @@ public sealed partial class TrackList : UserControl
     // ---------------- Columns ----------------
 
     // Column indices in the header and row templates.
-    private const int ColCheck = 0, ColLead = 1, ColArtist = 4, ColYear = 5, ColAlbum = 6, ColGenre = 7;
+    private const int ColCheck = 0, ColLead = 1, ColYear = 5, ColAlbum = 6, ColGenre = 7;
 
     private void ApplyColumnsEverywhere()
     {

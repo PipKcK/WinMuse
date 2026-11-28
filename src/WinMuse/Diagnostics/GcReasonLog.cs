@@ -24,7 +24,7 @@ internal sealed class GcReasonLog : EventListener
 
     protected override void OnEventWritten(EventWrittenEventArgs e)
     {
-        if (e.EventName?.StartsWith("GCStart") != true || e.Payload == null) return;
+        if (e.EventName?.StartsWith("GCStart", StringComparison.Ordinal) != true || e.Payload == null) return;
         int depth = Convert.ToInt32(e.Payload[e.PayloadNames!.IndexOf("Depth")]);
         if (depth < 2) return;
         int reason = Convert.ToInt32(e.Payload[e.PayloadNames.IndexOf("Reason")]);

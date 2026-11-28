@@ -204,7 +204,7 @@ public sealed class TagService
         "dts" => "DTS",
         "truehd" => "TrueHD",
         "mlp" => "MLP",
-        var s when s.StartsWith("pcm_") => "PCM",
+        var s when s.StartsWith("pcm_", StringComparison.Ordinal) => "PCM",
         var s => s.ToUpperInvariant(),
     };
 }

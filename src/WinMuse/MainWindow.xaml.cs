@@ -546,12 +546,6 @@ public sealed partial class MainWindow : Window
 
     // ---------------- Keyboard ----------------
 
-    private bool IsTyping()
-    {
-        var focused = FocusManager.GetFocusedElement(RootGrid.XamlRoot);
-        return focused is TextBox or PasswordBox or AutoSuggestBox or RichEditBox or ComboBox;
-    }
-
     private void OnAccelPlayPause(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e)
     {
         e.Handled = true;

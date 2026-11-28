@@ -304,9 +304,9 @@ A few decisions worth knowing about:
 ```
 src/WinMuse/
   Services/Audio/   FFmpegDecoder, PlaybackPipeline, Equalizer, SpectrumAnalyzer, AudioEngine (WASAPI)
-  Services/         Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Theme,
-                    OnlineMetadata + MusicSources + ArtistImages, MetadataServices (identify, edit, lyrics,
-                    fingerprint), AutoFix, Favorites, ContinueListening, SystemIntegration (media overlay, taskbar)
+  Services/         Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Theme, Settings,
+                    OnlineMetadata (+ .MusicSources, .ArtistImages), MetadataEdit (identify, edit), Lyrics,
+                    Fingerprint, AutoFix, Favorites, ContinueListening, Smtc (media overlay), Taskbar
   Controls/         PlayerBar, TrackList, QueuePanel, ArtImage, AmbientBackground (aurora), Visualizer, shelf rows
   Views/            Pages, NowPlayingView, MiniPlayerWindow
   Dialogs/          Metadata editor, Fetch, playlists (incl. smart rules), album/artist/genre editors, API keys
@@ -333,6 +333,8 @@ tracks CPU and memory, a screenshot pass over every page in both themes, and a r
 
 Issues and pull requests are welcome. If you're changing something visible, a before/after screenshot helps a lot.
 For anything touching playback, please run the audio tests: they catch gaps and glitches you can't always hear.
+Code style (naming, layout, one class per file) is in `.editorconfig`, which Visual Studio, VS Code and Rider apply
+automatically; a Release build has no warnings, and it should stay that way.
 
 ## Notes
 

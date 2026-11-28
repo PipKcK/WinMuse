@@ -22,7 +22,7 @@ public sealed class Visualizer : Grid
     private bool _rendering;
 
     public int BarCount { get; set; } = 48;
-    public VisualizerStyle Style { get; set; } = VisualizerStyle.Bars;
+    public VisualizerStyle Mode { get; set; } = VisualizerStyle.Bars;
     public double BarOpacity { get; set; } = 0.9;
     /// <summary>Level multiplier (behind the player bar the bars need more height to show through the blur).</summary>
     public double Gain { get; set; } = 1;
@@ -167,20 +167,20 @@ public sealed class Visualizer : Grid
         float w = (float)ActualWidth, h = (float)ActualHeight;
         int n = _bars.Count;
         float slot = w / n;
-        float barW = Style == VisualizerStyle.Line ? MathF.Max(2, slot * 0.22f) : MathF.Max(2, slot * 0.58f);
+        float barW = Mode == VisualizerStyle.Line ? MathF.Max(2, slot * 0.22f) : MathF.Max(2, slot * 0.58f);
         float radius = barW / 2;
 
         for (int i = 0; i < n; i++)
         {
             // mirror the spectrum around the centre for a symmetric look
-            int src = Style == VisualizerStyle.Mirror ? Math.Min(n - 1, Math.Abs(i - n / 2) * 2) : i;
+            int src = Mode == VisualizerStyle.Mirror ? Math.Min(n - 1, Math.Abs(i - n / 2) * 2) : i;
             float lv = MathF.Min(1, _levels[Math.Clamp(src, 0, n - 1)] * (float)Gain);
             float bh = MathF.Max(barW, lv * h);
             var (_, geo) = _bars[i];
             geo.Size = new Vector2(barW, bh);
             geo.CornerRadius = new Vector2(radius, radius);
             float x = i * slot + (slot - barW) / 2;
-            float y = Style == VisualizerStyle.Mirror ? (h - bh) / 2 : h - bh;
+            float y = Mode == VisualizerStyle.Mirror ? (h - bh) / 2 : h - bh;
             geo.Offset = new Vector2(x, y);
         }
     }

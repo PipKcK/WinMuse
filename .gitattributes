@@ -1,0 +1,10 @@
+# Text files are stored with LF line endings and checked out in the platform's style.
+* text=auto
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.ico binary
+*.dll binary
+*.exe binary
+*.msi binary

@@ -21,7 +21,6 @@ public sealed partial class NowPlayingView : UserControl
     private readonly List<TextBlock> _lineBlocks = new();
     private int _activeLine = -1;
     private DateTime _userScrolledAt = DateTime.MinValue;
-    private bool _programmaticScroll;
     private CancellationTokenSource? _lyricsCts;
     private Track? _lyricsFor;
     /// <summary>Lyrics timing for the current song: positive shows each line later.</summary>
@@ -113,7 +112,7 @@ public sealed partial class NowPlayingView : UserControl
     {
         Visibility = Visibility.Visible;
         Viz.IsActive = true;
-        Viz.Style = Svc.Settings.Current.VisualizerStyle;
+        Viz.Mode = Svc.Settings.Current.VisualizerStyle;
         Viz.Visibility = Svc.Settings.Current.ShowVisualizer ? Visibility.Visible : Visibility.Collapsed;
         Aurora.Animate = Svc.Settings.Current.AnimateBackground;
         if (lyrics) Tabs.SelectedItem = TabLyrics;
@@ -353,7 +352,6 @@ public sealed partial class NowPlayingView : UserControl
         if ((DateTime.Now - _userScrolledAt).TotalSeconds > 3.5)
         {
             var y = tb.TransformToVisual(LyricsLines).TransformPoint(new Windows.Foundation.Point(0, 0)).Y;
-            _programmaticScroll = true;
             LyricsScroll.ChangeView(null, Math.Max(0, y - LyricsScroll.ViewportHeight * 0.36), null, false);
         }
     }
@@ -403,11 +401,6 @@ public sealed partial class NowPlayingView : UserControl
         LyricsTimingSlider.Value = _lyricsOffsetMs / 1000.0;
         LyricsTimingBox.Value = Math.Round(_lyricsOffsetMs / 1000.0, 2);
         _offsetUpdating = false;
-    }
-
-    private void OnLyricsScrolled(object? sender, ScrollViewerViewChangedEventArgs e)
-    {
-        if (!e.IsIntermediate) _programmaticScroll = false;
     }
 
     private async void OnFetchLyrics(object sender, RoutedEventArgs e)

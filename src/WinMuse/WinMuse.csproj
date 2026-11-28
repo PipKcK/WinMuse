@@ -21,7 +21,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-    <NoWarn>$(NoWarn);CA1416;MVVMTK0045;CS8618;CS8602;CS8604</NoWarn>
+    <NoWarn>$(NoWarn);CA1416;MVVMTK0045</NoWarn>
 
     <!-- Internal identity is WinMuse; everything user-facing says "Music Player" (or the name set with tools\Build-App.ps1). -->
     <Product>Music Player</Product>

@@ -8,7 +8,9 @@ namespace WinMuse.Tests;
 /// <summary>
 /// Decoding real songs (MUSIC_TEST_DIR): every file opens and decodes, decode-ahead gives exactly the same audio as
 /// direct decoding, seeking lands where asked, and the gapless pipeline joins songs without losing samples.
+/// Runs on its own (not alongside other test classes), so the CPU test measures only the decoder.
 /// </summary>
+[Collection(AudioCollection.Name)]
 public class AudioTests
 {
     private const int Rate = 48000;
@@ -88,7 +90,7 @@ public class AudioTests
     }
 
     [Fact]
-    public void Seek_WhileReading_FromAnotherThread_DoesNotThrow()
+    public async Task Seek_WhileReading_FromAnotherThread_DoesNotThrow()
     {
         var path = TestSupport.Songs(1).FirstOrDefault();
         if (path == null) return;
@@ -98,7 +100,7 @@ public class AudioTests
         var reader = Task.Run(() => { var buf = new float[4096]; while (DateTime.UtcNow < stop) if (d.Read(buf, 0, buf.Length) == 0) d.Seek(TimeSpan.Zero); });
         var rng = new Random(7);
         while (DateTime.UtcNow < stop) { d.Seek(TimeSpan.FromSeconds(rng.NextDouble() * Math.Max(1, d.Duration.TotalSeconds - 5))); Thread.Sleep(5); }
-        reader.Wait();
+        await reader;
     }
 
     [Fact]
@@ -156,4 +158,11 @@ public class AudioTests
         _out.WriteLine($"decode-ahead CPU: {cpuPct:0.00}% of the machine");
         Assert.True(cpuPct < 2, $"{cpuPct:0.00}%");
     }
+}
+
+/// <summary>The audio tests' collection: run after the others, with nothing in parallel.</summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class AudioCollection
+{
+    public const string Name = "Audio";
 }

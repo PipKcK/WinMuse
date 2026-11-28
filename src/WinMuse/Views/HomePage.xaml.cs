@@ -576,7 +576,7 @@ public sealed partial class HomePage : Page
         UpdateAppearanceButton();
         var a = Svc.Theme.Accent;
         ColorTween.To(PlaylistLineStop, ColorKit.Lighten(a, 0.1));
-        var (h, s, l) = ColorKit.ToHsl(a);
+        var (h, s, _) = ColorKit.ToHsl(a);
         // Glow: the banner's colors, see-through and fading to nothing, so it melts into the theme.
         var wash = ColorKit.FromHsl(h + 10, Math.Max(0.55, s), 0.5);
         ColorTween.To(GlowWashTop, ColorKit.WithAlpha(wash, 120));
@@ -621,7 +621,6 @@ public sealed partial class HomePage : Page
 
     private async void OnShuffleAll(object sender, RoutedEventArgs e) => await Svc.Player.PlayAsync(Svc.Library.Tracks, 0, shuffle: true);
     private void OnResume(object sender, RoutedEventArgs e) { if (!Svc.Player.IsPlaying) Svc.Player.Play(); App.MainWindow.ShowNowPlaying(true); }
-    private void OnSeeAlbums(object sender, RoutedEventArgs e) => App.MainWindow.Navigate(typeof(AlbumsPage));
 
     private async void OnQuickPickTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
     {
