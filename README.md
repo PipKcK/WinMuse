@@ -99,11 +99,11 @@ fade softly at their edges.
 
 Make normal playlists (reorder them, give them a custom cover, import or export M3U), or **smart playlists** built from
 rules: genre, play count, rating, dates added and played, format and more. Smart playlists update by themselves as your
-library changes. Tap the heart on any song to add it to **Favorite**.
+library changes. Tap the heart on any song to add it to **Favorites**.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/playlists.jpg" alt="Playlists page with a smart playlist, Favorite and a custom playlist" /></td>
+    <td width="50%"><img src="docs/screenshots/playlists.jpg" alt="Playlists page with a smart playlist, Favorites and a custom playlist" /></td>
     <td width="50%"><img src="docs/screenshots/smart-playlist.jpg" alt="Smart playlist editor with a Genre contains Hop rule" /></td>
   </tr>
 </table>
@@ -163,9 +163,9 @@ click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narr
 | Area | Features |
 |---|---|
 | **Playback** | FFmpeg decoding (decoded ahead on its own thread) → WASAPI. Gapless, crossfade (0–12 s), 10-band EQ with presets, preamp and soft limiter, genre-matched and per-song EQ, smooth volume, output device choice. The queue and position are restored when you reopen the app. |
-| **Library** | Scans any number of folders (TagLib#, with FFmpeg filling the gaps), stores everything in SQLite, watches folders for changes, and reads embedded or folder art (`cover.jpg`, `folder.jpg`…). Browse by songs, albums, artists and genres, with search everywhere. |
+| **Library** | Scans any number of folders (TagLib#, with FFmpeg filling the gaps), stores everything in SQLite, watches folders for changes, and reads embedded or folder art (`cover.jpg`, `folder.jpg`…). A song whose file is moved or renamed, even by a tag editor that rewrites its tags, keeps its plays, Favorites and playlist places. Browse by songs, albums, artists and genres, with search everywhere. |
 | **Queue** | Collapsible **Up next** panel, a full Queue page, drag to reorder, play next or add to queue, shuffle, repeat all or one. |
-| **Playlists** | Normal playlists (reorder, custom cover, M3U import/export), smart playlists from rules, automatic playlists on Home, and Favorite (the heart). |
+| **Playlists** | Normal playlists (reorder, custom cover, M3U import/export), smart playlists from rules, automatic playlists on Home, and Favorites (the heart). |
 | **Home** | Time-of-day greeting with Shuffle All, Quick Access (pins, favorites and a few discoveries), Continue Listening, automatic playlists, and one row per playlist with the sort order of your choice. |
 | **Metadata** | Automatic identification of new songs, manual **Fetch** for any song (pick another match or search yourself), the Fetch overview page, a single- or multi-song editor (details, artwork, lyrics, file info), a read-only Properties view, artist and genre renaming, and **New album** to build an album from songs you choose. |
 | **Lyrics** | Synced lyrics from LRCLIB, kept in Music's data folder (an `.lrc` you already have next to a song is read too). Click a line to seek, adjust timing per song, or add your own. |
@@ -214,17 +214,23 @@ Or open `WinMuse.sln` and press <kbd>F5</kbd> with the **x64** (or **ARM64**) pl
 `tools/Build-App.ps1` opens a small window that builds the app for you (right-click → *Run with PowerShell*, or
 `powershell -ExecutionPolicy Bypass -File tools\Build-App.ps1`):
 
+- **Current build**: when the app has been built before, the window opens with that build's choices and shows its
+  version, where it is, and whether the source has changed since. **Rebuild and update** builds the current source
+  again with them and replaces the installed copy, so trying a change takes one click.
 - **Name**: shown in the title bar, Start menu and Settings → Apps (default "Music"). The exe stays `WinMuse.exe` and
   your library stays in `%LocalAppData%\WinMuse`.
-- **Icon**: one of the designs in `tools/icons`, any color (the design is recolored for you), or your own SVG, PNG, JPG
-  or ICO, with a live preview.
-- **Title-bar logo**: follows the accent color, or shows your icon exactly as it is.
-- **Architecture**: Auto, x64 or ARM64.
-- **Install as a Windows app** (optional): Start menu shortcut, desktop shortcut, an entry in Settings → Apps with an
+- **Icon**: the current icon, one of the designs in `tools/icons`, a custom color (the design is recolored for you),
+  or your own SVG, PNG, JPG or ICO, with a live preview.
+- **Title bar logo**: follows the accent color, or shows your icon exactly as it is.
+- **Architecture**: Automatic, x64 or ARM64.
+- **Installation** (optional): Start menu shortcut, desktop shortcut, an entry in Settings → Apps with an
   uninstaller, and "Open with" for audio files.
-- **Create installer**: a single self-contained `<Name> Setup.exe` you can share with anyone (`tools/Make-Installer.ps1`).
+- **Setup file**: a single self-contained `<Name> Setup.exe` you can share with anyone (`tools/Make-Installer.ps1`).
+- **Developer hints**: explains every option. Set `$DeveloperHints = $false` at the top of the script to remove the
+  button for a release.
 
-The name and logo choice are written to `src/WinMuse/Assets/Branding.json`.
+The name and logo choice are written to `src/WinMuse/Assets/Branding.json`. The last build's choices are kept in
+`%LocalAppData%\WinMuse-Build\last-build.json`.
 
 <details>
 <summary>Using your own icon without the build tool</summary>
