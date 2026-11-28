@@ -11,8 +11,13 @@ $env:MUSIC_TEST_DIR = "$env:LOCALAPPDATA\WinMuseTests\Music"   # a copy of real 
 dotnet test tests\WinMuse.Tests -p:Platform=x64 --logger "trx;LogFileName=unit.trx" --results-directory "$env:LOCALAPPDATA\WinMuseTests\Results"
 ```
 
-Covers artist credits, matching, lyrics parsing, formatting, collection sync, the database, and audio (every song decodes,
-decode-ahead is bit-identical, seeking, thread safety, gapless joins, prefetch CPU).
+The tests reference `src/WinMuse.Core` and build the services the way the app does (`TestApp.cs`), each over a fresh
+settings file and database, with an inline UI dispatcher and a notifier that records messages.
+
+Covers the view models (Home, Now Playing, Settings), artist credits, matching, lyrics parsing (including line breaks
+typed in the editor), formatting, collection sync, the database, the background blur styles and the settings upgrade,
+and audio (every song decodes, decode-ahead is bit-identical, seeking, thread safety, gapless joins, prefetch CPU).
+GitHub Actions runs them on every push and pull request (`.github/workflows/build.yml`).
 
 ## Build script and stress (`ui`)
 

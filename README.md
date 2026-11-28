@@ -14,6 +14,7 @@ colors of whatever is playing.
 ![WinUI 3](https://img.shields.io/badge/WinUI-3-6E4AFF)
 ![FFmpeg](https://img.shields.io/badge/decoding-FFmpeg_8-007808?logo=ffmpeg&logoColor=white)
 ![x64 and ARM64](https://img.shields.io/badge/arch-x64%20%7C%20ARM64-555)
+[![Build and test](https://github.com/PipKcK/WinMuse/actions/workflows/build.yml/badge.svg)](https://github.com/PipKcK/WinMuse/actions/workflows/build.yml)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 <img src="docs/screenshots/home.jpg" alt="Home: greeting, Quick Access, Fresh in Your Library and the Up next panel, tinted by the album that is playing" />
@@ -144,7 +145,8 @@ clicks, and a choice of output device.
 ### Make it yours
 
 Light, dark, follow Windows, or **OLED true black**. The accent comes from Windows, a color you pick, or the album
-art. The background can be the album "aurora", a three-color gradient, or your own wallpaper with real blur and dim.
+art. The background can be the album "aurora", a three-color gradient, or your own image, blurred in one of four
+styles (smooth Gaussian, an out-of-focus lens, frosted glass or motion streaks) and dimmed to taste.
 Choose the card style for Home and the highlight for the playing song. A compact, always-on-top **mini player** is one
 click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narrow windows.
 
@@ -303,8 +305,20 @@ processed at a time. Turn any automatic download off in **Settings → Metadata*
 
 ## Under the hood
 
-WinMuse is a single WinUI 3 app with a small set of app-wide services (`Services/Svc.cs`) and pages that talk to them
-directly.
+WinMuse is two projects. **WinMuse.Core** holds everything that doesn't need a window: the models, the library and its
+database, metadata, lyrics, the audio engine, settings, and the view models behind Home, Now Playing and Settings. It
+has no WinUI reference, so the tests build any part of it directly. **WinMuse** is the WinUI 3 app: pages, controls,
+dialogs and the Windows integration (theme, media controls, taskbar).
+
+```
+WinMuse (WinUI app)                         WinMuse.Core (no UI)
+  Views, Controls, Dialogs ──── bind to ──►   ViewModels (Home, Now Playing, Settings)
+  Svc: builds every service once ─────────►   Services ──► Library, Playback, Metadata, Lyrics, Settings...
+  UiDispatcher, Notifier ── implement ────►   IUiDispatcher, INotifier
+```
+
+Services get what they need through their constructors (`Services/Svc.cs` is the one place that builds them) and reach
+the UI thread and notifications only through `IUiDispatcher` and `INotifier`, so tests pass simple stand-ins instead.
 
 ```
 FFmpegDecoder ──► PlaybackPipeline ──► PcmOutputProvider ──► WASAPI (NAudio)
@@ -324,17 +338,22 @@ A few decisions worth knowing about:
   song that is playing (or queued next) wait until it closes, so playback never jumps.
 
 ```
-src/WinMuse/
+src/WinMuse.Core/
   Services/Audio/   FFmpegDecoder, PlaybackPipeline, Equalizer, SpectrumAnalyzer, AudioEngine (WASAPI)
-  Services/         Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Theme, Settings,
+  Services/         Library (SQLite + scanner + watcher), Tags, Artwork, Playback (queue), Settings,
                     OnlineMetadata (+ .MusicSources, .ArtistImages), MetadataEdit (identify, edit), Lyrics,
-                    Fingerprint, AutoFix, Favorites, ContinueListening, Smtc (media overlay), Taskbar
+                    Fingerprint, AutoFix, Favorites, ContinueListening, IUiDispatcher, INotifier
+  ViewModels/       Home, Now Playing, Settings
+  Models/, Helpers/ Tracks, albums, playlists, settings; formatting, LRC parsing, image blur
+src/WinMuse/
+  Services/         Svc (builds the services), Theme, Smtc (media overlay), Taskbar, Notifier, Selection
   Controls/         PlayerBar, TrackList, QueuePanel, ArtImage, AmbientBackground (aurora), Visualizer, shelf rows
   Views/            Pages, NowPlayingView, MiniPlayerWindow
   Dialogs/          Metadata editor, Fetch, playlists (incl. smart rules), album/artist/genre editors, API keys
   Themes/           Fluent control styles, accent brushes and card templates
 tools/              Build tool, installer, icon and FFmpeg scripts
-tests/              Unit tests (WinMuse.Tests) and UI stress/visual scripts (ui/)
+tests/              Unit tests (WinMuse.Tests, against WinMuse.Core) and UI stress/visual scripts (ui/)
+.github/workflows/  Build for x64 and ARM64 and run the tests on every push and pull request
 ```
 
 **Your data** lives in `%LocalAppData%\WinMuse`: `settings.json`, `library.db`, the artwork cache, downloaded
@@ -346,8 +365,10 @@ lyrics and `log.txt`. Set `WINMUSE_DATA_DIR` to run a fully separate copy (handy
 dotnet test tests\WinMuse.Tests -p:Platform=x64
 ```
 
-The unit tests cover artist credits, matching, lyrics parsing, formatting, the database, and the audio engine (every
-song decodes, decode-ahead is bit-identical, seeking, gapless joins). `tests/ui` adds a scripted stress session that
+The unit tests cover the view models (what Home, Now Playing and Settings show and do), artist credits, matching,
+lyrics parsing, formatting, the database, the background blur styles, and the audio engine (every song decodes,
+decode-ahead is bit-identical, seeking, gapless joins). GitHub Actions runs them, and builds the app for x64 and ARM64,
+on every push and pull request. `tests/ui` adds a scripted stress session that
 tracks CPU and memory, a screenshot pass over every page in both themes, and a report generator. See
 [tests/README.md](tests/README.md).
 
@@ -356,7 +377,8 @@ tracks CPU and memory, a screenshot pass over every page in both themes, and a r
 Issues and pull requests are welcome. If you're changing something visible, a before/after screenshot helps a lot.
 For anything touching playback, please run the audio tests: they catch gaps and glitches you can't always hear.
 Code style (naming, layout, one class per file) is in `.editorconfig`, which Visual Studio, VS Code and Rider apply
-automatically; a Release build has no warnings, and it should stay that way.
+automatically; a Release build has no warnings (the CI build treats warnings as errors), and it should stay that way.
+New logic belongs in WinMuse.Core with a test; pages should only lay things out and animate them.
 
 ## Notes
 
