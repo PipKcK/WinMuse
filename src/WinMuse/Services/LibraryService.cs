@@ -293,6 +293,7 @@ public sealed partial class LibraryService
                 var listed = merged.ToHashSet();
                 merged.AddRange(result.Restored.Where(t => !listed.Contains(t)));
                 foreach (var (from, to) in result.Moved) MoveSongData(from, to);
+                foreach (var t in result.Restored) t.Refresh(); // a moved song shown elsewhere shows its new file
                 _missing = result.Missing.ToDictionary(t => t.Path, StringComparer.OrdinalIgnoreCase);
                 SetTracks(merged);
                 if (result.Hidden.Count > 0 || result.Restored.Count > 0) ReloadPlaylistItems();
@@ -346,7 +347,7 @@ public sealed partial class LibraryService
     /// <summary>
     /// Reads new and changed files. A song whose file is gone is not deleted: it is hidden and kept (a folder moved away
     /// and back, an unplugged drive, a folder being renamed) and comes back with its details, plays and playlist places
-    /// when the file is found again at the same path, or elsewhere in the library unchanged (same name, size and date).
+    /// when the file is found again at the same path, or moved or renamed elsewhere in the library (see <see cref="MovedSongs"/>).
     /// Songs are removed for good only when they are no longer inside a library folder (a folder removed in Settings),
     /// or after 30 days missing while their library folder is there.
     /// </summary>
@@ -383,30 +384,34 @@ public sealed partial class LibraryService
             return now - t.MissingSince > KeepMissingSeconds && Directory.Exists(root);
         }).ToHashSet();
 
-        // Missing songs found again: at the same path first, then moved within the library unchanged.
+        // Missing songs found again: at the same path first, then moved or renamed unchanged (see MovedSongs). Songs
+        // that moved and changed are matched after the new files have been read, below.
         var known = new Dictionary<string, Track>(existing, StringComparer.OrdinalIgnoreCase);
         var back = new Dictionary<string, Track>(StringComparer.OrdinalIgnoreCase);
         var candidates = missing.Where(t => !purged.Contains(t)).Concat(goneInLibrary).ToList(); // incl. songs moved since the last scan
+        var claimed = new HashSet<Track>();
         if (candidates.Count > 0)
         {
             var byPath = candidates.ToDictionary(t => t.Path, StringComparer.OrdinalIgnoreCase);
-            var byFile = candidates.GroupBy(t => (Path.GetFileName(t.Path).ToLowerInvariant(), t.FileSize, t.ModifiedUtc))
-                .Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.First());
-            var claimed = new HashSet<Track>();
             var fresh = files.Where(f => !existing.ContainsKey(f)).ToList();
             foreach (var f in fresh)
                 if (byPath.TryGetValue(f, out var m) && claimed.Add(m)) back[f] = m;
-            if (byFile.Count > 0)
+            var open = candidates.Where(t => !claimed.Contains(t)).ToList();
+            if (open.Count > 0)
+            {
+                var stamps = new List<MovedSongs.NewFile>();
                 foreach (var f in fresh.Where(f => !back.ContainsKey(f)))
                 {
                     try
                     {
                         var fi = new FileInfo(f);
-                        var key = (fi.Name.ToLowerInvariant(), fi.Length, new DateTimeOffset(fi.LastWriteTimeUtc).ToUnixTimeSeconds());
-                        if (byFile.TryGetValue(key, out var m) && claimed.Add(m)) back[f] = m;
+                        stamps.Add(new MovedSongs.NewFile(f, fi.Length, new DateTimeOffset(fi.LastWriteTimeUtc).ToUnixTimeSeconds()));
                     }
                     catch (Exception ex) { AppPaths.Log($"Stat {f}: {ex.Message}"); }
                 }
+                foreach (var (f, m) in MovedSongs.MatchUnchanged(open, stamps))
+                    if (claimed.Add(m)) back[f] = m;
+            }
             foreach (var (f, m) in back) known[f] = m;
         }
 
@@ -447,6 +452,22 @@ public sealed partial class LibraryService
         });
 
         var list = changed.ToList();
+
+        // Songs whose file moved or was renamed and also changed (a tag editor that renames as it saves).
+        var unclaimed = candidates.Where(t => !claimed.Contains(t)).ToList();
+        var unknown = list.Where(t => !known.ContainsKey(t.Path)).ToList();
+        if (unclaimed.Count > 0 && unknown.Count > 0)
+        {
+            var byNewPath = unknown.ToDictionary(t => t.Path, StringComparer.OrdinalIgnoreCase);
+            foreach (var (f, m) in MovedSongs.MatchChanged(unclaimed, unknown))
+            {
+                if (!claimed.Add(m)) continue;
+                back[f] = m; known[f] = m;
+                var t = byNewPath[f];
+                t.Id = m.Id; t.AddedUtc = m.AddedUtc;
+            }
+        }
+
         // Preserve library-only edits and stats for changed files.
         foreach (var t in list)
         {
@@ -473,8 +494,17 @@ public sealed partial class LibraryService
         var moved = new List<(string from, string to)>();
         foreach (var (f, m) in back)
         {
-            if (reread.TryGetValue(m.Id, out var t)) { restored.Add(t); continue; }
-            if (!string.Equals(m.Path, f, StringComparison.OrdinalIgnoreCase)) moved.Add((m.Path, f));
+            bool isMove = !string.Equals(m.Path, f, StringComparison.OrdinalIgnoreCase);
+            if (isMove) moved.Add((m.Path, f));
+            if (reread.TryGetValue(m.Id, out var t))
+            {
+                if (!isMove) { restored.Add(t); continue; }
+                // Moved and changed: the song shown (and maybe queued) keeps its object, updated from its new file.
+                CopyScanned(t, m);
+                m.Path = f; m.MissingSince = 0;
+                restored.Add(m);
+                continue;
+            }
             m.Path = f; m.MissingSince = 0;
             restored.Add(m); unchanged.Add(m);
         }
@@ -489,7 +519,7 @@ public sealed partial class LibraryService
 
         var stillMissing = missing.Where(t => !purged.Contains(t) && !backSet.Contains(t)).Concat(newlyMissing).ToList();
         if (gone.Count > 0 || restored.Count > 0 || forget.Count > 0)
-            AppPaths.Log($"Scan: {newlyMissing.Count} song(s) now missing, {restored.Count} back ({moved.Count} moved), {forget.Count} removed for good, {stillMissing.Count} missing in all.");
+            AppPaths.Log($"Scan: {newlyMissing.Count} song(s) now missing, {restored.Count} back ({moved.Count} moved or renamed), {forget.Count} removed for good, {stillMissing.Count} missing in all.");
         return new ScanResult(list, deleted.Concat(newlyMissing).ToHashSet(), restored, stillMissing, purged.Count > 0, moved);
     }
 
