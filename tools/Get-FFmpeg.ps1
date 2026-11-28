@@ -14,7 +14,10 @@ $zip = Join-Path $tmp "ffmpeg.zip"
 Write-Host "Downloading FFmpeg 8.1 for $Arch (LGPL, shared)..."
 $ProgressPreference = 'SilentlyContinue'
 Invoke-WebRequest $url -OutFile $zip -UseBasicParsing
-Expand-Archive $zip -DestinationPath $tmp
+# .NET's ZipFile rather than Expand-Archive: Windows PowerShell started by the build can load PowerShell 7's Archive
+# module (when PSModulePath lists both, as on GitHub's runners), and Expand-Archive then fails.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $tmp)
 New-Item -ItemType Directory -Force $Dest | Out-Null
 Get-ChildItem $tmp -Recurse -Filter *.dll | Copy-Item -Destination $Dest -Force
 Get-ChildItem $tmp -Recurse -Filter LICENSE* | Select-Object -First 1 | Copy-Item -Destination (Join-Path $Dest "LICENSE.txt") -Force

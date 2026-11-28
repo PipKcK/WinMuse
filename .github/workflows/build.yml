@@ -23,8 +23,8 @@ jobs:
     name: Tests
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
       - name: Get FFmpeg (the decoder tests load it)
@@ -34,7 +34,7 @@ jobs:
         run: dotnet test tests/WinMuse.Tests -c Release --logger "trx;LogFileName=results.trx" --results-directory TestResults
       - name: Keep the results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results
           path: TestResults
@@ -47,8 +47,8 @@ jobs:
       matrix:
         platform: [x64, ARM64]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
       # The build downloads FFmpeg for the CPU it targets (see EnsureFFmpeg in WinMuse.csproj).
