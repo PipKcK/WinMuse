@@ -26,7 +26,7 @@ like `Artist - Song (Official Video) [dQw4w9WgXcQ].mp3`. WinMuse is a player bui
 like a first-party Windows 11 app, it never streams or uploads your music, and it quietly fixes titles, covers, artist
 photos and lyrics for you, but only when it is sure.
 
-> The app shows itself as **Music** by default, and the built-in build tool lets you give it any name and icon you like.
+> The app shows itself as **Music Player** by default, and the built-in build tool lets you give it any name and icon you like.
 > The project, namespaces and executable are **WinMuse**.
 
 ## Highlights
@@ -41,7 +41,7 @@ photos and lyrics for you, but only when it is sure.
   applied only when the evidence agrees, and your own edits are never overwritten.
 - 🎚️ **A 10-band equalizer that follows the genre.** Rock gets the Rock curve, jazz gets the Jazz curve. Save a custom
   EQ for a single song and it always wins.
-- 🛡️ **Your music files stay untouched.** Edits, downloaded covers and lyrics live in Music's own library. Writing tags
+- 🛡️ **Your music files stay untouched.** Edits, downloaded covers and lyrics live in the app's own library. Writing tags
   into the files or deleting files are separate opt-in settings, and you can choose to be asked on every save.
 - 🔒 **Private by design.** No account, no telemetry, no streaming. API keys are optional and free, and every online
   source is listed below.
@@ -121,7 +121,7 @@ When a song joins the library, WinMuse tries to identify it once:
 
 Album art, artist photos, genres and synced lyrics are downloaded alongside. The **Fetch** page shows where every
 piece came from (downloaded, from the file, edited by you, not found) and lets you redo any song with one click.
-The **editor** handles one song or many at once. Your edits stay in Music's library and your files are never changed,
+The **editor** handles one song or many at once. Your edits stay in the app's library and your files are never changed,
 unless you allow it in **Settings → Your music files**: then choose **App only**, **Files only** (edits are written into
 the tags), or **Ask each time** (every edit window offers *Save to library* and *Save to files*).
 
@@ -168,9 +168,9 @@ click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narr
 | **Playlists** | Normal playlists (reorder, custom cover, M3U import/export), smart playlists from rules, automatic playlists on Home, and Favorites (the heart). |
 | **Home** | Time-of-day greeting with Shuffle All, Quick Access (pins, favorites and a few discoveries), Continue Listening, automatic playlists, and one row per playlist with the sort order of your choice. |
 | **Metadata** | Automatic identification of new songs, manual **Fetch** for any song (pick another match or search yourself), the Fetch overview page, a single- or multi-song editor (details, artwork, lyrics, file info), a read-only Properties view, artist and genre renaming, and **New album** to build an album from songs you choose. |
-| **Lyrics** | Synced lyrics from LRCLIB, kept in Music's data folder (an `.lrc` you already have next to a song is read too). Click a line to seek, adjust timing per song, or add your own. |
+| **Lyrics** | Synced lyrics from LRCLIB, kept in the app's data folder (an `.lrc` you already have next to a song is read too). Click a line to seek, adjust timing per song, or add your own. |
 | **Files** | **Remove from library** hides a song but keeps the file (restore it in Settings). **Delete file** (opt-in: Settings → Your music files) sends the song to the Recycle Bin. |
-| **Windows** | Media keys and the media overlay, taskbar thumbnail buttons, mini player, a single running instance ("Open with" sends files to the open window), and Start menu and "Open with" registration through the build tool. |
+| **Windows** | Media keys and the media overlay, taskbar thumbnail buttons, mini player, a single running instance ("Open with" sends files to the open window), and Start menu, Settings → Apps and "Open with" registration by the setup files or the build tool. |
 | **Appearance** | Light, dark, system or OLED theme on Mica Alt; accent from Windows, a custom color or the album; album aurora, gradient or wallpaper background; card styles; playing-song highlight; visualizer styles. |
 
 ### Keyboard shortcuts
@@ -187,7 +187,21 @@ click (or <kbd>Ctrl</kbd>+<kbd>M</kbd>) away, and the layout adapts down to narr
 
 ## Getting started
 
-### Requirements
+### Install
+
+Download a setup file from the [latest release](https://github.com/PipKcK/WinMuse/releases/latest). Choose the one for
+your PC: **x64** for Intel and AMD processors, **ARM64** for Snapdragon and other ARM processors.
+
+| File | What it is |
+|---|---|
+| `WinMuse_Setup_x64.msi` / `WinMuse_Setup_ARM64.msi` | Windows Installer package: the standard setup wizard. Also works with `msiexec`, Group Policy and Intune. |
+| `WinMuse_Setup_x64.exe` / `WinMuse_Setup_ARM64.exe` | A small setup program, if you prefer a single click. |
+
+Both install **Music Player** for your account only (no administrator rights needed) and include everything it needs,
+so there's nothing else to install. Remove it from **Settings → Apps**; your library and settings are kept. The setup
+files aren't code-signed yet, so Windows SmartScreen may ask first: select **More info → Run anyway**.
+
+### Requirements for building
 
 - Windows 11 (x64 or ARM64)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) to build from source. Visual Studio 2022+ with the WinUI workload is optional.
@@ -217,8 +231,8 @@ Or open `WinMuse.sln` and press <kbd>F5</kbd> with the **x64** (or **ARM64**) pl
 - **Current build**: when the app has been built before, the window opens with that build's choices and shows its
   version, where it is, and whether the source has changed since. **Rebuild and update** builds the current source
   again with them and replaces the installed copy, so trying a change takes one click.
-- **Name**: shown in the title bar, Start menu and Settings → Apps (default "Music"). The exe stays `WinMuse.exe` and
-  your library stays in `%LocalAppData%\WinMuse`.
+- **Name**: shown in the title bar, Start menu and Settings → Apps (default "Music Player"). The exe stays
+  `WinMuse.exe` and your library stays in `%LocalAppData%\WinMuse`.
 - **Icon**: the current icon, one of the designs in `tools/icons`, a custom color (the design is recolored for you),
   or your own SVG, PNG, JPG or ICO, with a live preview.
 - **Title bar logo**: follows the accent color, or shows your icon exactly as it is.
@@ -233,6 +247,13 @@ Or open `WinMuse.sln` and press <kbd>F5</kbd> with the **x64** (or **ARM64**) pl
 
   Both install for the current user without administrator rights. A newer setup file with the same name replaces the
   copy an older one installed.
+- **Uninstall…**: choose what to remove, each with its size and location shown first:
+  - **Uninstall**: removes the app (installed by the tool or by a setup file), its shortcuts and its Settings → Apps
+    entry. Your library, playlists and settings are kept.
+  - **Uninstall and delete app data**: also deletes the library, playlists and settings, after asking again. Your
+    music files are never touched.
+  - **Clean up build files**: deletes the build output, temporary files and downloaded FFmpeg libraries once the app is
+    installed. The source code is kept; the next build restores what it needs.
 - **Developer hints**: explains every option. Set `$DeveloperHints = $false` at the top of the script to remove the
   button for a release.
 
