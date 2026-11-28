@@ -2,23 +2,32 @@
 #
 #   Right-click > Run with PowerShell, or:  powershell -ExecutionPolicy Bypass -File tools\Build-App.ps1
 #
-# Choices:
+# When the app has been built before, the window opens with the last build's choices and a "Rebuild" button that
+# builds the current source again with them and updates the installed copy: the quick way to try each change.
+#
+# Choices (the "Developer hints" button shows the same in the window):
 #   Name          shown in the title bar, window titles, Start menu and Apps list (default "Music").
-#   Icon          one of the bundled designs (tools\icons\*.svg, default Purple), any color (the design is recolored
-#                 to it), or your own image (.svg, .png, .jpg, .ico).
-#   Title-bar logo  follows the accent color (Rings design) or shows the icon exactly as it is.
-#   Architecture  Auto (this PC), x64 or ARM64.
-#   Register      copies the app to an install folder and adds a Start menu shortcut, optionally a desktop shortcut,
+#   Icon          the current icon (kept as it is), one of the bundled designs (tools\icons\*.svg), any color (the
+#                 Purple design recolored to it), or your own image (.svg, .png, .jpg, .ico).
+#   Title bar logo  follows the accent color (Rings design) or shows the icon exactly as it is.
+#   Architecture  Automatic (this PC), x64 or ARM64.
+#   Installation  copies the app to an install folder and adds a Start menu shortcut, optionally a desktop shortcut,
 #                 an entry in Settings > Apps (with an uninstaller) and "Open with" for audio files.
-#   Installer     also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one file to share that installs the app on
+#   Setup file    also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one file to share that installs the app on
 #                 another PC, with everything it needs included.
 #
 # The exe stays WinMuse.exe and your library/settings stay in %LocalAppData%\WinMuse whatever the name.
 # SVG icons are drawn with Microsoft Edge (installed with Windows 11) in headless mode.
+# The last build's choices are kept in %LocalAppData%\WinMuse-Build\last-build.json (WINMUSE_BUILD_RECORD overrides
+# the path, for tests).
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
+
+# Developer hints: a button that explains every option. Set to $false for a release of this tool; nothing else
+# depends on it (see "Developer hints" below).
+$DeveloperHints = $true
 
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Project = Join-Path $Root 'src\WinMuse\WinMuse.csproj'
@@ -29,6 +38,8 @@ $Assets = Join-Path $Root 'src\WinMuse\Assets'
 $IconDir = Join-Path $PSScriptRoot 'icons'
 $Work = Join-Path $env:TEMP 'WinMuse-Build'
 New-Item -ItemType Directory -Force $Work | Out-Null
+Get-ChildItem $Work -Filter 'preview-*.png' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+$RecordPath = if ($env:WINMUSE_BUILD_RECORD) { $env:WINMUSE_BUILD_RECORD } else { Join-Path $env:LOCALAPPDATA 'WinMuse-Build\last-build.json' }
 
 $Presets = [ordered]@{
     'Purple' = 'purple.svg'; 'Blue' = 'blue.svg'; 'Indigo' = 'indigo.svg'; 'Mint' = 'mint.svg'; 'Amber' = 'amber.svg'
@@ -43,6 +54,8 @@ function Get-NativeArch {
     if ($a -eq 'ARM64') { 'ARM64' } else { 'x64' }
 }
 
+function Get-OutputDir([string]$arch) { Join-Path $Root "src\WinMuse\bin\$arch\Release\net10.0-windows10.0.22621.0\win-$($arch.ToLower())" }
+
 function Find-Edge {
     foreach ($p in "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") {
         if (Test-Path $p) { return $p }
@@ -53,7 +66,7 @@ function Find-Edge {
 # Draws an SVG to a transparent square PNG with Edge headless.
 function Convert-SvgToPng([string]$svg, [string]$png, [int]$size = 512) {
     $edge = Find-Edge
-    if (-not $edge) { throw 'Microsoft Edge was not found; it is needed to draw SVG icons. Use a PNG instead.' }
+    if (-not $edge) { throw 'Microsoft Edge is required to render SVG icons. Use a PNG image instead.' }
     $html = Join-Path $Work 'render.html'
     $uri = ([Uri](Resolve-Path $svg).Path).AbsoluteUri
     "<!doctype html><html><body style='margin:0;background:transparent'><img src='$uri' width='$size' height='$size' style='display:block;object-fit:contain'></body></html>" |
@@ -62,8 +75,8 @@ function Convert-SvgToPng([string]$svg, [string]$png, [int]$size = 512) {
     $edgeArgs = @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--default-background-color=00000000', "--window-size=$size,$size",
               "--user-data-dir=`"$(Join-Path $Work 'edge')`"", "--screenshot=`"$png`"", "`"$(([Uri]$html).AbsoluteUri)`"")
     $p = Start-Process $edge -ArgumentList $edgeArgs -PassThru -WindowStyle Hidden
-    if (-not $p.WaitForExit(30000)) { try { $p.Kill() } catch {}; throw 'Drawing the SVG timed out.' }
-    if (-not (Test-Path $png)) { throw "The SVG could not be drawn: $svg" }
+    if (-not $p.WaitForExit(30000)) { try { $p.Kill() } catch {}; throw 'Rendering the SVG icon timed out.' }
+    if (-not (Test-Path $png)) { throw "The SVG icon could not be rendered: $svg" }
 }
 
 # The biggest picture in an .ico (frames may be PNG-compressed, which System.Drawing.Icon can't always read).
@@ -136,24 +149,95 @@ function New-RecoloredSvg([System.Drawing.Color]$color, [string]$outSvg) {
 
 function Test-Name([string]$n) { return ($n.Trim().Length -gt 0) -and ($n.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -lt 0) }
 
+function Get-Branding {
+    $file = Join-Path $Assets 'Branding.json'
+    if (Test-Path $file) { try { return Get-Content -Raw $file | ConvertFrom-Json } catch {} }
+    return $null
+}
+
+# ---------------------------------------------------------------- the previous build
+
+# The last build, so it can be repeated in one click: the choices this tool saved after its last successful build, or,
+# for a build made before it kept them, what that build left behind (an app it installed, or the build output).
+function Find-PreviousBuild {
+    if (Test-Path $RecordPath) {
+        try { $r = Get-Content -Raw $RecordPath | ConvertFrom-Json; if ($r.Name -and $r.Arch) { return $r } } catch {}
+    }
+    $native = Get-NativeArch
+    $brand = Get-Branding
+    $name = if ($brand -and $brand.Name) { [string]$brand.Name } else { 'Music' }
+    $found = [pscustomobject]@{
+        Name = $name; Arch = $native; Launch = $true; Register = $false; InstallDir = ''; Desktop = $false; Apps = $true
+        OpenWith = $true; Installer = $false; ShareDir = [Environment]::GetFolderPath('Desktop')
+    }
+    # Installed by this tool: listed in Settings > Apps, with its Uninstall.ps1 next to the exe.
+    $installed = @(Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' -ErrorAction SilentlyContinue |
+        Where-Object { $_.PSChildName -like 'WinMuse-*' } | ForEach-Object { Get-ItemProperty $_.PSPath } |
+        Where-Object { $_.InstallLocation -and (Test-Path (Join-Path $_.InstallLocation 'WinMuse.exe')) -and (Test-Path (Join-Path $_.InstallLocation 'Uninstall.ps1')) } |
+        Sort-Object { (Get-Item (Join-Path $_.InstallLocation 'WinMuse.exe')).LastWriteTime } -Descending)
+    if ($installed.Count -gt 0) {
+        $i = $installed[0]
+        $found.Name = [string]$i.DisplayName; $found.Register = $true; $found.InstallDir = [string]$i.InstallLocation
+        $found.Desktop = Test-Path (Join-Path ([Environment]::GetFolderPath('Desktop')) "$($i.DisplayName).lnk")
+        $found.OpenWith = Test-Path 'HKCU:\Software\Classes\Applications\WinMuse.exe\shell\open\command'
+        return $found
+    }
+    foreach ($a in $native, 'x64', 'ARM64') {
+        if (Test-Path (Join-Path (Get-OutputDir $a) 'WinMuse.exe')) { $found.Arch = $a; return $found }
+    }
+    return $null
+}
+
+# The newest change to the app's source (bin and obj left out), to tell whether a build is up to date.
+function Get-SourceTime {
+    $src = Join-Path $Root 'src\WinMuse'
+    $files = @(Get-ChildItem $src -File) + @(Get-ChildItem $src -Directory | Where-Object { $_.Name -notin 'bin', 'obj' } | Get-ChildItem -Recurse -File)
+    return ($files | Measure-Object LastWriteTime -Maximum).Maximum
+}
+
+# What the Current build panel shows: the exe it describes (the installed copy, else the build output) and its details.
+function Get-BuildStatus($prev) {
+    $installedExe = if ($prev.Register -and $prev.InstallDir) { Join-Path $prev.InstallDir 'WinMuse.exe' } else { '' }
+    $outputExe = Join-Path (Get-OutputDir $prev.Arch) 'WinMuse.exe'
+    $isInstalled = $installedExe -and (Test-Path $installedExe)
+    $exe = if ($isInstalled) { $installedExe } elseif (Test-Path $outputExe) { $outputExe } else { return $null }
+    $item = Get-Item $exe
+    $version = ([string]$item.VersionInfo.ProductVersion -split '\+')[0]
+    $where = if ($isInstalled) { "Installed in $($prev.InstallDir)" } else { "Not installed. Build output: $(Split-Path $exe)" }
+    $fresh = if ((Get-SourceTime) -gt $item.LastWriteTime) { 'Source has changed since this build.' } else { 'Up to date with the source.' }
+    return [pscustomobject]@{
+        Title = "$($prev.Name) $version ($($prev.Arch))"
+        Where = $where
+        When = "Built $($item.LastWriteTime.ToString('g')). $fresh"
+        Installed = [bool]$isInstalled
+    }
+}
+
+$Previous = Find-PreviousBuild
+$Status = if ($Previous) { Get-BuildStatus $Previous } else { $null }
+if (-not $Status) { $Previous = $null }
+
 # ---------------------------------------------------------------- window
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Build Music'
-$form.Size = New-Object System.Drawing.Size(760, 924)
 $form.StartPosition = 'CenterScreen'
 $form.Font = New-Object System.Drawing.Font('Segoe UI', 9.5)
 $form.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 252)
 $form.FormBorderStyle = 'FixedDialog'; $form.MaximizeBox = $false
 $iconPath = Join-Path $Assets 'AppIcon.ico'
 if (Test-Path $iconPath) { $form.Icon = New-Object System.Drawing.Icon $iconPath }
+$Accent = [System.Drawing.Color]::FromArgb(124, 77, 226)
+$DimColor = [System.Drawing.Color]::FromArgb(96, 96, 108)
 
-function Add-Label($parent, [string]$text, [int]$x, [int]$y, [int]$w = 200, [switch]$Bold, [switch]$Dim) {
+function Set-Font($c) { $c.Font = New-Object System.Drawing.Font('Segoe UI', 9.5); return $c }
+
+function Add-Label($parent, [string]$text, [int]$x, [int]$y, [int]$w = 200, [int]$h = 22, [switch]$Bold, [switch]$Dim) {
     $l = New-Object System.Windows.Forms.Label
     $l.Text = $text; $l.Location = New-Object System.Drawing.Point($x, $y); $l.AutoSize = $false
-    $l.Size = New-Object System.Drawing.Size($w, $(if ($Dim) { 40 } else { 22 }))   # hints may wrap to two lines
-    if ($Bold) { $l.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 10) }
-    if ($Dim) { $l.ForeColor = [System.Drawing.Color]::FromArgb(100, 100, 110) }
+    $l.Size = New-Object System.Drawing.Size($w, $h)
+    $l.Font = if ($Bold) { New-Object System.Drawing.Font('Segoe UI Semibold', 10) } else { New-Object System.Drawing.Font('Segoe UI', 9.5) }
+    if ($Dim) { $l.ForeColor = $DimColor }
     $parent.Controls.Add($l); return $l
 }
 
@@ -164,92 +248,178 @@ function Add-Group([string]$title, [int]$y, [int]$h) {
     $form.Controls.Add($g); return $g
 }
 
-function Set-Font($c) { $c.Font = New-Object System.Drawing.Font('Segoe UI', 9.5); return $c }
+function New-Control([string]$type, [string]$text, [int]$x, [int]$y, [int]$w = 0, [int]$h = 0) {
+    $c = Set-Font (New-Object "System.Windows.Forms.$type")
+    if ($text) { $c.Text = $text }
+    $c.Location = New-Object System.Drawing.Point($x, $y)
+    if ($w -gt 0) { $c.Size = New-Object System.Drawing.Size($w, $h) } else { $c.AutoSize = $true }
+    return $c
+}
+
+function Set-Primary($button) {
+    $button.BackColor = $Accent; $button.ForeColor = [System.Drawing.Color]::White; $button.FlatStyle = 'Flat'
+    $button.FlatAppearance.BorderSize = 0; $button.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 10)
+}
+
+$y = 12
+
+# ---- Current build (only when the app has been built before)
+if ($Previous) {
+    $gCurrent = Add-Group 'Current build' $y 96
+    Add-Label $gCurrent $Status.Title 16 26 500 22 -Bold | Out-Null
+    $lblWhere = Add-Label $gCurrent $Status.Where 16 50 510 20 -Dim; $lblWhere.AutoEllipsis = $true
+    $tips = New-Object System.Windows.Forms.ToolTip; $tips.SetToolTip($lblWhere, $Status.Where)   # the whole path
+    Add-Label $gCurrent $Status.When 16 70 510 20 -Dim | Out-Null
+    $btnRebuild = New-Control Button $(if ($Previous.Register) { 'Rebuild and update' } else { 'Rebuild' }) 540 34 156 36
+    Set-Primary $btnRebuild
+    $gCurrent.Controls.Add($btnRebuild)
+    $y += 104
+}
 
 # ---- App
-$gApp = Add-Group 'App' 12 74
-Set-Font (Add-Label $gApp 'Name' 16 32 60) | Out-Null
-$txtName = Set-Font (New-Object System.Windows.Forms.TextBox)
-$txtName.Location = New-Object System.Drawing.Point(80, 29); $txtName.Size = New-Object System.Drawing.Size(260, 26); $txtName.Text = 'Music'
+$gApp = Add-Group 'App' $y 64
+Add-Label $gApp 'Name' 16 30 100 | Out-Null
+$txtName = New-Control TextBox 'Music' 130 27 300 26
 $gApp.Controls.Add($txtName)
-Set-Font (Add-Label $gApp 'Title bar, window, Start menu and Apps list. The exe stays WinMuse.exe.' 352 32 350 -Dim) | Out-Null
+$y += 72
 
 # ---- Icon
-$gIcon = Add-Group 'Icon' 96 246
+$gIcon = Add-Group 'Icon' $y 224
 $picPreview = New-Object System.Windows.Forms.PictureBox
-$picPreview.Location = New-Object System.Drawing.Point(540, 30); $picPreview.Size = New-Object System.Drawing.Size(150, 150)
+$picPreview.Location = New-Object System.Drawing.Point(540, 24); $picPreview.Size = New-Object System.Drawing.Size(150, 150)
 $picPreview.SizeMode = 'Zoom'; $picPreview.BackColor = [System.Drawing.Color]::Transparent
 $gIcon.Controls.Add($picPreview)
-$lblPreview = Set-Font (Add-Label $gIcon 'Preview' 540 184 150 -Dim); $lblPreview.TextAlign = 'MiddleCenter'
+$lblPreview = Add-Label $gIcon 'Preview' 520 178 190 40 -Dim; $lblPreview.TextAlign = 'TopCenter'
 
-$rbPreset = Set-Font (New-Object System.Windows.Forms.RadioButton); $rbPreset.Text = 'Design'; $rbPreset.Location = New-Object System.Drawing.Point(16, 32); $rbPreset.AutoSize = $true; $rbPreset.Checked = $true
-$cmbPreset = Set-Font (New-Object System.Windows.Forms.ComboBox); $cmbPreset.DropDownStyle = 'DropDownList'
-$cmbPreset.Location = New-Object System.Drawing.Point(150, 30); $cmbPreset.Size = New-Object System.Drawing.Size(220, 26)
+$rbCurrent = New-Control RadioButton 'Current icon' 16 28
+$rbPreset = New-Control RadioButton 'Design' 16 62
+$cmbPreset = New-Control ComboBox '' 150 60 220 26; $cmbPreset.DropDownStyle = 'DropDownList'
 foreach ($k in $Presets.Keys) { [void]$cmbPreset.Items.Add($k) }; $cmbPreset.SelectedIndex = 0
-
-$rbColor = Set-Font (New-Object System.Windows.Forms.RadioButton); $rbColor.Text = 'Any color'; $rbColor.Location = New-Object System.Drawing.Point(16, 72); $rbColor.AutoSize = $true
-$txtColor = Set-Font (New-Object System.Windows.Forms.TextBox); $txtColor.Location = New-Object System.Drawing.Point(150, 70); $txtColor.Size = New-Object System.Drawing.Size(110, 26); $txtColor.Text = '#1DB954'
-$btnPick = Set-Font (New-Object System.Windows.Forms.Button); $btnPick.Text = 'Pick…'; $btnPick.Location = New-Object System.Drawing.Point(268, 69); $btnPick.Size = New-Object System.Drawing.Size(70, 28)
-$swatch = New-Object System.Windows.Forms.Panel; $swatch.Location = New-Object System.Drawing.Point(346, 70); $swatch.Size = New-Object System.Drawing.Size(26, 26); $swatch.BorderStyle = 'FixedSingle'
-
-$rbFile = Set-Font (New-Object System.Windows.Forms.RadioButton); $rbFile.Text = 'My own image'; $rbFile.Location = New-Object System.Drawing.Point(16, 112); $rbFile.AutoSize = $true
-$txtFile = Set-Font (New-Object System.Windows.Forms.TextBox); $txtFile.Location = New-Object System.Drawing.Point(150, 110); $txtFile.Size = New-Object System.Drawing.Size(290, 26)
-$btnFile = Set-Font (New-Object System.Windows.Forms.Button); $btnFile.Text = 'Browse…'; $btnFile.Location = New-Object System.Drawing.Point(446, 109); $btnFile.Size = New-Object System.Drawing.Size(80, 28)
-Set-Font (Add-Label $gIcon 'SVG, PNG, JPG or ICO. Square images look best (others are padded).' 150 140 380 -Dim) | Out-Null
-
-$chkAccent = Set-Font (New-Object System.Windows.Forms.CheckBox)
-$chkAccent.Text = 'Title-bar logo follows the accent color (otherwise it shows the icon exactly as it is)'
-$chkAccent.Location = New-Object System.Drawing.Point(16, 176); $chkAccent.Size = New-Object System.Drawing.Size(510, 40); $chkAccent.Checked = $true
-$gIcon.Controls.AddRange(@($rbPreset, $cmbPreset, $rbColor, $txtColor, $btnPick, $swatch, $rbFile, $txtFile, $btnFile, $chkAccent))
+$rbColor = New-Control RadioButton 'Custom color' 16 96
+$txtColor = New-Control TextBox '#1DB954' 150 94 110 26
+$btnPick = New-Control Button 'Choose…' 268 93 80 28
+$swatch = New-Object System.Windows.Forms.Panel; $swatch.Location = New-Object System.Drawing.Point(356, 94); $swatch.Size = New-Object System.Drawing.Size(26, 26); $swatch.BorderStyle = 'FixedSingle'
+$rbFile = New-Control RadioButton 'Image file' 16 130
+$txtFile = New-Control TextBox '' 150 128 290 26
+$btnFile = New-Control Button 'Browse…' 446 127 80 28
+Add-Label $gIcon 'SVG, PNG, JPG or ICO' 150 158 300 20 -Dim | Out-Null
+$chkAccent = New-Control CheckBox 'Match title bar logo to accent color' 16 188; $chkAccent.Checked = $true
+$gIcon.Controls.AddRange(@($rbCurrent, $rbPreset, $cmbPreset, $rbColor, $txtColor, $btnPick, $swatch, $rbFile, $txtFile, $btnFile, $chkAccent))
+$y += 232
 
 # ---- Build
-$gBuild = Add-Group 'Build' 350 104
-Set-Font (Add-Label $gBuild 'Architecture' 16 32 100) | Out-Null
-$cmbArch = Set-Font (New-Object System.Windows.Forms.ComboBox); $cmbArch.DropDownStyle = 'DropDownList'
-$cmbArch.Location = New-Object System.Drawing.Point(120, 29); $cmbArch.Size = New-Object System.Drawing.Size(220, 26)
+$gBuild = Add-Group 'Build' $y 96
+Add-Label $gBuild 'Architecture' 16 31 110 | Out-Null
+$cmbArch = New-Control ComboBox '' 130 28 220 26; $cmbArch.DropDownStyle = 'DropDownList'
 $native = Get-NativeArch
-[void]$cmbArch.Items.Add("Auto (this PC: $native)"); [void]$cmbArch.Items.Add('x64'); [void]$cmbArch.Items.Add('ARM64'); $cmbArch.SelectedIndex = 0
-Set-Font (Add-Label $gBuild 'x64 runs on Intel/AMD PCs; ARM64 on Snapdragon/ARM PCs. 32-bit (x86) is not supported.' 352 32 350 -Dim) | Out-Null
-$chkClean = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkClean.Text = 'Clean build (slower; use if something looks stale)'; $chkClean.Location = New-Object System.Drawing.Point(16, 66); $chkClean.AutoSize = $true
-$chkLaunch = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkLaunch.Text = 'Open the app when done'; $chkLaunch.Location = New-Object System.Drawing.Point(400, 66); $chkLaunch.AutoSize = $true; $chkLaunch.Checked = $true
+[void]$cmbArch.Items.Add("Automatic ($native)"); [void]$cmbArch.Items.Add('x64'); [void]$cmbArch.Items.Add('ARM64'); $cmbArch.SelectedIndex = 0
+$chkClean = New-Control CheckBox 'Clean build' 16 62
+$chkLaunch = New-Control CheckBox 'Open app when finished' 200 62; $chkLaunch.Checked = $true
 $gBuild.Controls.AddRange(@($cmbArch, $chkClean, $chkLaunch))
+$y += 104
 
-# ---- Register
-$gReg = Add-Group 'Install as a Windows app' 462 150
-$chkRegister = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkRegister.Text = 'Install and register (Start menu shortcut)'; $chkRegister.Location = New-Object System.Drawing.Point(16, 30); $chkRegister.AutoSize = $true
-Set-Font (Add-Label $gReg 'Install to' 36 64 70) | Out-Null
-$txtInstall = Set-Font (New-Object System.Windows.Forms.TextBox); $txtInstall.Location = New-Object System.Drawing.Point(110, 61); $txtInstall.Size = New-Object System.Drawing.Size(500, 26)
-$btnInstall = Set-Font (New-Object System.Windows.Forms.Button); $btnInstall.Text = 'Browse…'; $btnInstall.Location = New-Object System.Drawing.Point(616, 60); $btnInstall.Size = New-Object System.Drawing.Size(80, 28)
-$chkDesktop = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkDesktop.Text = 'Desktop shortcut'; $chkDesktop.Location = New-Object System.Drawing.Point(36, 100); $chkDesktop.AutoSize = $true
-$chkApps = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkApps.Text = 'Show in Settings > Apps (with Uninstall)'; $chkApps.Location = New-Object System.Drawing.Point(190, 100); $chkApps.AutoSize = $true; $chkApps.Checked = $true
-$chkOpenWith = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkOpenWith.Text = '"Open with" for audio files'; $chkOpenWith.Location = New-Object System.Drawing.Point(480, 100); $chkOpenWith.AutoSize = $true; $chkOpenWith.Checked = $true
+# ---- Installation
+$gReg = Add-Group 'Installation' $y 136
+$chkRegister = New-Control CheckBox 'Install for current user' 16 28
+Add-Label $gReg 'Location' 36 63 90 | Out-Null
+$txtInstall = New-Control TextBox '' 130 60 480 26
+$btnInstall = New-Control Button 'Browse…' 616 59 80 28
+$chkDesktop = New-Control CheckBox 'Desktop shortcut' 36 98
+$chkApps = New-Control CheckBox 'List in Settings > Apps' 200 98; $chkApps.Checked = $true
+$chkOpenWith = New-Control CheckBox 'Add to "Open with" for audio files' 400 98; $chkOpenWith.Checked = $true
 $gReg.Controls.AddRange(@($chkRegister, $txtInstall, $btnInstall, $chkDesktop, $chkApps, $chkOpenWith))
+$y += 144
 
-# ---- Installer to share
-$gShare = Add-Group 'Share' 620 96
-$chkInstaller = Set-Font (New-Object System.Windows.Forms.CheckBox); $chkInstaller.Text = 'Create installer (.exe to share)'; $chkInstaller.Location = New-Object System.Drawing.Point(16, 30); $chkInstaller.AutoSize = $true
-Set-Font (Add-Label $gShare 'Save to' 260 32 60) | Out-Null
-$txtShare = Set-Font (New-Object System.Windows.Forms.TextBox); $txtShare.Location = New-Object System.Drawing.Point(320, 29); $txtShare.Size = New-Object System.Drawing.Size(290, 26)
-$txtShare.Text = [Environment]::GetFolderPath('Desktop')
-$btnShare = Set-Font (New-Object System.Windows.Forms.Button); $btnShare.Text = 'Browse…'; $btnShare.Location = New-Object System.Drawing.Point(616, 28); $btnShare.Size = New-Object System.Drawing.Size(80, 28)
-Set-Font (Add-Label $gShare 'One file with everything included: other PCs need nothing installed first. It isn''t signed, so Windows may warn; choose More info > Run anyway.' 36 58 660 -Dim) | Out-Null
+# ---- Setup file to share
+$gShare = Add-Group 'Setup file' $y 88
+$chkInstaller = New-Control CheckBox 'Create setup file' 16 28
+Add-Label $gShare 'Save to' 220 31 70 | Out-Null
+$txtShare = New-Control TextBox ([Environment]::GetFolderPath('Desktop')) 300 28 310 26
+$btnShare = New-Control Button 'Browse…' 616 27 80 28
+Add-Label $gShare 'Unsigned. Windows SmartScreen may show a warning when it runs on another PC.' 36 58 660 20 -Dim | Out-Null
 $gShare.Controls.AddRange(@($chkInstaller, $txtShare, $btnShare))
+$y += 96
 
-# ---- Log + buttons
+# ---- Output + buttons
 $log = New-Object System.Windows.Forms.TextBox
 $log.Multiline = $true; $log.ScrollBars = 'Vertical'; $log.ReadOnly = $true; $log.WordWrap = $false
-$log.Location = New-Object System.Drawing.Point(16, 726); $log.Size = New-Object System.Drawing.Size(712, 104)
+$log.Location = New-Object System.Drawing.Point(16, $y); $log.Size = New-Object System.Drawing.Size(712, 88)
 $log.Font = New-Object System.Drawing.Font('Cascadia Mono, Consolas', 8.5); $log.BackColor = [System.Drawing.Color]::White
-$progress = New-Object System.Windows.Forms.ProgressBar; $progress.Location = New-Object System.Drawing.Point(16, 842); $progress.Size = New-Object System.Drawing.Size(420, 10); $progress.Style = 'Marquee'; $progress.Visible = $false
-$btnBuild = New-Object System.Windows.Forms.Button; $btnBuild.Text = 'Build'; $btnBuild.Location = New-Object System.Drawing.Point(536, 836); $btnBuild.Size = New-Object System.Drawing.Size(92, 34)
-$btnBuild.BackColor = [System.Drawing.Color]::FromArgb(124, 77, 226); $btnBuild.ForeColor = [System.Drawing.Color]::White; $btnBuild.FlatStyle = 'Flat'; $btnBuild.FlatAppearance.BorderSize = 0
-$btnBuild.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 10)
-$btnClose = Set-Font (New-Object System.Windows.Forms.Button); $btnClose.Text = 'Close'; $btnClose.Location = New-Object System.Drawing.Point(636, 836); $btnClose.Size = New-Object System.Drawing.Size(92, 34)
-$btnUninstall = Set-Font (New-Object System.Windows.Forms.Button); $btnUninstall.Text = 'Uninstall…'; $btnUninstall.Location = New-Object System.Drawing.Point(444, 836); $btnUninstall.Size = New-Object System.Drawing.Size(84, 34)
+$y += 100
+$progress = New-Object System.Windows.Forms.ProgressBar; $progress.Location = New-Object System.Drawing.Point(16, ($y + 12)); $progress.Size = New-Object System.Drawing.Size(410, 10); $progress.Style = 'Marquee'; $progress.Visible = $false
+$btnUninstall = New-Control Button 'Uninstall…' 436 $y 92 34
+$btnBuild = New-Control Button 'Build' 536 $y 92 34; Set-Primary $btnBuild
+$btnClose = New-Control Button 'Close' 636 $y 92 34
 $form.Controls.AddRange(@($log, $progress, $btnBuild, $btnClose, $btnUninstall))
 $form.AcceptButton = $btnBuild; $form.CancelButton = $btnClose
+$form.ClientSize = New-Object System.Drawing.Size(744, ($y + 34 + 14))
 
 function Write-Log([string]$text) { $log.AppendText($text + "`r`n") }
+
+# ---------------------------------------------------------------- Developer hints
+# What each option does, for developers working on the app. Remove for a release by setting $DeveloperHints = $false
+# at the top (or delete this section).
+
+if ($DeveloperHints) {
+    $HintSections = [ordered]@{
+        'Current build' = [ordered]@{
+            'Rebuild and update' = 'Builds the current source again with the choices of the last build, keeps the current icon, and replaces the installed copy (a running copy is closed first). Shown as "Rebuild" when the last build was not installed. The quickest way to try a change.'
+            'Details' = 'Version and architecture of the last build, where it is, when it was built, and whether any file under src\WinMuse changed after that. The choices are kept in %LocalAppData%\WinMuse-Build\last-build.json.'
+        }
+        'App' = [ordered]@{
+            'Name' = 'Shown in the title bar, window titles, Start menu and Settings > Apps. The executable is always WinMuse.exe, and the library and settings stay in %LocalAppData%\WinMuse whatever the name. Written to src\WinMuse\Assets\Branding.json.'
+        }
+        'Icon' = [ordered]@{
+            'Current icon' = 'Keeps AppIcon.ico and AppIcon.png in src\WinMuse\Assets as they are. Nothing is redrawn.'
+            'Design' = 'One of the bundled designs in tools\icons.'
+            'Custom color' = 'The Purple design recolored to the chosen color.'
+            'Image file' = 'An SVG, PNG, JPG or ICO of your own. Images that are not square are padded with transparency. SVG files are rendered with Microsoft Edge in headless mode.'
+            'Match title bar logo to accent color' = 'On: the title bar logo is drawn in the app''s accent color (the simple design for "Indigo (simple)", otherwise the Rings design). Off: it shows the icon unchanged. Ignored with Current icon, which keeps the logo setting of the last build.'
+        }
+        'Build' = [ordered]@{
+            'Architecture' = 'x64 runs on Intel and AMD processors, ARM64 on Snapdragon and other ARM processors. Automatic uses this PC''s. 32-bit (x86) is not supported.'
+            'Clean build' = 'Rebuilds every file instead of only what changed. Slower; use it when the app seems out of date after a build.'
+            'Open app when finished' = 'Starts the app when everything is done (the installed copy when installing) and closes this window. After a failure the window stays open.'
+        }
+        'Installation' = [ordered]@{
+            'Install for current user' = 'Copies the build to Location and adds a Start menu shortcut, with an Uninstall.ps1 next to the exe. No administrator rights needed. A copy running from Location is closed first.'
+            'Desktop shortcut' = 'Also adds a shortcut on the desktop.'
+            'List in Settings > Apps' = 'Adds an entry in Settings > Apps with Uninstall. Uninstalling keeps the library and settings.'
+            'Add to "Open with" for audio files' = 'Offers the app under "Open with" for 15 audio formats. Default apps are not changed.'
+            'Uninstall…' = 'Removes the copy in Location, its shortcuts and its registry entries. The library and settings are kept.'
+        }
+        'Setup file' = [ordered]@{
+            'Create setup file' = 'Also makes "<Name> Setup.exe" (tools\Make-Installer.ps1): one self-contained file that installs the app on another PC with nothing else needed. ARM64 builds add "(ARM64)" to the file name. Takes a few minutes.'
+            'Unsigned' = 'The file has no code signature, so SmartScreen on other PCs asks first: More info > Run anyway.'
+        }
+    }
+
+    function Show-DeveloperHints {
+        $f = New-Object System.Windows.Forms.Form
+        $f.Text = 'Developer hints'; $f.StartPosition = 'CenterParent'; $f.ClientSize = New-Object System.Drawing.Size(620, 640)
+        $f.MinimizeBox = $false; $f.ShowIcon = $false; $f.ShowInTaskbar = $false
+        $box = New-Object System.Windows.Forms.RichTextBox
+        $box.Dock = 'Fill'; $box.ReadOnly = $true; $box.BorderStyle = 'None'; $box.BackColor = [System.Drawing.Color]::White
+        $box.Font = New-Object System.Drawing.Font('Segoe UI', 9.5)
+        $head = New-Object System.Drawing.Font('Segoe UI Semibold', 11); $term = New-Object System.Drawing.Font('Segoe UI Semibold', 9.5)
+        foreach ($section in $HintSections.Keys) {
+            $box.SelectionFont = $head; $box.AppendText("$section`n")
+            foreach ($option in $HintSections[$section].Keys) {
+                $box.SelectionFont = $term; $box.AppendText("$option`n")
+                $box.SelectionFont = $box.Font; $box.AppendText("$($HintSections[$section][$option])`n`n")
+            }
+        }
+        $box.SelectionStart = 0
+        $pad = New-Object System.Windows.Forms.Panel; $pad.Dock = 'Fill'; $pad.Padding = New-Object System.Windows.Forms.Padding(16, 12, 8, 8); $pad.BackColor = [System.Drawing.Color]::White
+        $pad.Controls.Add($box); $f.Controls.Add($pad)
+        [void]$f.ShowDialog($form)
+    }
+
+    $btnHints = New-Control Button 'Developer hints' 16 $btnBuild.Top 130 34
+    $btnHints.Add_Click({ Show-DeveloperHints })
+    $form.Controls.Add($btnHints)
+    $progress.Left = 156; $progress.Width = 270
+}
 
 # ---------------------------------------------------------------- behaviour
 
@@ -266,26 +436,56 @@ $chkInstaller.Add_CheckedChanged({ Update-ShareEnabled }); Update-ShareEnabled
 
 function Get-ColorOrNull { try { return [System.Drawing.ColorTranslator]::FromHtml($txtColor.Text.Trim()) } catch { return $null } }
 
+# The window starts with the choices of the previous build, so Build repeats it unless something is changed.
+function Set-Choices($prev) {
+    $txtName.Text = [string]$prev.Name
+    $cmbArch.SelectedIndex = if ($prev.Arch -eq $native) { 0 } elseif ($prev.Arch -eq 'ARM64') { 2 } else { 1 }
+    $chkLaunch.Checked = [bool]$prev.Launch
+    $chkRegister.Checked = [bool]$prev.Register
+    if ($prev.InstallDir) { $txtInstall.Text = [string]$prev.InstallDir; $txtInstall.Tag = 'edited' }
+    $chkDesktop.Checked = [bool]$prev.Desktop; $chkApps.Checked = [bool]$prev.Apps; $chkOpenWith.Checked = [bool]$prev.OpenWith
+    $chkInstaller.Checked = [bool]$prev.Installer
+    if ($prev.ShareDir) { $txtShare.Text = [string]$prev.ShareDir }
+    $rbCurrent.Checked = $true
+}
+
+function Save-Choices([string]$arch) {
+    $record = [ordered]@{
+        Name = $txtName.Text.Trim(); Arch = $arch; Launch = $chkLaunch.Checked; Register = $chkRegister.Checked
+        InstallDir = $txtInstall.Text.Trim(); Desktop = $chkDesktop.Checked; Apps = $chkApps.Checked; OpenWith = $chkOpenWith.Checked
+        Installer = $chkInstaller.Checked; ShareDir = $txtShare.Text.Trim(); Version = $AppVersion; BuiltAt = (Get-Date).ToString('o')
+    }
+    try {
+        New-Item -ItemType Directory -Force (Split-Path $RecordPath) | Out-Null
+        [IO.File]::WriteAllText($RecordPath, ($record | ConvertTo-Json), (New-Object Text.UTF8Encoding $false))
+    } catch { Write-Log "The build choices could not be saved: $($_.Exception.Message)" }
+}
+
 $previewCache = @{}
 # Draws the chosen icon into $png. Returns the path, or throws with a message.
 function Resolve-IconPng([string]$png) {
-    if ($rbPreset.Checked) {
+    if ($rbCurrent.Checked) {
+        $current = Join-Path $Assets 'AppIcon.png'
+        if (-not (Test-Path $current)) { throw 'No current icon was found in src\WinMuse\Assets.' }
+        Copy-Item $current $png -Force
+    } elseif ($rbPreset.Checked) {
         $svg = Join-Path $IconDir $Presets[$cmbPreset.SelectedItem]
         Convert-SvgToPng $svg $png
     } elseif ($rbColor.Checked) {
-        $c = Get-ColorOrNull; if (-not $c) { throw 'Enter a color like #1DB954.' }
+        $c = Get-ColorOrNull; if (-not $c) { throw 'Enter a hex color, for example #1DB954.' }
         $svg = Join-Path $Work 'recolored.svg'; New-RecoloredSvg $c $svg
         Convert-SvgToPng $svg $png
     } else {
-        if (-not (Test-Path $txtFile.Text)) { throw 'Choose an image file.' }
+        if (-not (Test-Path $txtFile.Text)) { throw 'Select an image file.' }
         Convert-ImageToSquarePng $txtFile.Text $png
     }
     return $png
 }
 
 function Update-Preview {
-    $key = if ($rbPreset.Checked) { "p:$($cmbPreset.SelectedItem)" } elseif ($rbColor.Checked) { "c:$($txtColor.Text)" } else { "f:$($txtFile.Text)" }
+    $key = if ($rbCurrent.Checked) { 'current' } elseif ($rbPreset.Checked) { "p:$($cmbPreset.SelectedItem)" } elseif ($rbColor.Checked) { "c:$($txtColor.Text)" } else { "f:$($txtFile.Text)" }
     $swatch.BackColor = $(if ($c = Get-ColorOrNull) { $c } else { [System.Drawing.Color]::Transparent })
+    $chkAccent.Enabled = -not $rbCurrent.Checked
     try {
         if (-not $previewCache.ContainsKey($key)) {
             $form.Cursor = 'WaitCursor'
@@ -293,16 +493,18 @@ function Update-Preview {
             Resolve-IconPng $png | Out-Null
             $bytes = [IO.File]::ReadAllBytes($png)
             $previewCache[$key] = [System.Drawing.Image]::FromStream((New-Object IO.MemoryStream(, $bytes)))
+            Remove-Item $png -Force -ErrorAction SilentlyContinue
         }
         $picPreview.Image = $previewCache[$key]; $lblPreview.Text = 'Preview'
     } catch { $picPreview.Image = $null; $lblPreview.Text = $_.Exception.Message }
     finally { $form.Cursor = 'Default' }
 }
 
+$rbCurrent.Add_CheckedChanged({ if ($rbCurrent.Checked) { Update-Preview } })
 $rbPreset.Add_CheckedChanged({ if ($rbPreset.Checked) { Update-Preview } })
 $rbColor.Add_CheckedChanged({ if ($rbColor.Checked) { Update-Preview } })
 $rbFile.Add_CheckedChanged({ if ($rbFile.Checked) { $chkAccent.Checked = $false; Update-Preview } })
-$cmbPreset.Add_SelectedIndexChanged({ $rbPreset.Checked = $true; Update-Preview })
+$cmbPreset.Add_SelectedIndexChanged({ if ($form.Visible) { $rbPreset.Checked = $true; Update-Preview } })
 $txtColor.Add_Leave({ $rbColor.Checked = $true; Update-Preview })
 $txtColor.Add_KeyDown({ if ($_.KeyCode -eq 'Enter') { $rbColor.Checked = $true; Update-Preview; $_.SuppressKeyPress = $true } })
 $btnPick.Add_Click({
@@ -351,7 +553,7 @@ function Register-App([string]$installDir, [string]$name) {
             Set-ItemProperty "$classes\SupportedTypes" $t ''
             New-Item -Force "HKCU:\Software\Classes\$t\OpenWithList\WinMuse.exe" | Out-Null
         }
-        Write-Log "'Open with $name' added for $($AudioTypes.Count) audio types"
+        Write-Log "Registered ""Open with"" for $($AudioTypes.Count) audio file types"
     }
 
     # The uninstaller lives next to the app; it copies itself to TEMP before deleting the folder.
@@ -378,61 +580,78 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `$dir
         }
         foreach ($k in $props.Keys) { Set-ItemProperty $key $k $props[$k] }
         Set-ItemProperty $key NoModify 1 -Type DWord; Set-ItemProperty $key NoRepair 1 -Type DWord; Set-ItemProperty $key EstimatedSize $size -Type DWord
-        Write-Log "Added to Settings > Apps as '$name'"
+        Write-Log "Listed in Settings > Apps as ""$name"""
     }
 }
 
 $btnUninstall.Add_Click({
-    $u = Join-Path $txtInstall.Text 'Uninstall.ps1'
-    if (-not (Test-Path $u)) { [System.Windows.Forms.MessageBox]::Show("Nothing is installed in`n$($txtInstall.Text)", 'Uninstall') | Out-Null; return }
-    if ([System.Windows.Forms.MessageBox]::Show("Remove the app installed in`n$($txtInstall.Text)?`n`nYour library and settings are kept.", 'Uninstall', 'YesNo', 'Question') -ne 'Yes') { return }
+    $dir = $txtInstall.Text.Trim()
+    $u = Join-Path $dir 'Uninstall.ps1'
+    if (-not (Test-Path $u)) { [System.Windows.Forms.MessageBox]::Show("No installation was found in:`n$dir", 'Uninstall', 'OK', 'Information') | Out-Null; return }
+    if ([System.Windows.Forms.MessageBox]::Show("Uninstall the app from this location?`n$dir`n`nThe library and settings are kept.", 'Uninstall', 'YesNo', 'Question') -ne 'Yes') { return }
     Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$u`"" -WindowStyle Hidden -Wait
-    Write-Log "Uninstalled from $($txtInstall.Text)"
+    Write-Log "Uninstalled from $dir"
 })
 
-# ---- Build (runs dotnet in the background; a timer follows its log so the window stays responsive)
+# ---- Build (runs dotnet in the background; a timer follows its output so the window stays responsive)
 
 $state = @{}
 $timer = New-Object System.Windows.Forms.Timer; $timer.Interval = 300
 
 function Set-Busy([bool]$busy) {
-    foreach ($c in $gApp, $gIcon, $gBuild, $gReg, $gShare, $btnBuild, $btnUninstall) { $c.Enabled = -not $busy }
+    $controls = @($gApp, $gIcon, $gBuild, $gReg, $gShare, $btnBuild, $btnUninstall)
+    if ($Previous) { $controls += $gCurrent }
+    foreach ($c in $controls) { $c.Enabled = -not $busy }
     $progress.Visible = $busy
 }
 
-$btnBuild.Add_Click({
+function Start-Build {
     $log.Clear()
     $name = $txtName.Text.Trim()
-    if (-not (Test-Name $name)) { [System.Windows.Forms.MessageBox]::Show('Enter a name without \ / : * ? " < > |', 'Name') | Out-Null; return }
+    if (-not (Test-Name $name)) { [System.Windows.Forms.MessageBox]::Show('Enter a name. It cannot contain \ / : * ? " < > |', 'Name', 'OK', 'Warning') | Out-Null; return }
     $arch = if ($cmbArch.SelectedIndex -eq 0) { $native } else { [string]$cmbArch.SelectedItem }
     try {
         Set-Busy $true
-        Write-Log "Name: $name   Architecture: $arch"
-        Write-Log 'Drawing the icon…'; [System.Windows.Forms.Application]::DoEvents()
-        $png = Resolve-IconPng (Join-Path $Work 'icon.png')
-        & (Join-Path $PSScriptRoot 'Make-Icons.ps1') -FromPng $png | Out-Null
-        Write-Log 'Icon written (AppIcon.ico / AppIcon.png)'
-        $logo = if ($chkAccent.Checked) { if ($rbPreset.Checked -and $cmbPreset.SelectedItem -like '*simple*') { 'Simple' } else { 'Rings' } } else { 'Image' }
-        @{ Name = $name; Logo = $logo } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $Assets 'Branding.json')
-        Write-Log "Branding: $name, title-bar logo $logo"
+        Write-Log "Building $name for $arch"
+        $brandingFile = Join-Path $Assets 'Branding.json'
+        if ($rbCurrent.Checked) {
+            # The icon and the title bar logo stay as they are; only a new name is written.
+            $brand = Get-Branding
+            $logo = if ($brand -and $brand.Logo) { [string]$brand.Logo } else { 'Rings' }
+            Write-Log 'Icon: current'
+        } else {
+            Write-Log 'Generating icon…'; [System.Windows.Forms.Application]::DoEvents()
+            $png = Resolve-IconPng (Join-Path $Work 'icon.png')
+            & (Join-Path $PSScriptRoot 'Make-Icons.ps1') -FromPng $png | Out-Null
+            Write-Log 'Icon generated (AppIcon.ico, AppIcon.png)'
+            $logo = if ($chkAccent.Checked) { if ($rbPreset.Checked -and $cmbPreset.SelectedItem -like '*simple*') { 'Simple' } else { 'Rings' } } else { 'Image' }
+            $brand = $null
+        }
+        if (-not ($brand -and $brand.Name -eq $name -and $brand.Logo -eq $logo)) {
+            @{ Name = $name; Logo = $logo } | ConvertTo-Json | Set-Content -Encoding UTF8 $brandingFile
+        }
+        Write-Log "Branding: $name, title bar logo: $logo"
 
         $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
-        if (-not $dotnet) { throw 'The .NET SDK (dotnet) was not found. Install the .NET 10 SDK.' }
+        if (-not $dotnet) { throw 'The .NET SDK was not found. Install the .NET 10 SDK and try again.' }
         # FFmpeg for this CPU first (fetched during the build it would miss the copy to the output on the first build).
-        Write-Log 'Checking FFmpeg…'; [System.Windows.Forms.Application]::DoEvents()
+        Write-Log 'Checking FFmpeg libraries…'; [System.Windows.Forms.Application]::DoEvents()
         & (Join-Path $PSScriptRoot 'Get-FFmpeg.ps1') -Arch $arch.ToLower() | Out-Null
         $buildLog = Join-Path $Work 'build.log'; Set-Content $buildLog ''
         $target = if ($chkClean.Checked) { '-t:Rebuild' } else { '' }
         $quoted = '"' + ($name -replace '"', '') + '"'
         $cmd = "dotnet build `"$Project`" -c Release -p:Platform=$arch $target -p:Product=$quoted -p:AssemblyTitle=$quoted -p:Description=$quoted -nologo -v:minimal > `"$buildLog`" 2>&1"
-        Write-Log 'Building (the first build takes a few minutes)…'
+        Write-Log 'Compiling… A first build can take several minutes.'
         $state.Process = Start-Process cmd.exe -ArgumentList '/c', $cmd -PassThru -WindowStyle Hidden
         $state.Log = $buildLog; $state.Read = 0; $state.Name = $name; $state.Arch = $arch; $state.Phase = 'build'; $state.Setup = $null
         $timer.Start()
     } catch {
         Write-Log ('Error: ' + $_.Exception.Message); Set-Busy $false
     }
-})
+}
+
+$btnBuild.Add_Click({ Start-Build })
+if ($Previous) { $btnRebuild.Add_Click({ Set-Choices $Previous; $chkClean.Checked = $false; Start-Build }) }
 
 $timer.Add_Tick({
     # New build output since the last tick.
@@ -446,28 +665,30 @@ $timer.Add_Tick({
     $done = $false
     try {
         if ($state.Phase -eq 'installer') {
-            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path $state.Setup)) { throw 'Making the installer failed. See the messages above.' }
+            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path $state.Setup)) { throw 'Creating the setup file failed. See the output above.' }
+            Write-Log "Setup file: $($state.Setup)"
             $done = $true
         } else {
-            $out = Join-Path $Root "src\WinMuse\bin\$($state.Arch)\Release\net10.0-windows10.0.22621.0\win-$($state.Arch.ToLower())"
-            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path (Join-Path $out 'WinMuse.exe'))) { throw 'The build failed. See the messages above.' }
-            Write-Log "Built: $out"
+            $out = Get-OutputDir $state.Arch
+            if ($state.Process.ExitCode -ne 0 -or -not (Test-Path (Join-Path $out 'WinMuse.exe'))) { throw 'The build failed. See the output above.' }
+            Write-Log "Build output: $out"
             $state.Exe = Join-Path $out 'WinMuse.exe'
             if ($chkRegister.Checked) {
                 $dir = $txtInstall.Text.Trim()
                 $running = Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" }
                 if ($running) {
-                    if ([System.Windows.Forms.MessageBox]::Show("$($state.Name) is running from the install folder. Close it to update it?", 'Install', 'YesNo', 'Question') -ne 'Yes') { throw 'Install skipped: the app is still running.' }
+                    if ([System.Windows.Forms.MessageBox]::Show("$($state.Name) is running. Close it and continue the installation?", 'Install', 'YesNo', 'Question') -ne 'Yes') { throw 'Installation canceled because the app is running.' }
                     $running | ForEach-Object { $_.CloseMainWindow() | Out-Null }; Start-Sleep 2
                     Get-Process WinMuse -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" } | Stop-Process -Force
                 }
                 Write-Log "Installing to $dir…"; [System.Windows.Forms.Application]::DoEvents()
                 New-Item -ItemType Directory -Force $dir | Out-Null
                 robocopy $out $dir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:1 | Out-Null
-                if ($LASTEXITCODE -ge 8) { throw "Copying to $dir failed (robocopy $LASTEXITCODE)." }
+                if ($LASTEXITCODE -ge 8) { throw "Copying to $dir failed (robocopy exit code $LASTEXITCODE)." }
                 Register-App $dir $state.Name
                 $state.Exe = Join-Path $dir 'WinMuse.exe'
             }
+            Save-Choices $state.Arch
             if ($chkInstaller.Checked) {
                 # Second step, in the background like the build: publish self-contained, zip, wrap in the installer.
                 # Built for the architecture chosen above; ARM64 installers say so in their name (they don't run on Intel/AMD PCs).
@@ -476,7 +697,7 @@ $timer.Add_Tick({
                 $setupLog = Join-Path $Work 'installer.log'; Set-Content $setupLog ''
                 $script = Join-Path $PSScriptRoot 'Make-Installer.ps1'
                 $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Name `"$($state.Name -replace '"', '')`" -Arch $($state.Arch) -Out `"$($state.Setup)`" > `"$setupLog`" 2>&1"
-                Write-Log 'Making the installer (a few minutes)…'
+                Write-Log 'Creating setup file… This can take several minutes.'
                 $state.Process = Start-Process cmd.exe -ArgumentList '/c', $cmd -PassThru -WindowStyle Hidden
                 $state.Log = $setupLog; $state.Read = 0; $state.Phase = 'installer'
                 $timer.Start()
@@ -486,13 +707,14 @@ $timer.Add_Tick({
         }
     } catch { Write-Log ('Error: ' + $_.Exception.Message) }
     finally { if (-not $timer.Enabled) { Set-Busy $false } }
-    if (-not $done) { return }   # after a failure the tool stays open so the messages can be read
-    # Finished: open the app (and show the installer in File Explorer), then close the tool.
-    Write-Log 'Done.'
+    if (-not $done) { return }   # after a failure the window stays open so the output can be read
+    # Finished: open the app (and show the setup file in File Explorer), then close the window.
+    Write-Log 'Completed.'
     if ($chkLaunch.Checked) { Start-Process $state.Exe }
     if ($state.Setup) { Start-Process explorer.exe "/select,`"$($state.Setup)`"" }
     $form.Close()
 })
 
+if ($Previous) { Set-Choices $Previous } else { $rbPreset.Checked = $true }
 $form.Add_Shown({ Update-Preview })
 [void]$form.ShowDialog()

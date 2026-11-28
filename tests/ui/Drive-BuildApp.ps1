@@ -25,6 +25,10 @@ public static class W {
 }
 "@
 $tool = Join-Path $PSScriptRoot '..\..\tools\Build-App.ps1'
+# Known starting choices (the tool opens with the last build's), kept apart from the developer's own last build.
+$env:WINMUSE_BUILD_RECORD = Join-Path $env:TEMP 'WinMuseBuildTest-last-build.json'
+@{ Name = $Name; Arch = $(if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }); Launch = $true; Register = $false; InstallDir = ''
+   Desktop = $false; Apps = $true; OpenWith = $true; Installer = $false; ShareDir = '' } | ConvertTo-Json | Set-Content -Encoding UTF8 $env:WINMUSE_BUILD_RECORD
 $p = Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tool`"" -PassThru
 $deadline = (Get-Date).AddSeconds(40)
 do { Start-Sleep 1; $p.Refresh() } until ($p.MainWindowTitle -eq 'Build Music' -or (Get-Date) -gt $deadline)
@@ -48,18 +52,18 @@ $installBox = [IntPtr]$edits[3].Current.NativeWindowHandle
 $shareBox = [IntPtr]$edits[4].Current.NativeWindowHandle
 $logBox = [IntPtr]$edits[-1].Current.NativeWindowHandle
 SetText $nameBox $Name
-SetText $colorBox $Color; Click 'Any color'
+SetText $colorBox $Color; Click 'Custom color'
 if ($Register) {
-    Click 'Install and register (Start menu shortcut)'
+    Click 'Install for current user'
     SetText $installBox $InstallDir
     Click 'Desktop shortcut'
 }
 if ($InstallerDir) {
-    Click 'Create installer (.exe to share)'
+    Click 'Create setup file'
     New-Item -ItemType Directory -Force $InstallerDir | Out-Null
     SetText $shareBox $InstallerDir
 }
-Click 'Open the app when done'
+Click 'Open app when finished'
 Start-Sleep 3   # recolored preview
 Click 'Build'
 $start = Get-Date
