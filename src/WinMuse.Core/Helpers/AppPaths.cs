@@ -18,11 +18,6 @@ public static class AppPaths
     public static string ArtDir { get; } = Ensure(Path.Combine(DataDir, "Artwork"));
     public static string LyricsDir { get; } = Ensure(Path.Combine(DataDir, "Lyrics"));
     public static string DatabasePath => Path.Combine(DataDir, "library.db");
-    public static string SettingsPath => Path.Combine(DataDir, "settings.json");
-    /// <summary>The last settings file that read correctly (see SettingsService).</summary>
-    public static string SettingsBackupPath => Path.Combine(DataDir, "settings.backup.json");
-    /// <summary>The most recent damaged settings file, kept for a bug report.</summary>
-    public static string SettingsDamagedPath => Path.Combine(DataDir, "settings.damaged.json");
     public static string LogPath => Path.Combine(DataDir, "log.txt");
     public static string FFmpegDir => Path.Combine(AppContext.BaseDirectory, "ffmpeg");
     public static string AssetsDir => Path.Combine(AppContext.BaseDirectory, "Assets");

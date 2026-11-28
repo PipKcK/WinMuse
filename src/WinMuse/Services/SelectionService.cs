@@ -51,6 +51,7 @@ public static class SelectionService
     }
 
     /// <summary>Called by <see cref="Track.IsChecked"/>.</summary>
+    /// <summary>Follows <see cref="Track.CheckedChanged"/> (subscribed once at startup, see Svc).</summary>
     internal static void OnTrackChecked(Track t, bool isChecked)
     {
         if (isChecked) { if (!CheckedTracks.Contains(t)) CheckedTracks.Add(t); }

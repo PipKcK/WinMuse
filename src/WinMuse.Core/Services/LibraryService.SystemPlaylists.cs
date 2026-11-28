@@ -4,7 +4,7 @@ using WinMuse.Models;
 namespace WinMuse.Services;
 
 /// <summary>
-/// Automatic playlists: Fresh in Your Library, On Repeat and Long Time No Play. Music keeps them up to
+/// Automatic playlists: Fresh in Your Library, On Repeat and Long Time No Play. The app keeps them up to
 /// date from the library and play history; they are never saved and don't appear on the Playlists page.
 /// </summary>
 public sealed partial class LibraryService

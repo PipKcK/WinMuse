@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Numerics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -8,11 +7,18 @@ using WinMuse.Controls;
 using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services;
+using WinMuse.ViewModels;
 
 namespace WinMuse.Views;
 
+/// <summary>
+/// Home. What it shows (the summary, Quick access, the rows and their order) comes from <see cref="HomeViewModel"/>;
+/// this page adds the greeting's look (colors, glow, the fanned covers), smooth scrolling and navigation.
+/// </summary>
 public sealed partial class HomePage : Page
 {
+    public HomeViewModel Vm { get; } = new(Svc.Library, Svc.Settings, Svc.Favorites, Svc.Continue, Svc.Player);
+
     public HomePage()
     {
         InitializeComponent();
@@ -20,13 +26,10 @@ public sealed partial class HomePage : Page
         Svc.Library.Changed += () => { if (IsLoaded) Refresh(); else _dirty = true; };
         Svc.Library.ScanCompleted += () => { if (IsLoaded) Refresh(); else _dirty = true; };
         Svc.Theme.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ThemeService.Accent)) TintHero(); };
-        Svc.Player.TrackChanged += _ => UpdateResume();
+        Svc.Player.TrackChanged += _ => Vm.RefreshResume();
         Svc.Favorites.Changed += () => { if (IsLoaded) Refresh(); else _dirty = true; };
         Svc.Continue.Changed += () => { if (IsLoaded) RefreshContinue(); else _dirty = true; };
-        Svc.Library.PlaylistsChanged += () => { if (IsLoaded) RefreshPlaylists(); else _dirty = true; };
-        _loadingSort = true;
-        PlaylistSortBox.SelectedIndex = (int)Svc.Settings.Current.HomePlaylistSort;
-        _loadingSort = false;
+        Svc.Library.PlaylistsChanged += () => { if (IsLoaded) Vm.RefreshPlaylists(); else _dirty = true; };
         // The fanned covers need room; hide them (and give back their column) rather than letting them crowd the greeting.
         Hero.SizeChanged += (_, e) =>
         {
@@ -115,7 +118,7 @@ public sealed partial class HomePage : Page
         EventHandler<object>? show = null;
         show = (_, _) =>
         {
-            Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= show;
+            CompositionTarget.Rendering -= show;
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
                 foreach (var (index, row) in _detached.OrderBy(d => d.index))
@@ -123,7 +126,7 @@ public sealed partial class HomePage : Page
                 _detached.Clear();
             });
         };
-        Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += show;
+        CompositionTarget.Rendering += show;
     }
 
     /// <summary>
@@ -132,8 +135,8 @@ public sealed partial class HomePage : Page
     /// </summary>
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
-        Greeting.Text = Format.Greeting(); // cheap things that may have changed with time
-        UpdateResume();
+        Vm.RefreshGreeting(); // cheap things that may have changed with time
+        Vm.RefreshResume();
         ApplyGreetingColors(); // the theme or greeting style may have changed while Home was away
         RefreshContinue(); // songs and progress move on while Home is away
         // Rows that were taken out when Home was left (see OnNavigatingFrom) go back right after it appears.
@@ -149,151 +152,18 @@ public sealed partial class HomePage : Page
 
     private void Refresh()
     {
-        var lib = Svc.Library;
-        var tracks = lib.Tracks;
-        var hasMusic = tracks.Count > 0;
-        var hasFolders = Svc.Settings.Current.MusicFolders.Count > 0;
-
-        Greeting.Text = Format.Greeting();
-        GreetingIcon.Glyph = DateTime.Now.Hour is >= 6 and < 18 ? "\uE706" : "\uE708"; // sun / moon
-        // Each part keeps its words together (no-break spaces), so a narrow card breaks the line only between parts.
-        static string Keep(string s) => s.Replace(' ', ' ');
-        Stats.Text = hasMusic
-            ? string.Join(" · ", Keep($"{tracks.Count:N0} songs"), Keep($"{lib.Albums.Count:N0} albums"), Keep($"{lib.Artists.Count:N0} artists"),
-                Keep($"{Format.LongTime(TimeSpan.FromMilliseconds(tracks.Sum(t => t.DurationMs)))} of music"))
-            : hasFolders && lib.IsScanning ? "Scanning library…" : "Your library is empty";
-        ShuffleAllButton.IsEnabled = hasMusic;
-        Welcome.Visibility = !hasMusic && !lib.IsScanning ? Visibility.Visible : Visibility.Collapsed;
-        var musicFolder = AppPaths.MusicFolder;
-        bool musicAdded = Svc.Settings.Current.MusicFolders.Contains(musicFolder, StringComparer.OrdinalIgnoreCase);
-        WelcomeTitle.Text = hasFolders ? "No Songs Found" : "Set Up Your Library";
-        WelcomeText.Text = hasFolders
-            ? $"Copy music into {musicFolder} or add another folder. New files are detected automatically and their metadata, album art and lyrics are updated."
-            : "Add the folders that contain your music. Files remain on this PC. Supported formats include MP3, FLAC, ALAC, AAC, Opus, Vorbis, WAV, AIFF, APE, WavPack and DSD.";
-        MusicFolderButtonText.Text = musicAdded ? "Open Music Folder" : "Add Music Folder";
-
-        Bind(QuickPicks, ref _quick, BuildQuickAccess(), q => q.Key, (a, b) => a.SameAs(b));
-        QuickSection.Visibility = hasMusic ? Visibility.Visible : Visibility.Collapsed;
-
-        // Automatic playlists, updated in place (cards that stay keep their covers).
-        ShowSystemPlaylist(RecentAdded, RecentAddedSection, ref _recentAdded, LibraryService.RecentlyAddedId);
-        RefreshContinue();
-        ShowSystemPlaylist(MostPlayed, MostPlayedSection, ref _most, LibraryService.MostPlayedId);
-        // Long Time No Play waits for listening history (Settings > Debug can show it anyway).
-        ShowSystemPlaylist(Rediscover, RediscoverSection, ref _rediscover, LibraryService.NotPlayedRecentlyId,
-            lib.HasListeningHistory || Svc.Settings.Current.ShowAllHomeRows);
-
-        RefreshPlaylists();
-
-        var fan = lib.Albums.Where(a => a.ArtPath != null).OrderByDescending(a => a.AddedUtc).Take(3).ToList();
-        var fanKey = string.Join("|", fan.Select(a => a.ArtPath));
-        if (fanKey != _fanKey) { _fanKey = fanKey; BuildArtFan(fan); }
-        UpdateResume();
+        Vm.Refresh();
+        var fanKey = string.Join("|", Vm.ArtFanAlbums.Select(a => a.ArtPath));
+        if (fanKey != _fanKey) { _fanKey = fanKey; BuildArtFan(Vm.ArtFanAlbums); }
         TintHero();
     }
 
-    private ObservableCollection<QuickEntry> _quick = new();
-    private bool _loadingSort;
+    private string? _fanKey;
 
-    // ---------------- Playlists row ----------------
-
-    private void RefreshPlaylists()
-    {
-        var s = Svc.Settings.Current;
-        var all = Svc.Library.Playlists.Where(p => p.Tracks.Count > 0).ToList();
-        IEnumerable<Playlist> sorted = s.HomePlaylistSort switch
-        {
-            PlaylistSort.Alphabetical => all.OrderBy(p => p.Name, NaturalOrder.Instance), // "Mix 2" before "Mix 10", like File Explorer
-            PlaylistSort.DateCreated => all.OrderByDescending(p => p.CreatedUtc).ThenByDescending(p => p.Id),
-            PlaylistSort.Custom => all.OrderBy(p => s.PlaylistOrder.IndexOf(p.Id) is var i && i >= 0 ? i : int.MaxValue).ThenByDescending(p => p.Id),
-            _ => all.OrderByDescending(Svc.Library.LastActivity).ThenByDescending(p => p.Id),
-        };
-        var list = sorted.ToList();
-        // Updated in place: only playlists whose name or songs changed are rebuilt, a new order is applied by moving
-        // rows. Rebuilding every row on the way back to Home made it visibly refresh and reload all its covers.
-        string Sig(Playlist p) => p.Name + "\u001f" + string.Join(",", p.Tracks.Select(t => t.Id));
-        foreach (var p in _playlists.ToList())
-            if (!_playlistSigs.TryGetValue(p.Id, out var sig) || sig != Sig(p)) _playlists.Remove(p); // re-added fresh below
-        if (!CollectionSync.Sync(_playlists, list, p => p.Id)) { _playlists = new ObservableCollection<Playlist>(list); HomePlaylists.ItemsSource = _playlists; }
-        if (HomePlaylists.ItemsSource == null) HomePlaylists.ItemsSource = _playlists;
-        _playlistSigs.Clear();
-        foreach (var p in list) _playlistSigs[p.Id] = Sig(p);
-        foreach (var p in list) p.CanMove = s.HomePlaylistSort == PlaylistSort.Custom;
-        PlaylistCountText.Text = $"{list.Count} {(list.Count == 1 ? "playlist" : "playlists")}";
-        PlaylistsSection.Visibility = list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private ObservableCollection<Playlist> _playlists = new();
-    private readonly Dictionary<long, string> _playlistSigs = new();
-
-    private void OnPlaylistSortChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_loadingSort) return;
-        var sort = (PlaylistSort)PlaylistSortBox.SelectedIndex;
-        var shown = _playlists.Select(p => p.Id).ToList();
-        Svc.Settings.Set(nameof(AppSettings.HomePlaylistSort), s =>
-        {
-            // Custom starts from the order currently shown.
-            if (sort == PlaylistSort.Custom && s.PlaylistOrder.Count == 0) s.PlaylistOrder = shown;
-            s.HomePlaylistSort = sort;
-        });
-        RefreshPlaylists();
-    }
-
-    private static Playlist? PlaylistOf(object sender) => (sender as FrameworkElement)?.DataContext as Playlist;
-
-    private void OnOpenPlaylist(object sender, RoutedEventArgs e)
-    {
-        if (PlaylistOf(sender) is not { } p) return;
-        Svc.Library.TouchPlaylist(p);
-        App.MainWindow.Navigate(typeof(PlaylistDetailPage), p.Id);
-    }
-
-    /// <summary>A song card in a playlist row opens the playlist and plays it from that song.</summary>
-    private async void OnPlaylistSongClick(object sender, ItemClickEventArgs e)
-    {
-        if (PlaylistOf(sender) is { } p && e.ClickedItem is Track t) await PlaylistDetailPage.OpenAndPlayAsync(p, t);
-    }
-
-    private void OnMovePlaylistUp(object sender, RoutedEventArgs e) => MovePlaylist(sender, -1);
-    private void OnMovePlaylistDown(object sender, RoutedEventArgs e) => MovePlaylist(sender, 1);
-
-    private void MovePlaylist(object sender, int by)
-    {
-        if (PlaylistOf(sender) is not { } p) return;
-        var shown = _playlists.ToList();
-        var order = shown.Select(x => x.Id).ToList();
-        int i = order.IndexOf(p.Id), j = i + by;
-        if (i < 0 || j < 0 || j >= order.Count) return;
-        (order[i], order[j]) = (order[j], order[i]);
-        Svc.Settings.Set(nameof(AppSettings.PlaylistOrder), s => s.PlaylistOrder = order);
-        RefreshPlaylists();
-    }
-
-    private void OnSeePlaylists(object sender, RoutedEventArgs e) => App.MainWindow.Navigate(typeof(PlaylistsPage));
-    private ObservableCollection<Track> _recentAdded = new(), _most = new(), _rediscover = new();
-    private ObservableCollection<ContinueItem> _continue = new();
-
-    /// <summary>
-    /// Continue Listening cards (entries whose song is no longer in the library are skipped). Cards that stay are
-    /// updated in place; one whose song moved on (next song of its playlist, album or artist) eases its new song in.
-    /// </summary>
+    /// <summary>Continue Listening; a card whose song moved on eases its new song in.</summary>
     private void RefreshContinue()
     {
-        var current = _continue.ToDictionary(c => c.Key);
-        var items = new List<ContinueItem>();
-        var changed = new List<ContinueItem>();
-        foreach (var e in Svc.Continue.Entries)
-        {
-            if (Svc.Continue.TrackOf(e) is not { } t) continue;
-            var key = $"{e.Kind}:{e.Key}";
-            if (current.TryGetValue(key, out var item)) { if (item.Update(e, t)) changed.Add(item); }
-            else item = new ContinueItem(e, t);
-            items.Add(item);
-        }
-        Bind(ContinueRow, ref _continue, items, c => c.Key);
-        ContinueSection.Visibility = items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var item in changed)
+        foreach (var item in Vm.RefreshContinue())
             if (ContinueRow.ContainerFromItem(item) is ListViewItem { ContentTemplateRoot: FrameworkElement root } && FindNamed(root, "CardContent") is { } content)
                 Effects.SwapIn(content);
     }
@@ -306,24 +176,41 @@ public sealed partial class HomePage : Page
         return null;
     }
 
-    private async void OnContinueClick(object sender, ItemClickEventArgs e) => await Svc.Continue.ResumeAsync(((ContinueItem)e.ClickedItem).Entry);
+    // ---------------- Playlists row ----------------
+
+    private static Playlist? PlaylistOf(object sender) => (sender as FrameworkElement)?.DataContext as Playlist;
+
+    private void OnOpenPlaylist(object sender, RoutedEventArgs e)
+    {
+        if (PlaylistOf(sender) is not { } p) return;
+        Vm.OpenPlaylist(p);
+        App.MainWindow.Navigate(typeof(PlaylistDetailPage), p.Id);
+    }
+
+    /// <summary>A song card in a playlist row opens the playlist and plays it from that song.</summary>
+    private async void OnPlaylistSongClick(object sender, ItemClickEventArgs e)
+    {
+        if (PlaylistOf(sender) is { } p && e.ClickedItem is Track t) await PlaylistDetailPage.OpenAndPlayAsync(p, t);
+    }
+
+    private void OnMovePlaylistUp(object sender, RoutedEventArgs e) { if (PlaylistOf(sender) is { } p) Vm.MovePlaylist(p, -1); }
+    private void OnMovePlaylistDown(object sender, RoutedEventArgs e) { if (PlaylistOf(sender) is { } p) Vm.MovePlaylist(p, 1); }
+
+    private void OnSeePlaylists(object sender, RoutedEventArgs e) => App.MainWindow.Navigate(typeof(PlaylistsPage));
+
+    // ---------------- Continue Listening and automatic rows ----------------
+
+    private async void OnContinueClick(object sender, ItemClickEventArgs e) => await Vm.ResumeAsync((ContinueItem)e.ClickedItem);
 
     private void OnContinueRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
         if (e.OriginalSource is not FrameworkElement { DataContext: ContinueItem c } el) return;
         var menu = new MenuFlyout();
-        menu.Items.Add(TrackActions.Item("Resume", "\uE768", async () => await Svc.Continue.ResumeAsync(c.Entry)));
+        menu.Items.Add(TrackActions.Item("Resume", "\uE768", async () => await Vm.ResumeAsync(c)));
         menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(TrackActions.Item("Remove from Continue Listening", "\uE711", () => Svc.Continue.Remove(c.Entry)));
+        menu.Items.Add(TrackActions.Item("Remove from Continue Listening", "\uE711", () => Vm.RemoveFromContinue(c)));
         menu.ShowAt(el, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(el) });
         e.Handled = true;
-    }
-
-    private static void ShowSystemPlaylist(ListView list, FrameworkElement section, ref ObservableCollection<Track> bound, long id, bool ready = true)
-    {
-        var tracks = ready ? Svc.Library.SystemPlaylist(id)?.Tracks ?? new List<Track>() : new List<Track>();
-        Bind(list, ref bound, tracks, t => t);
-        section.Visibility = tracks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static long SystemPlaylistIdOf(object sender) => long.TryParse((sender as FrameworkElement)?.Tag as string, out var id) ? id : 0;
@@ -336,61 +223,37 @@ public sealed partial class HomePage : Page
         if (Svc.Library.SystemPlaylist(SystemPlaylistIdOf(sender)) is { } p && e.ClickedItem is Track t) await PlaylistDetailPage.OpenAndPlayAsync(p, t);
     }
 
-    /// <summary>
-    /// Quick access, at most 10 tiles, in this order: pinned (up to 10), then favorites (any number, as many as fit),
-    /// then random tiles only for the places left (up to 2 artists and 3 songs, preferring ones with a photo or album
-    /// art). Within each group, artists come before songs. Random and favorite picks are kept between refreshes so tiles don't reshuffle on every update.
-    /// </summary>
-    private List<QuickEntry> BuildQuickAccess()
+    // ---------------- Quick access ----------------
+
+    private async void OnQuickPickTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
     {
-        var fav = Svc.Favorites;
-        var lib = Svc.Library;
-        var list = new List<QuickEntry>();
-        var keys = new HashSet<string>();
-        void Add(QuickEntry e) { if (list.Count < FavoritesService.MaxQuickAccess && keys.Add(e.Key)) list.Add(e); }
-        void AddGroup(IEnumerable<QuickEntry> group) { foreach (var e in group.OrderBy(e => e.IsArtist ? 0 : 1)) Add(e); } // stable: keeps order inside
-        QuickEntry Song(Track t) => new() { Track = t, IsPinned = fav.IsPinned(FavoritesService.Key(t)), IsFavorite = t.IsFavorite };
-        QuickEntry Artist(Artist a) => new() { Artist = a, IsPinned = fav.IsPinned(FavoritesService.Key(a)), IsFavorite = fav.IsFavoriteArtist(a.Name) };
-
-        // Pinned, in pin order.
-        AddGroup(fav.PinnedItems().Select(item => item is Track t ? Song(t) : Artist((Artist)item)));
-
-        // Favorites: ones already shown stay, the rest in random order.
-        var shown = _quick.Select(q => q.Key).ToHashSet();
-        var favorites = fav.FavoriteArtists.Select(Artist).Concat(fav.FavoriteSongs.Select(Song)).ToList();
-        AddGroup(favorites.Where(e => shown.Contains(e.Key)).Concat(favorites.Where(e => !shown.Contains(e.Key)).OrderBy(_ => Random.Shared.Next())));
-
-        // Random: 2 artists and 3 songs; earlier picks first, then new ones with artwork before ones without.
-        var artists = lib.Artists.Where(a => a.Name is not ("Unknown Artist" or "Various Artists")).ToList();
-        var randomArtists = _quick.Where(q => q is { IsPinned: false, IsFavorite: false, Artist: not null } && !keys.Contains(q.Key))
-            .Select(q => lib.FindArtist(q.Artist!.Name)).OfType<Artist>().Take(2).ToList();
-        randomArtists.AddRange(artists.Where(a => !keys.Contains(FavoritesService.Key(a)) && !randomArtists.Any(r => r.Name == a.Name))
-            .OrderBy(a => a.ImagePath != null ? 0 : a.ArtPath != null ? 1 : 2).ThenBy(_ => Random.Shared.Next()).Take(2 - randomArtists.Count));
-        var randomSongs = _quick.Where(q => q is { IsPinned: false, IsFavorite: false, Track: not null } && lib.Tracks.Contains(q.Track!) && !keys.Contains(q.Key))
-            .Select(q => q.Track!).Take(3).ToList();
-        randomSongs.AddRange(lib.Tracks.Where(t => !keys.Contains(FavoritesService.Key(t)) && !randomSongs.Contains(t))
-            .OrderBy(t => t.ArtPath != null ? 0 : 1).ThenBy(_ => Random.Shared.Next()).Take(3 - randomSongs.Count));
-        AddGroup(randomArtists.Select(Artist).Concat(randomSongs.Select(Song)));
-        return list;
-    }
-    private string? _fanKey;
-
-
-    private static void Bind<T>(ItemsControl control, ref ObservableCollection<T> current, IList<T> items, Func<T, object> key, Func<T, T, bool>? same = null)
-    {
-        var bound = CollectionSync.SyncOrReplace(current, items, key, same);
-        if (!ReferenceEquals(bound, current) || control.ItemsSource == null) { current = bound; control.ItemsSource = current; }
+        if (e.OriginalSource is not FrameworkElement { DataContext: QuickEntry q }) return;
+        if (q.Artist != null) App.MainWindow.Navigate(typeof(ArtistDetailPage), q.Artist.Name);
+        else await Svc.Player.PlayTrackAsync(q.Track!);
     }
 
-    private void UpdateResume()
+    private void OnQuickPickRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
-        var t = Svc.Player.CurrentTrack;
-        ResumeButton.Visibility = t != null ? Visibility.Visible : Visibility.Collapsed;
-        if (t != null)
-        {
-            ResumeText.Text = $"{t.DisplayTitle} · {t.DisplayArtist}";
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(ResumeButton, $"Resume {t.DisplayTitle} by {t.DisplayArtist}");
-        }
+        if (e.OriginalSource is not FrameworkElement { DataContext: QuickEntry q } el) return;
+        Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase menu = q.Artist != null ? TrackActions.BuildArtistMenu(q.Artist) : TrackActions.BuildMenu(new[] { q.Track! });
+        menu.ShowAt(el, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(el) });
+        e.Handled = true;
+    }
+
+    // ---------------- Greeting buttons and the empty library ----------------
+
+    private async void OnShuffleAll(object sender, RoutedEventArgs e) => await Vm.ShuffleAllAsync();
+    private void OnResume(object sender, RoutedEventArgs e) { Vm.Resume(); App.MainWindow.ShowNowPlaying(true); }
+
+    private async void OnUseMusicFolder(object sender, RoutedEventArgs e)
+    {
+        if (!Vm.MusicFolderAdded) { await Vm.AddMusicFolderAsync(); return; }
+        try { System.Diagnostics.Process.Start("explorer.exe", $"\"{AppPaths.MusicFolder}\""); } catch { }
+    }
+
+    private async void OnAddFolder(object sender, RoutedEventArgs e)
+    {
+        if (await Pickers.PickFolderAsync() is { } folder) await Vm.AddFolderAsync(folder);
     }
 
     private void OnPageWheel(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
@@ -594,7 +457,7 @@ public sealed partial class HomePage : Page
     }
 
     /// <summary>Three overlapping album covers fanned out on the hero card.</summary>
-    private void BuildArtFan(List<Album> albums)
+    private void BuildArtFan(IReadOnlyList<Album> albums)
     {
         ArtFan.Children.Clear();
         ArtFan.Visibility = albums.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -612,56 +475,12 @@ public sealed partial class HomePage : Page
                 Shadow = new ThemeShadow(),
                 Translation = new Vector3(0, 0, 16 + i * 8),
             };
+            // Decorative: the covers repeat albums listed below, so screen readers skip them.
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(art, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
             // Wrapper takes the composition entrance animation; the art itself uses facade properties for its shadow depth.
             var wrapper = new Grid { Children = { art } };
             ArtFan.Children.Add(wrapper);
             Effects.EntranceSlide(wrapper, 30, 120 + i * 90, 600);
         }
-    }
-
-    private async void OnShuffleAll(object sender, RoutedEventArgs e) => await Svc.Player.PlayAsync(Svc.Library.Tracks, 0, shuffle: true);
-    private void OnResume(object sender, RoutedEventArgs e) { if (!Svc.Player.IsPlaying) Svc.Player.Play(); App.MainWindow.ShowNowPlaying(true); }
-
-    private async void OnQuickPickTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-    {
-        if (e.OriginalSource is not FrameworkElement { DataContext: QuickEntry q }) return;
-        if (q.Artist != null) App.MainWindow.Navigate(typeof(ArtistDetailPage), q.Artist.Name);
-        else await Svc.Player.PlayTrackAsync(q.Track!);
-    }
-
-    private void OnQuickPickRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
-    {
-        if (e.OriginalSource is not FrameworkElement { DataContext: QuickEntry q } el) return;
-        Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase menu = q.Artist != null ? TrackActions.BuildArtistMenu(q.Artist) : TrackActions.BuildMenu(new[] { q.Track! });
-        menu.ShowAt(el, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(el) });
-        e.Handled = true;
-    }
-
-    private async void OnUseMusicFolder(object sender, RoutedEventArgs e)
-    {
-        var music = AppPaths.MusicFolder;
-        if (Svc.Settings.Current.MusicFolders.Contains(music, StringComparer.OrdinalIgnoreCase))
-        {
-            try { System.Diagnostics.Process.Start("explorer.exe", $"\"{music}\""); } catch { }
-            return;
-        }
-        if (Directory.Exists(music)) await Svc.Library.AddFolderAsync(music);
-        Refresh();
-    }
-
-    private async void OnAddFolder(object sender, RoutedEventArgs e)
-    {
-        var folder = await Pickers.PickFolderAsync();
-        if (folder != null) await Svc.Library.AddFolderAsync(folder);
-        Refresh();
-    }
-
-    /// <summary>File Explorer's name order: numbers inside names compare by value.</summary>
-    private sealed partial class NaturalOrder : IComparer<string>
-    {
-        public static readonly NaturalOrder Instance = new();
-        [System.Runtime.InteropServices.LibraryImport("shlwapi.dll", StringMarshalling = System.Runtime.InteropServices.StringMarshalling.Utf16)]
-        private static partial int StrCmpLogicalW(string a, string b);
-        public int Compare(string? x, string? y) => StrCmpLogicalW(x ?? "", y ?? "");
     }
 }

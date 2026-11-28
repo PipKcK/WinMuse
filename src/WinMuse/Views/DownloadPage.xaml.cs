@@ -27,6 +27,7 @@ public sealed partial class DownloadEntry : ObservableObject
 }
 
 /// <summary>Downloads songs with mdown.exe, adds them to the library and runs the online checks on them.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "The source exists only while a download runs and is disposed when it ends (see OnDownload).")]
 public sealed partial class DownloadPage : Page
 {
     private static readonly ObservableCollection<DownloadEntry> s_history = new();

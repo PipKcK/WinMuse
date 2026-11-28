@@ -24,7 +24,7 @@
                 <TextBlock x:Name="SummaryText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <ComboBox x:Name="FilterBox" SelectionChanged="OnFilterChanged" MinWidth="170" VerticalAlignment="Center">
+                <ComboBox x:Name="FilterBox" AutomationProperties.Name="Show" SelectionChanged="OnFilterChanged" MinWidth="170" VerticalAlignment="Center">
                     <x:String>All songs</x:String>
                     <x:String>Complete</x:String>
                     <x:String>Pending</x:String>
@@ -57,7 +57,7 @@
             <TextBlock Grid.Column="5" Text="Fetch status" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
         </Grid>
 
-        <ListView x:Name="List" Grid.Row="2" SelectionMode="None" IsItemClickEnabled="False" Padding="24,4,24,24" RightTapped="OnRightTapped">
+        <ListView x:Name="List" AutomationProperties.Name="Songs" Grid.Row="2" SelectionMode="None" IsItemClickEnabled="False" Padding="24,4,24,24" RightTapped="OnRightTapped">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
                     <Setter Property="Padding" Value="20,0" />
@@ -96,7 +96,7 @@
                             <TextBlock Text="{x:Bind StatusText}" FontSize="11" FontWeight="SemiBold" Foreground="{x:Bind StatusForeground}" TextTrimming="CharacterEllipsis" />
                         </Border>
                         <Button Grid.Column="6" Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xEBD3;" FontSize="14" Click="OnSyncRow"
-                                IsEnabled="{x:Bind CanSync}" ToolTipService.ToolTip="{x:Bind SyncTooltip}" AutomationProperties.Name="Fetch this song" />
+                                IsEnabled="{x:Bind CanSync}" ToolTipService.ToolTip="{x:Bind SyncTooltip}" AutomationProperties.Name="{x:Bind FetchButtonName}" />
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

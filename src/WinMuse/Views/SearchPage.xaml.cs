@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using WinMuse.Controls;
+using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services;
 
@@ -22,7 +23,7 @@ public sealed partial class SearchPage : Page
         var q = e.Parameter as string ?? "";
         TitleText.Text = $"Results for “{q}”";
         var (songs, albums, artists) = Svc.Library.Search(q, 500);
-        SummaryText.Text = $"{songs.Count} songs · {albums.Count} albums · {artists.Count} artists";
+        SummaryText.Text = $"{Format.Count(songs.Count, "song", "songs")} · {Format.Count(albums.Count, "album", "albums")} · {Format.Count(artists.Count, "artist", "artists")}";
         ArtistsList.ItemsSource = artists.Take(20).ToList();
         AlbumsList.ItemsSource = albums.Take(30).ToList();
         ArtistsSection.Visibility = artists.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

@@ -265,12 +265,26 @@ public sealed partial class MainWindow : Window
             ConnectedAnimationService.GetForCurrentView().PrepareToAnimate("NowPlayingArt", PlayerBar.ArtElement);
             NowPlaying.Open(lyrics);
             BackButton.IsEnabled = true;
+            // Once it has slid in and covers them (it is opaque), the page and player bar behind it are taken out.
+            After(TimeSpan.FromMilliseconds(600), () => { if (IsNowPlayingOpen) SetCoveredLayersShown(false); });
         }
         else
         {
+            SetCoveredLayersShown(true); // back before Now Playing fades, so they show through it
             NowPlaying.Close();
             BackButton.IsEnabled = ContentFrame.CanGoBack;
         }
+    }
+
+    /// <summary>
+    /// The page and the player bar under Now Playing. Collapsed while it covers them, so screen readers and Tab can't
+    /// land on buttons that can't be seen (and the bar's spectrum stops drawing out of sight).
+    /// </summary>
+    private void SetCoveredLayersShown(bool shown)
+    {
+        var v = shown ? Visibility.Visible : Visibility.Collapsed;
+        if (Nav.Visibility != v) Nav.Visibility = v;
+        if (PlayerBar.Visibility != v) PlayerBar.Visibility = v;
     }
 
     public bool IsNowPlayingOpen => NowPlaying.Visibility == Visibility.Visible;
@@ -397,6 +411,7 @@ public sealed partial class MainWindow : Window
                 break;
             case nameof(AppSettings.WallpaperPath):
             case nameof(AppSettings.WallpaperBlur):
+            case nameof(AppSettings.WallpaperBlurStyle):
             case nameof(AppSettings.WallpaperDim):
             case nameof(AppSettings.BackgroundIntensity):
             case nameof(AppSettings.AnimateBackground):
@@ -426,9 +441,9 @@ public sealed partial class MainWindow : Window
 
             case BackgroundMode.Wallpaper when !string.IsNullOrEmpty(s.WallpaperPath) && File.Exists(s.WallpaperPath):
                 Ambient.Opacity = 0;
-                // A real (Gaussian) blur, made in the background and cached (Helpers/WallpaperBlur).
-                var key = $"{s.WallpaperPath}|{Math.Round(s.WallpaperBlur)}";
-                if (_wallpaperKey != key) { _wallpaperKey = key; _ = LoadWallpaperAsync(s.WallpaperPath!, s.WallpaperBlur, key); }
+                // Blurred in the background in the chosen style, and cached (Helpers/WallpaperBlur).
+                var key = $"{s.WallpaperPath}|{Math.Round(s.WallpaperBlur)}|{s.WallpaperBlurStyle}";
+                if (_wallpaperKey != key) { _wallpaperKey = key; _ = LoadWallpaperAsync(s.WallpaperPath!, s.WallpaperBlur, s.WallpaperBlurStyle, key); }
                 WallpaperImage.Opacity = 1;
                 BackgroundScrim.Opacity = s.WallpaperDim / 100.0;
                 break;
@@ -491,13 +506,19 @@ public sealed partial class MainWindow : Window
 
     // ---------------- Notifications ----------------
 
-    private void ShowToast(string title, string? message, InfoBarSeverity severity, Notifier.ToastAction? action)
+    private void ShowToast(string title, string? message, NoticeSeverity severity, NoticeAction? action)
     {
         var bar = new InfoBar
         {
             Title = title,
             Message = message ?? "",
-            Severity = severity,
+            Severity = severity switch
+            {
+                NoticeSeverity.Success => InfoBarSeverity.Success,
+                NoticeSeverity.Warning => InfoBarSeverity.Warning,
+                NoticeSeverity.Error => InfoBarSeverity.Error,
+                _ => InfoBarSeverity.Informational,
+            },
             IsOpen = true,
             IsClosable = true,
             Background = ThemeRes.Brush("GlassBrush"),
@@ -527,7 +548,7 @@ public sealed partial class MainWindow : Window
         Toasts.Children.Add(wrap);
         while (Toasts.Children.Count > 3) Toasts.Children.RemoveAt(0);
         After(TimeSpan.FromMilliseconds(16), () => { wrap.Opacity = 1; wrap.Translation = System.Numerics.Vector3.Zero; });
-        After(TimeSpan.FromSeconds(severity is InfoBarSeverity.Error or InfoBarSeverity.Warning ? 8 : 4), Close); // problems stay longer
+        After(TimeSpan.FromSeconds(severity is NoticeSeverity.Error or NoticeSeverity.Warning ? 8 : 4), Close); // problems stay longer
     }
 
     // Timers are kept here until they fire: a timer held only in a local variable can be collected first, which is
@@ -574,13 +595,13 @@ public sealed partial class MainWindow : Window
 
     private string? _wallpaperKey;
 
-    private async Task LoadWallpaperAsync(string path, double blur, string key)
+    private async Task LoadWallpaperAsync(string path, double blur, BlurStyle style, string key)
     {
         try
         {
             await Task.Delay(250); // the blur slider: only the value it settles on
             if (_wallpaperKey != key) return;
-            var shown = await WallpaperBlur.GetAsync(path, blur);
+            var shown = await WallpaperBlur.GetAsync(path, blur, style);
             if (_wallpaperKey != key) return; // changed again meanwhile
             WallpaperImage.Source = new BitmapImage(new Uri(shown));
         }
@@ -595,7 +616,8 @@ public sealed partial class MainWindow : Window
             Svc.Settings.Current.WindowHeight = AppWindow.Size.Height;
         }
         _mini?.Close();
-        Svc.AutoFix.Stop();
+        Svc.AutoFix.Dispose();
+        Svc.Smtc.Dispose();
         Svc.Player.Shutdown();
         Svc.Metadata.WriteDeferred(all: true);
         Svc.Settings.Save();

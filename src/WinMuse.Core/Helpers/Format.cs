@@ -25,11 +25,12 @@ public static class Format
         return $"{v:0.#} {u[i]}";
     }
 
-    public static string Greeting()
-    {
-        var h = DateTime.Now.Hour;
-        return h < 5 ? "Good Evening" : h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
-    }
+    /// <summary>"1 song", "2 songs", "1,234 songs".</summary>
+    public static string Count(int n, string one, string many) => $"{n:N0} {(n == 1 ? one : many)}";
+
+    public static string Greeting() => Greeting(DateTime.Now.Hour);
+
+    public static string Greeting(int hour) => hour < 5 ? "Good Evening" : hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
 
     public static long NowUnix() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 }

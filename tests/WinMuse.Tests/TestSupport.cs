@@ -5,13 +5,19 @@ namespace WinMuse.Tests;
 
 internal static class TestSupport
 {
-    /// <summary>Every run gets its own data folder, so the app's real library and settings are never touched.</summary>
+    /// <summary>
+    /// Every run gets its own data folder and an empty "Music folder", so the app's real library, settings and the
+    /// user's music are never touched (a new settings file would otherwise add the real Music folder).
+    /// </summary>
     [ModuleInitializer]
     internal static void Init()
     {
         var dir = Path.Combine(Path.GetTempPath(), "WinMuseUnitTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         Environment.SetEnvironmentVariable("WINMUSE_DATA_DIR", dir);
+        var music = Path.Combine(dir, "Music");
+        Directory.CreateDirectory(music);
+        Environment.SetEnvironmentVariable("WINMUSE_MUSIC_DIR", music);
     }
 
     /// <summary>Folder of real songs for decoder tests (MUSIC_TEST_DIR), or null to skip them.</summary>

@@ -14,14 +14,18 @@ public sealed partial class MetadataEditService
     private readonly SettingsService _settings;
     private readonly OnlineMetadataService _online;
     private readonly FingerprintService _fingerprint;
+    private readonly PlaybackService _player;
+    private readonly IUiDispatcher _ui;
 
-    public MetadataEditService(TagService tags, ArtworkService art, LibraryService library, SettingsService settings, OnlineMetadataService online, FingerprintService fingerprint)
+    public MetadataEditService(TagService tags, ArtworkService art, LibraryService library, SettingsService settings, OnlineMetadataService online,
+        FingerprintService fingerprint, PlaybackService player, IUiDispatcher ui)
     {
         _tags = tags; _art = art; _library = library; _settings = settings; _online = online; _fingerprint = fingerprint;
+        _player = player; _ui = ui;
     }
 
     // ---------------- Where edits go ----------------
-    // Music never changes a music file unless Settings > Your music files > Change music files is on. Every write to a
+    // A music file is never changed unless Settings > Your music files > Change music files is on. Every write to a
     // file goes through ApplyAsync (and WriteDeferred), and both check it, so no other path can change a file.
 
     /// <summary>Changing music files is allowed (off by default).</summary>
@@ -101,7 +105,7 @@ public sealed partial class MetadataEditService
 
     private bool DeferIfPlaying(Track t, TagEdit edit)
     {
-        if (!Svc.Player.IsOpen(t)) return false;
+        if (!_player.IsOpen(t)) return false;
         lock (_deferred)
         {
             if (_deferred.TryGetValue(t, out var d)) d.edits.Add(edit);
@@ -117,7 +121,7 @@ public sealed partial class MetadataEditService
         List<(Track t, List<TagEdit> edits, bool wasLocal)> due;
         lock (_deferred)
         {
-            due = _deferred.Where(kv => all || !Svc.Player.IsOpen(kv.Key))
+            due = _deferred.Where(kv => all || !_player.IsOpen(kv.Key))
                 .Select(kv => (kv.Key, kv.Value.edits, kv.Value.wasLocal)).ToList();
             foreach (var d in due) _deferred.Remove(d.t);
         }
@@ -138,8 +142,8 @@ public sealed partial class MetadataEditService
             catch (Exception ex) { AppPaths.Log($"Delayed tag write failed for {t.Path}: {ex.Message}"); }
         }
         if (written.Count == 0) return;
-        if (App.UI.HasThreadAccess) _library.SaveStates(written);
-        else App.UI.TryEnqueue(() => _library.SaveStates(written));
+        if (_ui.HasThreadAccess) _library.SaveStates(written);
+        else _ui.TryEnqueue(() => _library.SaveStates(written));
     }
 
     private static void ApplyToTrack(Track t, TagEdit e)
@@ -480,7 +484,7 @@ public sealed partial class MetadataEditService
     /// MusicBrainz entry links to Wikidata, Spotify, Deezer, YouTube and Bandcamp — then name searches.
     /// </summary>
     /// <param name="sample">A song by the artist; its YouTube video ID lets the uploader's avatar be used (2 quota units).</param>
-    public async Task<bool> FetchArtistImageAsync(string artist, MetadataCandidate? c, bool force = false, CancellationToken ct = default, Track? sample = null)
+    public async Task<bool> FetchArtistImageAsync(string artist, MetadataCandidate? c, bool force = false, Track? sample = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(artist) || artist is "Unknown Artist" or "Various Artists") return false;
         if (!force && (_library.GetArtistImage(artist) != null || _library.ArtistImageTried(artist))) return false;
@@ -489,7 +493,7 @@ public sealed partial class MetadataEditService
         {
             var path = _art.Save(await DownloadArtistImageAsync(artist, c, sample, ct));
             if (path == null) AppPaths.Log($"Artist image not found for \"{artist}\" (MusicBrainz artist: {c?.ArtistMbid ?? "searched by name"})");
-            App.UI.TryEnqueue(() => _library.SetArtistImage(artist, path));
+            _ui.TryEnqueue(() => _library.SetArtistImage(artist, path));
             return path != null;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -659,7 +663,7 @@ public sealed partial class MetadataEditService
     public async Task<bool> FetchAndApplyArtAsync(IList<Track> tracks, MetadataCandidate? candidate, CancellationToken ct = default)
     {
         var t = tracks[0];
-        var (bytes, fromYouTube) = await _online.FetchCoverAsync(candidate, t.AlbumArtist ?? t.Artist, t.Album, ct, t.Title, Matching.YouTubeId(t.Path));
+        var (bytes, fromYouTube) = await _online.FetchCoverAsync(candidate, t.AlbumArtist ?? t.Artist, t.Album, t.Title, Matching.YouTubeId(t.Path), ct);
         if (bytes == null) return false;
         if (fromYouTube) bytes = await ArtworkService.CropToSquareAsync(bytes); // 16:9 video frame -> square cover
 

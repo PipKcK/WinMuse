@@ -25,11 +25,11 @@ internal sealed class GcReasonLog : EventListener
     protected override void OnEventWritten(EventWrittenEventArgs e)
     {
         if (e.EventName?.StartsWith("GCStart", StringComparison.Ordinal) != true || e.Payload == null) return;
-        int depth = Convert.ToInt32(e.Payload[e.PayloadNames!.IndexOf("Depth")]);
+        int depth = Convert.ToInt32(e.Payload[e.PayloadNames!.IndexOf("Depth")], System.Globalization.CultureInfo.InvariantCulture);
         if (depth < 2) return;
-        int reason = Convert.ToInt32(e.Payload[e.PayloadNames.IndexOf("Reason")]);
-        int type = Convert.ToInt32(e.Payload[e.PayloadNames.IndexOf("Type")]);
-        AppPaths.Log($"GC gen2 started: {(reason < Reasons.Length ? Reasons[reason] : reason.ToString())}, {(type == 1 ? "background" : "blocking")}");
+        int reason = Convert.ToInt32(e.Payload[e.PayloadNames.IndexOf("Reason")], System.Globalization.CultureInfo.InvariantCulture);
+        int type = Convert.ToInt32(e.Payload[e.PayloadNames.IndexOf("Type")], System.Globalization.CultureInfo.InvariantCulture);
+        AppPaths.Log($"GC gen2 started: {(reason < Reasons.Length ? Reasons[reason] : reason.ToString(System.Globalization.CultureInfo.InvariantCulture))}, {(type == 1 ? "background" : "blocking")}");
     }
 }
 #endif

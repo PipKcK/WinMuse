@@ -38,7 +38,7 @@
                         ToolTipService.ToolTip="Lyrics timing for this song">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE916;" FontSize="14" />
-                        <TextBlock x:Name="LyricsTimingText" Text="Timing" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind Vm.TimingText, Mode=OneWay}" VerticalAlignment="Center" />
                     </StackPanel>
                     <Button.Flyout>
                         <Flyout Placement="BottomEdgeAlignedRight">
@@ -166,7 +166,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{x:Bind helpers:Conv.Time(Player.Position), Mode=OneWay}" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
-                        <Slider x:Name="Seek" Grid.Column="1" Minimum="0" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" StepFrequency="0.1"
+                        <Slider x:Name="Seek" AutomationProperties.Name="Seek" Grid.Column="1" Minimum="0" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" StepFrequency="0.1"
                                 ThumbToolTipValueConverter="{StaticResource TimeTip}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="{x:Bind helpers:Conv.Remaining(Player.Position, Player.Duration), Mode=OneWay}" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
                     </Grid>
@@ -193,9 +193,9 @@
                         <ScrollViewer x:Name="LyricsScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled">
                             <StackPanel x:Name="LyricsLines" Spacing="18" Padding="0,180,24,260" />
                         </ScrollViewer>
-                        <StackPanel x:Name="LyricsEmpty" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14" Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14" Visibility="{x:Bind helpers:Conv.ShowText(Vm.Message), Mode=OneWay}">
                             <FontIcon Glyph="&#xE8BD;" FontSize="40" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" />
-                            <TextBlock x:Name="LyricsEmptyText" Text="Lyrics unavailable" HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
+                            <TextBlock Text="{x:Bind Vm.Message, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                 <Button AutomationProperties.Name="Fetch lyrics" x:Name="FetchLyricsButton" Style="{StaticResource PillButtonStyle}" Click="OnFetchLyrics">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -205,9 +205,9 @@
                                 </Button>
                                 <Button Style="{StaticResource GhostPillButtonStyle}" Content="Add lyrics" Click="OnEditLyrics" />
                             </StackPanel>
-                            <ProgressRing x:Name="LyricsProgress" IsActive="False" Width="24" Height="24" />
+                            <ProgressRing IsActive="{x:Bind Vm.IsLoading, Mode=OneWay}" Width="24" Height="24" />
                         </StackPanel>
-                        <TextBlock x:Name="LyricsSource" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="11" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" Margin="0,0,24,0" />
+                        <TextBlock Text="{x:Bind Vm.SourceText, Mode=OneWay}" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="11" Foreground="{ThemeResource NowPlayingSubtleTextBrush}" Margin="0,0,24,0" />
                     </Grid>
 
                     <Grid x:Name="QueuePanel" Visibility="Collapsed">
@@ -217,7 +217,7 @@
                     <ScrollViewer x:Name="DetailsPanel" Visibility="Collapsed" VerticalAlignment="Center">
                         <StackPanel Spacing="16" MaxWidth="560">
                             <TextBlock Text="Track details" Style="{StaticResource SubtitleTextBlockStyle}" Foreground="{ThemeResource NowPlayingTextBrush}" />
-                            <RatingControl x:Name="Rating" HorizontalAlignment="Left" IsClearEnabled="True" ValueChanged="OnRatingChanged" />
+                            <RatingControl x:Name="Rating" AutomationProperties.Name="Rating" HorizontalAlignment="Left" IsClearEnabled="True" ValueChanged="OnRatingChanged" />
                             <Grid x:Name="DetailsGrid" ColumnSpacing="24" RowSpacing="10" />
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button AutomationProperties.Name="Edit metadata" Style="{StaticResource GhostPillButtonStyle}" Click="OnEditInfo">

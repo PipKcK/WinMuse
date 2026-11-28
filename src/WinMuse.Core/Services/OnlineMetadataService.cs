@@ -21,7 +21,7 @@ public sealed class ServiceBusyException(string service) : Exception($"{service}
 /// <summary>A lyrics lookup: the lyrics found (LRC or plain), or none and whether LRCLIB lists the song as instrumental.</summary>
 public sealed record LyricsLookup(string? Text, bool Instrumental);
 
-public sealed partial class OnlineMetadataService
+public sealed partial class OnlineMetadataService : IDisposable
 {
     private readonly HttpClient _http;
     private readonly SemaphoreSlim _mbGate = new(1, 1);
@@ -33,6 +33,14 @@ public sealed partial class OnlineMetadataService
         _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("WinMuse", "1.0"));
         _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(local-music-player)"));
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    }
+
+    /// <summary>Closes the connections to the online services.</summary>
+    public void Dispose()
+    {
+        _http.Dispose();
+        _mbGate.Dispose();
+        _itunesGate.Dispose();
     }
 
     // ---------------- MusicBrainz ----------------
@@ -246,8 +254,8 @@ public sealed partial class OnlineMetadataService
     /// Album art lookup order: the candidate's own art (iTunes/Deezer), Cover Art Archive, MusicBrainz release-group
     /// search, iTunes, Deezer, and finally the YouTube video thumbnail (last resort; cropped to a square by the caller).
     /// </summary>
-    public async Task<(byte[]? bytes, bool fromYouTube)> FetchCoverAsync(MetadataCandidate? c, string? artist, string? album, CancellationToken ct = default,
-        string? title = null, string? youTubeId = null)
+    public async Task<(byte[]? bytes, bool fromYouTube)> FetchCoverAsync(MetadataCandidate? c, string? artist, string? album,
+        string? title = null, string? youTubeId = null, CancellationToken ct = default)
     {
         if (c is { Source: "iTunes" or "Deezer", ArtworkUrl: { } direct } && await GetBytes(direct, ct) is { } d) return (d, false);
         if (c?.ReleaseId != null && await GetBytes($"https://coverartarchive.org/release/{c.ReleaseId}/front-500", ct) is { } a1) return (a1, false);

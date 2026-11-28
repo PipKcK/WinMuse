@@ -109,7 +109,7 @@
                         <ColumnDefinition Width="44" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{x:Bind helpers:Conv.Time(Player.Position), Mode=OneWay}" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Slider x:Name="SeekSlider" Grid.Column="1" Minimum="0" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" StepFrequency="0.1" IsThumbToolTipEnabled="True"
+                    <Slider x:Name="SeekSlider" AutomationProperties.Name="Seek" Grid.Column="1" Minimum="0" Maximum="{x:Bind helpers:Conv.Max1(Player.Duration), Mode=OneWay}" StepFrequency="0.1" IsThumbToolTipEnabled="True"
                             ThumbToolTipValueConverter="{StaticResource TimeTip}" VerticalAlignment="Center" Margin="0,-4" />
                     <TextBlock Grid.Column="2" Text="{x:Bind helpers:Conv.Time(Player.Duration), Mode=OneWay}" FontSize="11" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </Grid>
@@ -134,7 +134,7 @@
                                 <Grid>
                                     <TextBlock Text="Equalizer" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
                                     <StackPanel HorizontalAlignment="Right" Spacing="0">
-                                        <ToggleSwitch x:Name="EqGenreToggle" HorizontalAlignment="Right" MinWidth="0" OnContent="Match genre" OffContent="Match genre"
+                                        <ToggleSwitch x:Name="EqGenreToggle" AutomationProperties.Name="Match equalizer to genre" HorizontalAlignment="Right" MinWidth="0" OnContent="Match genre" OffContent="Match genre"
                                                       Toggled="OnEqGenreToggled" ToolTipService.ToolTip="Use the preset that suits each song's genre. Songs with a saved equalizer keep theirs." />
                                         <TextBlock x:Name="EqSourceText" HorizontalAlignment="Right" Style="{StaticResource CaptionTextBlockStyle}" Margin="0,-6,0,0"
                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -162,14 +162,14 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Preamp" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <Slider x:Name="PreampSlider" Grid.Column="1" Minimum="-12" Maximum="12" StepFrequency="0.5" ThumbToolTipValueConverter="{StaticResource DbTip}" ValueChanged="OnPreampChanged" />
+                                    <Slider x:Name="PreampSlider" AutomationProperties.Name="Preamp" Grid.Column="1" Minimum="-12" Maximum="12" StepFrequency="0.5" ThumbToolTipValueConverter="{StaticResource DbTip}" ValueChanged="OnPreampChanged" />
                                 </Grid>
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
                 <Button Style="{StaticResource IconButtonStyle}" Content="{x:Bind helpers:Conv.VolumeGlyph(Player.Volume, Player.IsMuted), Mode=OneWay}" Click="OnMute" ToolTipService.ToolTip="Mute" AutomationProperties.Name="Mute" />
-                <Slider x:Name="VolumeSlider" Width="92" Minimum="0" Maximum="1" StepFrequency="0.01" VerticalAlignment="Center"
+                <Slider x:Name="VolumeSlider" AutomationProperties.Name="Volume" Width="92" Minimum="0" Maximum="1" StepFrequency="0.01" VerticalAlignment="Center"
                         Value="{x:Bind Player.Volume, Mode=TwoWay}" ThumbToolTipValueConverter="{StaticResource PercentTip}" />
                 <Button x:Name="MiniButton" Style="{StaticResource IconButtonStyle}" Content="&#xEE49;" Click="OnMiniPlayer" ToolTipService.ToolTip="Mini player (Ctrl+M)" AutomationProperties.Name="Mini player (Ctrl+M)" Margin="6,0,0,0" />
                 <Button x:Name="ExpandButton" Style="{StaticResource IconButtonStyle}" Content="&#xE740;" Click="OnArtClick" ToolTipService.ToolTip="Now Playing (F11)" AutomationProperties.Name="Now Playing (F11)" />

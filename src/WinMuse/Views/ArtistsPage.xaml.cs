@@ -41,7 +41,7 @@ public sealed partial class ArtistsPage : Page
         }).ToList();
         var bound = CollectionSync.SyncOrReplace(_items, list, a => a.Name, (a, b) => a.ArtPath == b.ArtPath && a.Summary == b.Summary && a.IsFavorite == b.IsFavorite);
         if (!ReferenceEquals(bound, _items)) { _items = bound; Grid.ItemsSource = _items; }
-        CountText.Text = $"{Svc.Library.Artists.Count:N0} artists";
+        CountText.Text = Format.Count(Svc.Library.Artists.Count, "artist", "artists");
     }
 
     private void OnFilter(object sender, TextChangedEventArgs e) => Load();

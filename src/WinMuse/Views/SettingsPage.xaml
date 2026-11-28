@@ -29,21 +29,42 @@
                     <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="13" /><TextBlock Text="Add folder" /></StackPanel>
                 </Button>
                 <tk:SettingsExpander.ItemsHeader>
-                    <StackPanel x:Name="FoldersPanel" />
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{x:Bind Vm.Folders}" IsTabStop="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Grid Padding="58,10,44,10" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="&#xE8B7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                                        <TextBlock Grid.Column="1" Text="{x:Bind}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="2" Padding="8,6" Click="OnRemoveFolder" Tag="{x:Bind}" ToolTipService.ToolTip="Remove from library"
+                                                AutomationProperties.Name="Remove from library" AutomationProperties.HelpText="{x:Bind}">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="No folders added." Margin="58,10,44,10" Opacity="0.7" Visibility="{x:Bind Vm.HasNoFolders, Mode=OneWay}" />
+                    </StackPanel>
                 </tk:SettingsExpander.ItemsHeader>
             </tk:SettingsExpander>
             <tk:SettingsCard Header="Scan library" Description="Check library folders for new, changed and removed files.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE72C;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Name="ScanStatus" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{x:Bind Vm.ScanStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <Button Content="Scan" Click="OnRescan" />
                 </StackPanel>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Removed songs" Description="Songs removed from the library are hidden but stay on your PC. Restore brings them back.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE777;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Name="RemovedText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Button x:Name="RestoreButton" Content="Restore" Click="OnRestoreRemoved" />
+                    <TextBlock Text="{x:Bind Vm.RemovedText, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button Content="Restore" Click="OnRestoreRemoved" IsEnabled="{x:Bind Vm.CanRestore, Mode=OneWay}" />
                 </StackPanel>
             </tk:SettingsCard>
 
@@ -52,20 +73,20 @@
             <tk:SettingsCard Header="Title bar logo" Description="The logo at the top left. Rings and Simple take on the accent color; App icon shows the app's own icon as it is.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xECAA;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <ToggleButton x:Name="LogoRings" Click="OnLogoStyle" Tag="Rings" Padding="10,6" AutomationProperties.Name="Rings">
+                    <ToggleButton IsChecked="{x:Bind Vm.IsLogoRings, Mode=OneWay}" Click="OnLogoStyle" Tag="Rings" Padding="10,6" AutomationProperties.Name="Rings">
                         <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Rings" /><TextBlock Text="Rings" VerticalAlignment="Center" /></StackPanel>
                     </ToggleButton>
-                    <ToggleButton x:Name="LogoSimple" Click="OnLogoStyle" Tag="Simple" Padding="10,6" AutomationProperties.Name="Simple">
+                    <ToggleButton IsChecked="{x:Bind Vm.IsLogoSimple, Mode=OneWay}" Click="OnLogoStyle" Tag="Simple" Padding="10,6" AutomationProperties.Name="Simple">
                         <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Simple" /><TextBlock Text="Simple" VerticalAlignment="Center" /></StackPanel>
                     </ToggleButton>
-                    <ToggleButton x:Name="LogoImage" Click="OnLogoStyle" Tag="Image" Padding="10,6" AutomationProperties.Name="App icon">
+                    <ToggleButton IsChecked="{x:Bind Vm.IsLogoImage, Mode=OneWay}" Click="OnLogoStyle" Tag="Image" Padding="10,6" AutomationProperties.Name="App icon">
                         <StackPanel Orientation="Horizontal" Spacing="8"><controls:AppLogo Width="22" Height="22" LogoStyle="Image" /><TextBlock Text="App icon" VerticalAlignment="Center" /></StackPanel>
                     </ToggleButton>
                 </StackPanel>
             </tk:SettingsCard>
             <tk:SettingsCard Header="Theme" Description="Light or dark appearance. System default follows Windows. OLED uses true black, which saves power on OLED screens.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE790;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="ThemeBox" SelectionChanged="OnThemeChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.ThemeIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Theme">
                     <x:String>System default</x:String>
                     <x:String>Light</x:String>
                     <x:String>Dark</x:String>
@@ -74,67 +95,80 @@
             </tk:SettingsCard>
             <tk:SettingsCard Header="Accent color" Description="Color used for controls and highlights.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE771;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="AccentBox" SelectionChanged="OnAccentSourceChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.AccentSourceIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Accent color">
                     <x:String>Windows</x:String>
                     <x:String>Custom</x:String>
                     <x:String>Album art</x:String>
                 </ComboBox>
             </tk:SettingsCard>
-            <tk:SettingsCard x:Name="CustomAccentCard" Style="{StaticResource SubCard}" Header="Custom color" HorizontalContentAlignment="Left" ContentAlignment="Vertical">
+            <tk:SettingsCard Style="{StaticResource SubCard}" Header="Custom color" HorizontalContentAlignment="Left" ContentAlignment="Vertical"
+                             Visibility="{x:Bind Vm.ShowCustomAccent, Mode=OneWay}">
                 <StackPanel Spacing="12">
                     <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" Spacing="8" />
                     <ColorPicker x:Name="AccentPicker" ColorSpectrumShape="Ring" IsAlphaEnabled="False" IsMoreButtonVisible="True" ColorChanged="OnAccentPicked" />
                 </StackPanel>
             </tk:SettingsCard>
 
-            <tk:SettingsExpander x:Name="BackgroundCard" Header="Background" Description="Content displayed behind the app.">
+            <tk:SettingsExpander Header="Background" Description="{x:Bind Vm.BackgroundDescription, Mode=OneWay}" IsEnabled="{x:Bind Vm.IsBackgroundAvailable, Mode=OneWay}">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8B9;" /></tk:SettingsExpander.HeaderIcon>
-                <ComboBox x:Name="BackgroundBox" SelectionChanged="OnBackgroundModeChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.BackgroundModeIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Background">
                     <x:String>None</x:String>
                     <x:String>Album art</x:String>
                     <x:String>Gradient</x:String>
                     <x:String>Image</x:String>
                 </ComboBox>
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard x:Name="IntensityCard" Header="Intensity">
-                        <Slider x:Name="IntensitySlider" Minimum="10" Maximum="100" Width="220" ValueChanged="OnIntensityChanged" />
+                    <tk:SettingsCard Header="Intensity" Visibility="{x:Bind Vm.ShowIntensity, Mode=OneWay}">
+                        <Slider Value="{x:Bind Vm.BackgroundIntensity, Mode=TwoWay}" Minimum="10" Maximum="100" Width="220" AutomationProperties.Name="Intensity" />
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="AnimateCard" Header="Animation">
-                        <ToggleSwitch x:Name="AnimateToggle" Toggled="OnAnimateToggled" />
+                    <tk:SettingsCard Header="Animation" Visibility="{x:Bind Vm.ShowIntensity, Mode=OneWay}">
+                        <ToggleSwitch IsOn="{x:Bind Vm.AnimateBackground, Mode=TwoWay}" AutomationProperties.Name="Animation" />
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="GradientCard" Header="Gradient colors">
+                    <tk:SettingsCard Header="Gradient colors" Visibility="{x:Bind Vm.ShowGradientColors, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="Grad1" Width="44" Height="32" Tag="1" Click="OnGradientColor" AutomationProperties.Name="Gradient color 1" />
-                            <Button x:Name="Grad2" Width="44" Height="32" Tag="2" Click="OnGradientColor" AutomationProperties.Name="Gradient color 2" />
-                            <Button x:Name="Grad3" Width="44" Height="32" Tag="3" Click="OnGradientColor" AutomationProperties.Name="Gradient color 3" />
+                            <Button Width="44" Height="32" Tag="1" Click="OnGradientColor" AutomationProperties.Name="Gradient color 1"
+                                    Background="{x:Bind helpers:Conv.Brush(Vm.GradientColor1), Mode=OneWay}" />
+                            <Button Width="44" Height="32" Tag="2" Click="OnGradientColor" AutomationProperties.Name="Gradient color 2"
+                                    Background="{x:Bind helpers:Conv.Brush(Vm.GradientColor2), Mode=OneWay}" />
+                            <Button Width="44" Height="32" Tag="3" Click="OnGradientColor" AutomationProperties.Name="Gradient color 3"
+                                    Background="{x:Bind helpers:Conv.Brush(Vm.GradientColor3), Mode=OneWay}" />
                         </StackPanel>
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="WallpaperCard" Header="Image">
+                    <tk:SettingsCard Header="Image" Visibility="{x:Bind Vm.ShowImageOptions, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Border Width="80" Height="45" CornerRadius="4" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
-                                <Image x:Name="WallpaperPreview" Stretch="UniformToFill" />
+                                <Image Source="{x:Bind helpers:Conv.Thumbnail(Vm.WallpaperPath, 160), Mode=OneWay}" Stretch="UniformToFill" AutomationProperties.Name="Background image preview" />
                             </Border>
                             <Button Content="Browse…" Click="OnPickWallpaper" />
                         </StackPanel>
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="BlurCard" Header="Blur">
-                        <Slider x:Name="BlurSlider" Minimum="0" Maximum="100" Width="220" ValueChanged="OnBlurChanged" />
+                    <tk:SettingsCard Header="Blur style" Description="{x:Bind Vm.BlurStyleDescription, Mode=OneWay}" Visibility="{x:Bind Vm.ShowImageOptions, Mode=OneWay}">
+                        <ComboBox SelectedIndex="{x:Bind Vm.BlurStyleIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Blur style">
+                            <x:String>Gaussian</x:String>
+                            <x:String>Lens</x:String>
+                            <x:String>Frosted glass</x:String>
+                            <x:String>Motion</x:String>
+                        </ComboBox>
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="DimCard" Header="Dim">
-                        <Slider x:Name="DimSlider" Minimum="0" Maximum="90" Width="220" ValueChanged="OnDimChanged" />
+                    <tk:SettingsCard Header="Blur" Visibility="{x:Bind Vm.ShowImageOptions, Mode=OneWay}">
+                        <Slider Value="{x:Bind Vm.WallpaperBlur, Mode=TwoWay}" Minimum="0" Maximum="100" Width="220" AutomationProperties.Name="Blur" />
+                    </tk:SettingsCard>
+                    <tk:SettingsCard Header="Dim" Visibility="{x:Bind Vm.ShowImageOptions, Mode=OneWay}">
+                        <Slider Value="{x:Bind Vm.WallpaperDim, Mode=TwoWay}" Minimum="0" Maximum="90" Width="220" AutomationProperties.Name="Dim" />
                     </tk:SettingsCard>
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
 
-            <tk:SettingsExpander x:Name="VizCard" Header="Visualizer" Description="Audio spectrum that moves with the music, on the Now Playing screen and behind the player bar.">
+            <tk:SettingsExpander Header="Visualizer" Description="Audio spectrum that moves with the music, on the Now Playing screen and behind the player bar.">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE9D9;" /></tk:SettingsExpander.HeaderIcon>
-                <ToggleSwitch x:Name="VizToggle" Toggled="OnVizToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.ShowVisualizer, Mode=TwoWay}" AutomationProperties.Name="Visualizer" />
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard x:Name="VizBarCard" Header="Behind the player bar" Description="Show the spectrum underneath the player bar at the bottom of the window.">
-                        <ToggleSwitch x:Name="VizBarToggle" Toggled="OnVizBarToggled" />
+                    <tk:SettingsCard Header="Behind the player bar" Description="Show the spectrum underneath the player bar at the bottom of the window."
+                                     Visibility="{x:Bind Vm.ShowVisualizer, Mode=OneWay}">
+                        <ToggleSwitch IsOn="{x:Bind Vm.ShowBarVisualizer, Mode=TwoWay}" AutomationProperties.Name="Behind the player bar" />
                     </tk:SettingsCard>
-                    <tk:SettingsCard x:Name="VizStyleCard" Header="Style" Description="Shape of the spectrum on the Now Playing screen.">
-                        <ComboBox x:Name="VizStyleBox" SelectionChanged="OnVizStyleChanged" MinWidth="160">
+                    <tk:SettingsCard Header="Style" Description="Shape of the spectrum on the Now Playing screen." Visibility="{x:Bind Vm.ShowVisualizer, Mode=OneWay}">
+                        <ComboBox SelectedIndex="{x:Bind Vm.VisualizerStyleIndex, Mode=TwoWay}" MinWidth="160" AutomationProperties.Name="Visualizer style">
                             <x:String>Bars</x:String>
                             <x:String>Mirrored</x:String>
                             <x:String>Lines</x:String>
@@ -145,7 +179,7 @@
 
             <tk:SettingsCard Header="Card style" Description="Look of the album and song cards in the rows on Home. Glass: frosted and see-through. Smoke: deep, half-transparent black. Slate: cool blue-gray. Elevated: lighter, so cards seem to float. Outline: no fill, just an edge.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8A9;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="CardColorBox" SelectionChanged="OnCardColorChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.CardColorIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Card style">
                     <x:String>Neutral gray</x:String>
                     <x:String>Glass</x:String>
                     <x:String>Smoke</x:String>
@@ -157,7 +191,7 @@
             </tk:SettingsCard>
             <tk:SettingsCard Header="Playing song highlight" Description="Animated border around the song that is playing, in every song list.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7B3;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="HighlightBox" SelectionChanged="OnHighlightChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.PlayingHighlightIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Playing song highlight">
                     <x:String>Off</x:String>
                     <x:String>Accent color</x:String>
                     <x:String>Rainbow</x:String>
@@ -165,78 +199,78 @@
             </tk:SettingsCard>
             <tk:SettingsCard Header="Queue panel" Description="Show the upcoming songs panel above the player.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8FD;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="QueuePanelToggle" Toggled="OnQueuePanelToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.ShowQueuePanel, Mode=TwoWay}" AutomationProperties.Name="Queue panel" />
             </tk:SettingsCard>
 
             <!-- ================= Playback ================= -->
             <TextBlock Text="Playback" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsCard Header="Output device" x:Name="DeviceCard" Description="Speakers or headphones that play the music.">
+            <tk:SettingsCard Header="Output device" Description="Speakers or headphones that play the music.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE7F5;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="DeviceBox" SelectionChanged="OnDeviceChanged" MinWidth="240" DisplayMemberPath="Name" />
+                <ComboBox x:Name="DeviceBox" SelectionChanged="OnDeviceChanged" MinWidth="240" DisplayMemberPath="Name" AutomationProperties.Name="Output device" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Match equalizer to genre" Description="Use the preset that suits each song's genre (Rock, Pop, Electronic, Jazz and more). Songs with an equalizer saved for them keep theirs.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE9E9;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="EqGenreToggle" Toggled="OnEqGenreToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.EqMatchGenre, Mode=TwoWay}" AutomationProperties.Name="Match equalizer to genre" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Gapless playback" Description="Preload the next track to remove silence between tracks.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8EE;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="GaplessToggle" Toggled="OnGaplessToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.Gapless, Mode=TwoWay}" AutomationProperties.Name="Gapless playback" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Crossfade" Description="Overlap the end of each track with the start of the next.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8AB;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Name="CrossfadeText" VerticalAlignment="Center" MinWidth="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Slider x:Name="CrossfadeSlider" Minimum="0" Maximum="12" StepFrequency="0.5" Width="200" ValueChanged="OnCrossfadeChanged" />
+                    <TextBlock Text="{x:Bind Vm.CrossfadeText, Mode=OneWay}" VerticalAlignment="Center" MinWidth="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Slider Value="{x:Bind Vm.CrossfadeSeconds, Mode=TwoWay}" Minimum="0" Maximum="12" StepFrequency="0.5" Width="200" AutomationProperties.Name="Crossfade" />
                 </StackPanel>
             </tk:SettingsCard>
-            <tk:SettingsCard Header="Output format" x:Name="PipelineCard">
+            <tk:SettingsCard Header="Output format">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8D6;" /></tk:SettingsCard.HeaderIcon>
-                <TextBlock x:Name="PipelineText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360" />
+                <TextBlock Text="{x:Bind Vm.OutputDescription, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxWidth="360" />
             </tk:SettingsCard>
 
             <!-- ================= Metadata ================= -->
             <TextBlock Text="Metadata" Style="{StaticResource GroupHeader}" />
             <tk:SettingsCard Header="Automatic metadata" Description="Identify new songs and fill in their details when they are added to the library. Your later edits are preserved.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE945;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="AutoFixToggle" Toggled="OnAutoFixToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.AutoFixMetadata, Mode=TwoWay}" AutomationProperties.Name="Automatic metadata" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB. They're stored with your library, never next to your songs.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8BD;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.AutoFetchLyrics, Mode=TwoWay}" AutomationProperties.Name="Automatic lyrics" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Download media" Description="Download missing album art and artist photos.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEB9F;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="AutoArtToggle" Toggled="OnAutoArtToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.AutoFetchArt, Mode=TwoWay}" AutomationProperties.Name="Download media" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Fetch" Description="Download metadata, album art, artist images and lyrics for every song that is incomplete or was edited by you. Complete songs are skipped. Edits you made are replaced.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBD3;" /></tk:SettingsCard.HeaderIcon>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Name="FixAllText" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <Button x:Name="FixAllButton" Content="Fetch" Click="OnFixAll" />
+                    <TextBlock Text="{x:Bind Vm.FetchStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <Button Content="{x:Bind Vm.FetchButtonText, Mode=OneWay}" Click="OnFixAll" />
                 </StackPanel>
             </tk:SettingsCard>
             <!-- ================= Your music files ================= -->
-            <!-- Music never changes music files unless allowed here (enforced in MetadataEditService and LibraryService). -->
+            <!-- Music files are never changed unless allowed here (enforced in MetadataEditService and LibraryService). -->
             <TextBlock Text="Your music files" Style="{StaticResource GroupHeader}" />
             <TextBlock Text="Your music files stay unchanged unless you allow it here. Edits, downloaded album art and lyrics are kept in your library."
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="2,0,0,8" />
             <tk:SettingsExpander x:Name="FileChangesCard" Header="Change music files"
                                  Description="Write your edits (titles, artists, albums, album art, lyrics) into the songs' tags, so other apps and devices see them too.">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8A5;" /></tk:SettingsExpander.HeaderIcon>
-                <ToggleSwitch x:Name="FileChangesToggle" Toggled="OnFileChangesToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.AllowFileChanges, Mode=TwoWay}" Toggled="OnFileChangesToggled" AutomationProperties.Name="Change music files" />
                 <tk:SettingsExpander.Items>
-                    <tk:SettingsCard x:Name="WriteModeCard" Header="Save edits to">
-                        <ComboBox x:Name="WriteModeBox" SelectionChanged="OnWriteModeChanged" MinWidth="200" AutomationProperties.Name="Save edits to">
-                            <ComboBoxItem Content="App only" Tag="LibraryOnly" />
-                            <ComboBoxItem Content="Files only" Tag="WriteToFiles" />
-                            <ComboBoxItem Content="Ask each time" Tag="Ask" />
+                    <tk:SettingsCard Header="Save edits to" Description="{x:Bind Vm.WriteModeDescription, Mode=OneWay}" Visibility="{x:Bind Vm.AllowFileChanges, Mode=OneWay}">
+                        <ComboBox SelectedIndex="{x:Bind Vm.WriteModeIndex, Mode=TwoWay}" MinWidth="200" AutomationProperties.Name="Save edits to">
+                            <x:String>App only</x:String>
+                            <x:String>Files only</x:String>
+                            <x:String>Ask each time</x:String>
                         </ComboBox>
                     </tk:SettingsCard>
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
             <tk:SettingsCard Header="Allow deleting files" Description="Adds Delete file to the song menu. Deleted songs go to the Recycle Bin, where you can restore them.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE74D;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="DeleteFilesToggle" Toggled="OnDeleteFilesToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.AllowDeleteFiles, Mode=TwoWay}" AutomationProperties.Name="Allow deleting files" />
             </tk:SettingsCard>
 
             <!-- ================= API keys ================= -->
@@ -323,7 +357,7 @@
                                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                     1. Open the Spotify Developer Dashboard and sign in with a free Spotify account.<LineBreak />
                                     2. Select Create app. Enter a name, for example "Music Player", and a short description.<LineBreak />
-                                    3. For Redirect URI enter http://127.0.0.1:8888/callback (required by the form, not used by Music), tick Web API, accept the terms and select Save.<LineBreak />
+                                    3. For Redirect URI enter http://127.0.0.1:8888/callback (required by the form, not used by the app), tick Web API, accept the terms and select Save.<LineBreak />
                                     4. Open the app's Settings, copy the Client ID, select View client secret and copy it.<LineBreak />
                                     5. Paste both above. No Spotify Premium is needed.
                                 </TextBlock>
@@ -337,7 +371,7 @@
             <TextBlock Text="Debug" Style="{StaticResource GroupHeader}" />
             <tk:SettingsCard Header="Greeting" Description="Banner: the greeting on a gradient card. Gradient: no card; an accent glow runs from the top of Home to the middle of Quick access and fades into the background.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE706;" /></tk:SettingsCard.HeaderIcon>
-                <ComboBox x:Name="GreetingStyleBox" SelectionChanged="OnGreetingStyleChanged" MinWidth="180">
+                <ComboBox SelectedIndex="{x:Bind Vm.GreetingStyleIndex, Mode=TwoWay}" MinWidth="180" AutomationProperties.Name="Greeting">
                     <x:String>Banner</x:String>
                     <x:String>Gradient</x:String>
                     <x:String>None</x:String>
@@ -345,11 +379,11 @@
             </tk:SettingsCard>
             <tk:SettingsCard Header="Match whole albums" Description="Songs of one album (same folder and album label) are matched to the same release, so the album stays together. Off: each song is matched on its own, as before.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE93C;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="WholeAlbumsToggle" Toggled="OnWholeAlbumsToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.MatchWholeAlbums, Mode=TwoWay}" AutomationProperties.Name="Match whole albums" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Show all Home rows" Description="Shows rows that wait for listening history. Long Time No Play appears by itself after a week of use and 15 different songs played.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE80F;" /></tk:SettingsCard.HeaderIcon>
-                <ToggleSwitch x:Name="AllHomeRowsToggle" Toggled="OnAllHomeRowsToggled" />
+                <ToggleSwitch IsOn="{x:Bind Vm.ShowAllHomeRows, Mode=TwoWay}" AutomationProperties.Name="Show all Home rows" />
             </tk:SettingsCard>
             <tk:SettingsCard Header="Create test playlists" Description="Creates 10 playlists named &quot;Test playlist 1&quot; to &quot;Test playlist 10&quot;, each with 20 random songs from your library.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEBE8;" /></tk:SettingsCard.HeaderIcon>
@@ -358,7 +392,7 @@
 
             <!-- ================= About ================= -->
             <TextBlock Text="About" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsExpander Header="Music Player" x:Name="AboutCard">
+            <tk:SettingsExpander Header="{x:Bind Vm.AppName}" Description="{x:Bind Vm.AboutDescription, Mode=OneWay}">
                 <tk:SettingsExpander.HeaderIcon>
                     <BitmapIcon UriSource="ms-appx:///Assets/AppIcon.png" ShowAsMonochrome="False" />
                 </tk:SettingsExpander.HeaderIcon>

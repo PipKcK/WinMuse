@@ -12,6 +12,7 @@ public sealed class ArtworkService
     private readonly ConcurrentDictionary<string, string?> _folderArt = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Stores image bytes and returns the cached file path (deduplicated by hash).</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5350", Justification = "A file name for cached artwork, not security. Another hash would rename every cached cover and download them all again.")]
     public string? Save(byte[]? data)
     {
         if (data is not { Length: > 64 }) return null;

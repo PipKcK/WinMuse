@@ -62,7 +62,7 @@
             </StackPanel>
         </Grid>
 
-        <GridView x:Name="Grid" Grid.Row="1" Padding="32,4,24,24"
+        <GridView x:Name="Grid" AutomationProperties.Name="Playlists" Grid.Row="1" Padding="32,4,24,24"
                   SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnItemClick"
                   ItemTemplate="{StaticResource PlaylistCardTemplate}"
                   ItemContainerStyle="{StaticResource CardGridViewItemStyle}" />

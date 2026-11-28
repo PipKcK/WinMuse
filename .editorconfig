@@ -42,6 +42,10 @@ dotnet_diagnostic.IDE0052.severity = suggestion
 dotnet_diagnostic.IDE0059.severity = suggestion
 dotnet_diagnostic.IDE0060.severity = suggestion
 
+# Numbers and dates on screen follow the user's language settings on purpose; identifiers and stored data pass
+# CultureInfo.InvariantCulture explicitly. Requiring a culture on every display string (CA1305) would only add noise.
+dotnet_diagnostic.CA1305.severity = none
+
 # Naming: PascalCase for types, members, constants and static readonly fields; _camelCase for other private fields
 dotnet_naming_rule.constants.symbols = constants
 dotnet_naming_rule.constants.style = pascal

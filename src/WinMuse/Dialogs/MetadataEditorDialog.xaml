@@ -147,7 +147,7 @@
                     </Button>
                 </StackPanel>
             </Grid>
-            <TextBox x:Name="LyricsBox" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Cascadia Mono,Consolas" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+            <TextBox x:Name="LyricsBox" AutomationProperties.Name="Lyrics" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Cascadia Mono,Consolas" ScrollViewer.VerticalScrollBarVisibility="Auto" />
         </Grid>
 
         <!-- File -->

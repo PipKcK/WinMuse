@@ -54,7 +54,10 @@ public sealed class Track : ObservableObject
 
     private bool _isChecked;
     /// <summary>UI-only: checked in selection mode (shared across every song list).</summary>
-    public bool IsChecked { get => _isChecked; set { if (SetProperty(ref _isChecked, value)) Services.SelectionService.OnTrackChecked(this, value); } }
+    public bool IsChecked { get => _isChecked; set { if (SetProperty(ref _isChecked, value)) CheckedChanged?.Invoke(this, value); } }
+
+    /// <summary>Any song was checked or unchecked (the app's selection follows this).</summary>
+    public static event Action<Track, bool>? CheckedChanged;
 
     private bool _isFavorite;
     /// <summary>In the "Favorites" playlist (kept up to date by FavoritesService).</summary>

@@ -265,8 +265,10 @@ public sealed partial class MetadataEditorDialog : ContentDialog
             }
             if (_newArt != null) { edit.Artwork = _newArt; any = true; }
 
-            var lyricsNow = LyricsBox.Text;
-            bool lyricsChanged = _tracks.Count == 1 && lyricsNow != _lyricsInitial;
+            // The box separates lines with a lone CR; saved lyrics use Windows line breaks, so other apps show the lines too.
+            // Compared with breaks evened out: the box turns the breaks it was given into CRs, which isn't an edit.
+            var lyricsNow = LrcParser.NormalizeLineBreaks(LyricsBox.Text, "\r\n");
+            bool lyricsChanged = _tracks.Count == 1 && lyricsNow != LrcParser.NormalizeLineBreaks(_lyricsInitial, "\r\n");
             if (lyricsChanged)
             {
                 edit.Lyrics = lyricsNow;

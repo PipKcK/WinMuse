@@ -20,14 +20,15 @@ public sealed class LyricsService
         _online = online; _settings = settings; _library = library;
     }
 
-    /// <summary>Where Music keeps a song's lyrics: %LocalAppData%\WinMuse\Lyrics, named after the song's path.</summary>
+    /// <summary>Where the app keeps a song's lyrics: %LocalAppData%\WinMuse\Lyrics, named after the song's path.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5350", Justification = "A file name made from the song's path, not security. Another hash would lose every saved lyrics file.")]
     public static string AppLyricsPath(string songPath) =>
         Path.Combine(AppPaths.LyricsDir, Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(songPath.ToLowerInvariant()))) + ".lrc");
 
     private static string AppDataLrc(Track t) => AppLyricsPath(t.Path);
 
     /// <summary>
-    /// The song's lyrics: those Music saved (the latest you downloaded or added) first, then an .lrc file next to the
+    /// The song's lyrics: those saved in the library (the latest you downloaded or added) first, then an .lrc file next to the
     /// song, then lyrics embedded in the file.
     /// </summary>
     public LyricsResult? GetLocal(Track t)

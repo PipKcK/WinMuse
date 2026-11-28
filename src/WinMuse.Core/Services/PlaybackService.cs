@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Dispatching;
 using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services.Audio;
@@ -9,12 +8,13 @@ using WinMuse.Services.Audio;
 namespace WinMuse.Services;
 
 /// <summary>Queue, transport and the bridge between the UI thread and the audio engine.</summary>
-public sealed partial class PlaybackService : ObservableObject
+public sealed partial class PlaybackService : ObservableObject, IDisposable
 {
     private readonly AudioEngine _engine = new();
     private readonly SettingsService _settings;
     private readonly LibraryService _library;
-    private DispatcherQueueTimer? _timer;
+    private readonly IUiDispatcher _ui;
+    private IUiTimer? _timer;
     private List<Track>? _unshuffled;
     private bool _bulkQueueChange;
     private int _loadVersion, _prepareVersion;
@@ -52,10 +52,11 @@ public sealed partial class PlaybackService : ObservableObject
     public event Action? Seeked;
     public event Action<string>? PlaybackError;
 
-    public PlaybackService(SettingsService settings, LibraryService library)
+    public PlaybackService(SettingsService settings, LibraryService library, IUiDispatcher ui)
     {
         _settings = settings;
         _library = library;
+        _ui = ui;
         var s = settings.Current;
         CurrentIndex = -1;
         Volume = s.Volume;
@@ -87,7 +88,7 @@ public sealed partial class PlaybackService : ObservableObject
     // ---------------- A missing current song ----------------
 
     private const int MissingSkipSeconds = 5;
-    private DispatcherQueueTimer? _missingTimer;
+    private IUiTimer? _missingTimer;
 
     /// <summary>The playing (or loaded) song's file is gone: count down, then skip it (see <see cref="SkipMissingAsync"/>).</summary>
     private void StartMissing()
@@ -99,16 +100,10 @@ public sealed partial class PlaybackService : ObservableObject
         _missingTimer.Start();
     }
 
-    private DispatcherQueueTimer CreateMissingTimer()
+    private IUiTimer CreateMissingTimer() => _ui.CreateTimer(TimeSpan.FromSeconds(1), async () =>
     {
-        var timer = App.UI.CreateTimer();
-        timer.Interval = TimeSpan.FromSeconds(1);
-        timer.Tick += async (_, _) =>
-        {
-            if (--MissingCountdown <= 0) await SkipMissingAsync();
-        };
-        return timer;
-    }
+        if (--MissingCountdown <= 0) await SkipMissingAsync();
+    });
 
     private void EndMissing()
     {
@@ -138,23 +133,21 @@ public sealed partial class PlaybackService : ObservableObject
     public void Initialize()
     {
         InitEngine();
-        _engine.DeviceReset += () => App.UI.TryEnqueue(ReinitializeOutput);
-        _engine.Fatal += msg => App.UI.TryEnqueue(() =>
+        _engine.DeviceReset += () => _ui.TryEnqueue(ReinitializeOutput);
+        _engine.Fatal += msg => _ui.TryEnqueue(() =>
         {
             IsPlaying = false;
             _engine.Pause();
             PlaybackError?.Invoke("Audio output stopped. " + msg);
         });
 
-        _timer = App.UI.CreateTimer();
-        _timer.Interval = TimeSpan.FromMilliseconds(200);
-        _timer.Tick += (_, _) =>
+        _timer = _ui.CreateTimer(TimeSpan.FromMilliseconds(200), () =>
         {
             if (CurrentTrack == null) return;
             // What is heard now: the decoder is ahead by the output buffer while playing.
             var heard = _engine.Pipeline.Position - (IsPlaying ? _engine.OutputLatency : TimeSpan.Zero);
             Position = Math.Max(_listenedFloor, heard.TotalSeconds);
-        };
+        });
         _timer.Start();
 
         RestoreSession();
@@ -567,7 +560,7 @@ public sealed partial class PlaybackService : ObservableObject
             {
                 var d = new FFmpegDecoder(track.Path, rate) { Tag = track };
                 d.StartPrefetch();
-                App.UI.TryEnqueue(() =>
+                _ui.TryEnqueue(() =>
                 {
                     if (version == _prepareVersion) _engine.Pipeline.SetNext(d);
                     else d.Dispose();
@@ -577,7 +570,7 @@ public sealed partial class PlaybackService : ObservableObject
         });
     }
 
-    private void OnAdvanced(FFmpegDecoder dec) => App.UI.TryEnqueue(() =>
+    private void OnAdvanced(FFmpegDecoder dec) => _ui.TryEnqueue(() =>
     {
         if (CurrentTrack != null) _library.RecordPlay(CurrentTrack);
         var track = dec.Tag as Track;
@@ -595,7 +588,7 @@ public sealed partial class PlaybackService : ObservableObject
         PrepareNext();
     });
 
-    private void OnEnded(FFmpegDecoder dec) => App.UI.TryEnqueue(async () =>
+    private void OnEnded(FFmpegDecoder dec) => _ui.TryEnqueue(async () =>
     {
         if (CurrentTrack != null) _library.RecordPlay(CurrentTrack);
         _listenedFrom = double.MaxValue;
@@ -647,10 +640,18 @@ public sealed partial class PlaybackService : ObservableObject
         _ = PlayIndexAsync(idx, TimeSpan.FromSeconds(s.LastPositionSeconds), autoplay: false);
     }
 
+    /// <summary>Remembers the queue and position for next time, then releases the audio output.</summary>
     public void Shutdown()
     {
         SaveSession();
+        Dispose();
+    }
+
+    /// <summary>Stops the timers and releases the audio output.</summary>
+    public void Dispose()
+    {
         _timer?.Stop();
+        _missingTimer?.Stop();
         _engine.Dispose();
     }
 }

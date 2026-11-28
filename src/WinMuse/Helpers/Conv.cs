@@ -19,6 +19,8 @@ public static class Conv
     public static Visibility Hide(bool v) => v ? Visibility.Collapsed : Visibility.Visible;
     public static Visibility ShowIf(object? o) => o == null ? Visibility.Collapsed : Visibility.Visible;
     public static Visibility ShowText(string? s) => string.IsNullOrWhiteSpace(s) ? Visibility.Collapsed : Visibility.Visible;
+    /// <summary>Shown while the list has something in it.</summary>
+    public static Visibility ShowCount(int count) => count > 0 ? Visibility.Visible : Visibility.Collapsed;
     public static bool Not(bool v) => !v;
     public static double Max1(double d) => d <= 0 ? 1 : d;
     // The current song's details. x:Bind never calls a function again when its argument becomes null, so the player
@@ -31,6 +33,13 @@ public static class Conv
     public static Visibility HiRes(Track? t, bool hasTrack = true) => t?.IsHiRes == true ? Visibility.Visible : Visibility.Collapsed;
     /// <summary>Player bar, when the song's file has gone missing: the countdown to skipping it, on the Skip button.</summary>
     public static string SkipText(int seconds) => seconds > 0 ? $"Skip ({seconds})" : "Skip";
+    public static Microsoft.UI.Xaml.Media.Brush Brush(Windows.UI.Color c) => new Microsoft.UI.Xaml.Media.SolidColorBrush(c);
+    /// <summary>A small preview of an image file (null shows nothing).</summary>
+    public static Microsoft.UI.Xaml.Media.ImageSource? Thumbnail(string? path, int width) =>
+        path == null ? null : new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(path)) { DecodePixelWidth = width };
+    // Quick access tiles: artists get a round photo inset in the tile; song art fills the tile's left end, rounded like the tile.
+    public static CornerRadius QuickArtCorner(bool isArtist) => isArtist ? new CornerRadius(26) : new CornerRadius(7, 0, 0, 7);
+    public static Thickness QuickArtMargin(bool isArtist) => isArtist ? new Thickness(6) : new Thickness(0);
 }
 
 /// <summary>Slider tooltip showing m:ss.</summary>

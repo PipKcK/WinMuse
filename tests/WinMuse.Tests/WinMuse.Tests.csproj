@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Internal tests for Music (WinMuse). The app is a WinUI exe, so instead of referencing it this project compiles the
-    app's UI-free source files directly (logic, models, database, audio decoding) and tests them in isolation.
+    Tests for WinMuse.Core: models, the library database, matching, lyrics, audio decoding and the view models.
     Run:  dotnet test tests\WinMuse.Tests   (MUSIC_TEST_DIR = a folder of real songs for the decoder tests; optional)
   -->
   <PropertyGroup>
@@ -19,40 +18,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
-    <PackageReference Include="NAudio.Core" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
-    <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="TagLibSharp" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- App sources under test (no UI). -->
-    <Compile Include="..\..\src\WinMuse\Helpers\ArtistCredit.cs" Link="App\ArtistCredit.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\Format.cs" Link="App\Format.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\CollectionSync.cs" Link="App\CollectionSync.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\LrcParser.cs" Link="App\LrcParser.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\AppPaths.cs" Link="App\AppPaths.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\AppLog.cs" Link="App\AppLog.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\UiLock.cs" Link="App\UiLock.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\PlaylistOrder.cs" Link="App\PlaylistOrder.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\WebLink.cs" Link="App\WebLink.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\ErrorText.cs" Link="App\ErrorText.cs" />
-    <Compile Include="..\..\src\WinMuse\Helpers\ColorKit.cs" Link="App\ColorKit.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Matching.cs" Link="App\Matching.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Genres.cs" Link="App\Genres.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\AlbumAgreement.cs" Link="App\AlbumAgreement.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\MovedSongs.cs" Link="App\MovedSongs.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\LibraryDatabase.cs" Link="App\LibraryDatabase.cs" />
-    <Compile Include="..\..\src\WinMuse\Models\Track.cs" Link="App\Track.cs" />
-    <Compile Include="..\..\src\WinMuse\Models\Playlist.cs" Link="App\Playlist.cs" />
-    <Compile Include="..\..\src\WinMuse\Models\Metadata.cs" Link="App\Metadata.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Audio\FFmpegDecoder.cs" Link="App\FFmpegDecoder.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Audio\AudioThread.cs" Link="App\AudioThread.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Audio\Equalizer.cs" Link="App\Equalizer.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Audio\SpectrumAnalyzer.cs" Link="App\SpectrumAnalyzer.cs" />
-    <Compile Include="..\..\src\WinMuse\Services\Audio\PlaybackPipeline.cs" Link="App\PlaybackPipeline.cs" />
+    <ProjectReference Include="..\..\src\WinMuse.Core\WinMuse.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

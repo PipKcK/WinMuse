@@ -8,7 +8,7 @@ namespace WinMuse.Services;
 /// missing album art and lyrics. Each song is processed once; afterwards user edits persist until the user runs
 /// Sync on the song or Sync in Settings.
 /// </summary>
-public sealed class AutoFixService
+public sealed class AutoFixService : IDisposable
 {
     private readonly LibraryService _library;
     private readonly MetadataEditService _metadata;
@@ -38,15 +38,21 @@ public sealed class AutoFixService
     /// <summary>(done, total, current song) on the UI thread; total 0 means finished.</summary>
     public event Action<int, int, string?>? Progress;
 
-    public AutoFixService(LibraryService library, MetadataEditService metadata, LyricsService lyrics, SettingsService settings)
+    private readonly PlaybackService _player;
+    private readonly IUiDispatcher _ui;
+    private readonly INotifier _notifier;
+
+    public AutoFixService(LibraryService library, MetadataEditService metadata, LyricsService lyrics, SettingsService settings,
+        PlaybackService player, IUiDispatcher ui, INotifier notifier)
     {
         _library = library; _metadata = metadata; _lyrics = lyrics; _settings = settings;
+        _player = player; _ui = ui; _notifier = notifier;
     }
 
-    /// <summary>Processes every song not yet handled. Safe to call repeatedly; extra calls queue one more pass.</summary>
     /// <summary>Songs processed at the same time. Rate-limited services (MusicBrainz, iTunes) keep their own limits.</summary>
     private const int Parallelism = 4;
 
+    /// <summary>Processes every song not yet handled. Safe to call repeatedly; extra calls queue one more pass.</summary>
     public async Task RunPendingAsync()
     {
         if (IsHeld) return;
@@ -77,7 +83,7 @@ public sealed class AutoFixService
                 int total = queue.Count, done = 0, busyCount = 0;
                 bool offline = false;
                 // Fewer songs at once while music plays: each one is decoded to fingerprint it, which competes with playback.
-                int workers = Svc.Player.IsPlaying ? 2 : Parallelism;
+                int workers = _player.IsPlaying ? 2 : Parallelism;
                 using var gate = new SemaphoreSlim(workers);
 
                 // One step for one song. False: the song is finished for this run (failed, skipped, or stopped).
@@ -173,7 +179,7 @@ public sealed class AutoFixService
                 {
                     foreach (var t in fresh.Where(t => !t.AutoFixed)) _new.Add(t);
                     // Some services were rate-limited: give them a moment, then process those songs again.
-                    _ = Task.Delay(TimeSpan.FromSeconds(90), token).ContinueWith(_ => App.UI.TryEnqueue(async () => await RunPendingAsync()),
+                    _ = Task.Delay(TimeSpan.FromSeconds(90), token).ContinueWith(_ => _ui.TryEnqueue(async () => await RunPendingAsync()),
                         token, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
                 }
             } while (_rerun && !token.IsCancellationRequested);
@@ -227,7 +233,15 @@ public sealed class AutoFixService
         _new.Clear();
         _rerun = false;
         _cts.Cancel();
+        // The cancelled source isn't disposed here: songs still finishing may yet register with its token.
         _cts = new CancellationTokenSource();
+    }
+
+    /// <summary>Stops everything (when the app closes).</summary>
+    public void Dispose()
+    {
+        Stop();
+        _cts.Dispose();
     }
 
     /// <summary>What identifying a song found: the match applied (null: none), everything else found, and whether it
@@ -310,7 +324,7 @@ public sealed class AutoFixService
             if (!_fingerprintRejected && fpError != null && fpError.Contains("rejected"))
             {
                 _fingerprintRejected = true;
-                Notifier.Error("AcoustID API key rejected", "Songs are being matched by tags only. Verify the key in Settings > API keys.");
+                _notifier.Error("AcoustID API key rejected", "Songs are being matched by tags only. Verify the key in Settings > API keys.");
             }
             match = MetadataEditService.ChooseAutomatic(t, candidates);
             // A busy service is not "not found": leave the song pending so it is retried shortly.

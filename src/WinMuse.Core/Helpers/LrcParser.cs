@@ -14,11 +14,22 @@ public static partial class LrcParser
 
     public static bool LooksSynced(string? text) => !string.IsNullOrEmpty(text) && TimeTag().IsMatch(text);
 
+    /// <summary>
+    /// Every kind of line break as <paramref name="newline"/>. Text typed or pasted in a WinUI TextBox separates lines
+    /// with a lone CR, files use LF or CRLF; treating only LF as a break ran edited lyrics together into one line.
+    /// </summary>
+    public static string NormalizeLineBreaks(string text, string newline = "\n")
+    {
+        var lf = text.Replace("\r\n", "\n").Replace('\r', '\n');
+        return newline == "\n" ? lf : lf.Replace("\n", newline);
+    }
+
     public static LyricsResult Parse(string text, string? source = null)
     {
         var lines = new List<LyricLine>();
         long offsetMs = 0;
-        foreach (var raw in text.Replace("\r", "").Split('\n'))
+        text = NormalizeLineBreaks(text);
+        foreach (var raw in text.Split('\n'))
         {
             var line = raw.Trim();
             var om = OffsetTag().Match(line);
@@ -47,7 +58,7 @@ public static partial class LrcParser
             {
                 IsSynced = false,
                 PlainText = plain,
-                Lines = plain.Replace("\r", "").Split('\n').Select(l => new LyricLine(TimeSpan.Zero, l.Trim())).ToList(),
+                Lines = plain.Split('\n').Select(l => new LyricLine(TimeSpan.Zero, l.Trim())).ToList(),
                 Source = source,
             };
         }

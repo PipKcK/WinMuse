@@ -11,5 +11,5 @@ public sealed record PlayContext(PlayContextKind Kind, string Key, string Name)
     public static PlayContext Of(Track t) => new(PlayContextKind.Song, t.Path, t.DisplayTitle);
     public static PlayContext Of(Album a) => new(PlayContextKind.Album, a.Key, a.Title);
     public static PlayContext Of(Artist a) => new(PlayContextKind.Artist, a.Name, a.Name);
-    public static PlayContext Of(Playlist p) => new(PlayContextKind.Playlist, p.Id.ToString(), p.Name);
+    public static PlayContext Of(Playlist p) => new(PlayContextKind.Playlist, p.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), p.Name);
 }

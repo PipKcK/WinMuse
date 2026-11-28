@@ -9,7 +9,7 @@ public sealed record ScanProgress(int Done, int Total, string? Current);
 /// <summary>In-memory library backed by SQLite. All public mutation happens on the UI thread.</summary>
 public sealed partial class LibraryService
 {
-    private readonly LibraryDatabase _db = new();
+    private readonly LibraryDatabase _db;
     private readonly TagService _tags;
     private readonly ArtworkService _art;
     private readonly SettingsService _settings;
@@ -73,7 +73,7 @@ public sealed partial class LibraryService
         _artistImages[name] = (path, tried, byUser);
         _db.SaveArtistImage(name, path, tried, byUser);
         _artists = null;
-        _changedDebounce.Run(() => App.UI.TryEnqueue(() => Changed?.Invoke()));
+        _changedDebounce.Run(() => _ui.TryEnqueue(() => Changed?.Invoke()));
     }
 
     /// <summary>Records that songs were just credited to these artists (Artists page, "Recently changed").</summary>
@@ -82,7 +82,7 @@ public sealed partial class LibraryService
         var keys = names.Select(n => n.ToLowerInvariant()).Distinct().ToList();
         if (keys.Count == 0) return;
         var now = Format.NowUnix();
-        App.UI.TryEnqueue(() =>
+        _ui.TryEnqueue(() =>
         {
             _settings.Set(nameof(AppSettings.ArtistActivity), s => { foreach (var k in keys) s.ArtistActivity[k] = now; });
             _artists = null;
@@ -119,9 +119,11 @@ public sealed partial class LibraryService
     /// </summary>
     public event Action<IReadOnlyCollection<Track>>? TracksRemoved;
 
-    public LibraryService(TagService tags, ArtworkService art, SettingsService settings)
+    private readonly IUiDispatcher _ui;
+
+    public LibraryService(LibraryDatabase db, TagService tags, ArtworkService art, SettingsService settings, IUiDispatcher ui)
     {
-        _tags = tags; _art = art; _settings = settings;
+        _db = db; _tags = tags; _art = art; _settings = settings; _ui = ui;
     }
 
     // ---------------- Per-song settings ----------------
@@ -228,6 +230,7 @@ public sealed partial class LibraryService
             {
                 Name = kv.Key,
                 ImagePath = GetArtistImage(kv.Key),
+                FavoriteCheck = _settings.Current.IsFavoriteArtist,
                 Tracks = kv.Value.OrderBy(t => t.DisplayAlbum).ThenBy(t => t.DiscNumber).ThenBy(t => t.TrackNumber).ToList(),
                 ChangedUtc = Math.Max(_settings.Current.ArtistActivity.GetValueOrDefault(kv.Key.ToLowerInvariant()), kv.Value.Max(t => t.AddedUtc)),
                 Albums = (albums.GetValueOrDefault(kv.Key) ?? new List<Album>())
@@ -447,7 +450,7 @@ public sealed partial class LibraryService
             if ((DateTime.Now - lastReport).TotalMilliseconds > 150)
             {
                 lastReport = DateTime.Now;
-                App.UI.TryEnqueue(() => ScanProgressChanged?.Invoke(new ScanProgress(n, todo.Count, Path.GetFileName(f))));
+                _ui.TryEnqueue(() => ScanProgressChanged?.Invoke(new ScanProgress(n, todo.Count, Path.GetFileName(f))));
             }
         });
 
@@ -576,7 +579,7 @@ public sealed partial class LibraryService
         var ext = Path.GetExtension(path);
         if (ext.Length > 0 && !AppPaths.IsAudio(path) && !ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) && !ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) return;
         if (Path.GetDirectoryName(path) is { } dir) _art.ForgetFolder(dir);
-        _watchDebounce.Run(() => App.UI.TryEnqueue(async () => await ScanAsync()));
+        _watchDebounce.Run(() => _ui.TryEnqueue(async () => await ScanAsync()));
     }
 
     // ---------------- Track updates ----------------
@@ -589,7 +592,7 @@ public sealed partial class LibraryService
         _albums = null; _artists = null; _genres = null;
         foreach (var t in list) t.Refresh();
         // Debounced so batch updates (automatic metadata processing) don't refresh every page per song.
-        _changedDebounce.Run(() => App.UI.TryEnqueue(() =>
+        _changedDebounce.Run(() => _ui.TryEnqueue(() =>
         {
             _albums = null; _artists = null; _genres = null;
             ResolvePlaylistsAfterChange();
@@ -633,7 +636,7 @@ public sealed partial class LibraryService
         {
             try
             {
-                // The lyrics Music saved for the song are its own data: they go too.
+                // The lyrics saved in the library for the song are its own data: they go too.
                 var saved = LyricsService.AppLyricsPath(t.Path);
                 if (File.Exists(saved)) File.Delete(saved);
                 if (File.Exists(t.Path))

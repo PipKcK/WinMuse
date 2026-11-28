@@ -3,7 +3,6 @@ namespace WinMuse.Models;
 public enum AppTheme { System, Light, Dark, Oled }
 /// <summary>Animated border around the playing song in song lists.</summary>
 public enum PlayingHighlight { Off, Accent, Rainbow }
-/// <summary>Home greeting: a gradient card (Banner), or a glow behind the top of the page (Gradient). Debug option.</summary>
 /// <summary>Home's greeting: on a card (Banner), on a glow (Gradient), or on the page itself (None, laid out like Gradient).</summary>
 public enum GreetingStyle { Banner, Gradient, None }
 /// <summary>Look of the cards in Home's rows (Settings > Appearance > Card style). Accent and Opposite are retired
@@ -13,6 +12,8 @@ public enum ShelfCardColor { Neutral, Accent, Opposite, Glass, Smoke, Slate, Ele
 public enum PlaylistSort { Alphabetical, RecentActivity, DateCreated, Custom }
 public enum AccentSource { Windows, Custom, AlbumArt }
 public enum BackgroundMode { None, AlbumArt, Gradient, Wallpaper }
+/// <summary>How the background image is blurred (Settings > Appearance > Background > Blur style). Stored by name.</summary>
+public enum BlurStyle { Gaussian, Lens, Frosted, Motion }
 /// <summary>
 /// Where edits go when changing music files is allowed (<see cref="AppSettings.AllowFileChanges"/>): the app's library
 /// only (App only), the files' tags (Files only), or the user picks on each save (Ask). The names are stored in
@@ -38,7 +39,10 @@ public sealed class AppSettings
     public string CustomAccent { get; set; } = "#FF8B5CF6";
     public BackgroundMode BackgroundMode { get; set; } = BackgroundMode.AlbumArt;
     public string? WallpaperPath { get; set; }
-    public double WallpaperBlur { get; set; } = 40;
+    /// <summary>0–100 (see Helpers/WallpaperBlur for what it means for each style).</summary>
+    public double WallpaperBlur { get; set; } = WallpaperBlurDefault;
+    public const double WallpaperBlurDefault = 70;
+    public BlurStyle WallpaperBlurStyle { get; set; } = BlurStyle.Gaussian;
     public double WallpaperDim { get; set; } = 35;
     public double BackgroundIntensity { get; set; } = 55;
     public string GradientColor1 { get; set; } = "#FF6D5DFC";
@@ -60,6 +64,7 @@ public sealed class AppSettings
     /// <summary>The playlist that holds favorite songs ("Favorites"); created on the first heart.</summary>
     public long FavoritesPlaylistId { get; set; }
     public List<string> FavoriteArtists { get; set; } = new();
+    public bool IsFavoriteArtist(string name) => FavoriteArtists.Contains(name, StringComparer.OrdinalIgnoreCase);
     /// <summary>Items pinned to Quick access, in pin order: "song:&lt;path&gt;" or "artist:&lt;name&gt;".</summary>
     public List<string> QuickAccessPins { get; set; } = new();
 
@@ -88,8 +93,8 @@ public sealed class AppSettings
     public float[] EqBands { get; set; } = new float[10];
     public float EqPreamp { get; set; }
 
-    // Your music files: by default Music never changes them.
-    /// <summary>Music may write edits into the songs' tags. Off: files are never changed; edits stay in the library.</summary>
+    // Your music files: unchanged unless the user allows it.
+    /// <summary>Edits may be written into the songs' tags. Off: files are never changed; edits stay in the library.</summary>
     public bool AllowFileChanges { get; set; }
     /// <summary>Where edits go while <see cref="AllowFileChanges"/> is on (App only by default).</summary>
     public MetadataWriteMode WriteMode { get; set; } = MetadataWriteMode.LibraryOnly;

@@ -13,6 +13,7 @@ namespace WinMuse.Dialogs;
 /// rules would choose, shows what would change, and applies it together with album art, artist photo, lyrics and
 /// genre. The user can pick another match or search manually. Works through several songs one at a time.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "The search is cancelled when the dialog closes. A cancelled source with no timer holds nothing to release, and a search still finishing may register with its token.")]
 public sealed partial class FetchDialog : ContentDialog
 {
     private readonly IList<Track> _tracks;

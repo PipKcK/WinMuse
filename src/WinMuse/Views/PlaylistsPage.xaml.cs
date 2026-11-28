@@ -41,7 +41,7 @@ public sealed partial class PlaylistsPage : Page
         foreach (var p in lists) _shown[p.Id] = Look(p);
         var bound = CollectionSync.SyncOrReplace(_items, lists, p => p.Id);
         if (!ReferenceEquals(bound, _items)) { _items = bound; Grid.ItemsSource = _items; }
-        CountText.Text = $"{lists.Count} playlists";
+        CountText.Text = Format.Count(lists.Count, "playlist", "playlists");
         Empty.Visibility = lists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

@@ -14,7 +14,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <TextBox x:Name="FilterBox" PlaceholderText="Search albums…" Width="220" VerticalAlignment="Center" TextChanged="OnFilter" />
-                <ComboBox x:Name="SortBox" SelectionChanged="OnSortChanged" MinWidth="160" VerticalAlignment="Center">
+                <ComboBox x:Name="SortBox" AutomationProperties.Name="Sort albums" SelectionChanged="OnSortChanged" MinWidth="160" VerticalAlignment="Center">
                     <x:String>A–Z</x:String>
                     <x:String>Artist</x:String>
                     <x:String>Release year</x:String>
@@ -26,7 +26,7 @@
                 </Button>
             </StackPanel>
         </Grid>
-        <GridView x:Name="Grid" Grid.Row="1" Padding="32,4,24,24"
+        <GridView x:Name="Grid" AutomationProperties.Name="Albums" Grid.Row="1" Padding="32,4,24,24"
                   SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnItemClick" RightTapped="OnRightTapped"
                   ItemTemplate="{StaticResource AlbumCardTemplate}"
                   ItemContainerStyle="{StaticResource CardGridViewItemStyle}" />

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Numerics;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
@@ -11,20 +12,20 @@ using WinMuse.Dialogs;
 using WinMuse.Helpers;
 using WinMuse.Models;
 using WinMuse.Services;
+using WinMuse.ViewModels;
 
 namespace WinMuse.Views;
 
+/// <summary>
+/// The full-window Now Playing screen. Lyrics, their timing and the song's details come from
+/// <see cref="NowPlayingViewModel"/>; this view lays them out and animates them.
+/// </summary>
 public sealed partial class NowPlayingView : UserControl
 {
     private bool _dragging, _updating;
-    private LyricsResult? _lyrics;
     private readonly List<TextBlock> _lineBlocks = new();
-    private int _activeLine = -1;
+    private int _highlighted = -1;
     private DateTime _userScrolledAt = DateTime.MinValue;
-    private CancellationTokenSource? _lyricsCts;
-    private Track? _lyricsFor;
-    /// <summary>Lyrics timing for the current song: positive shows each line later.</summary>
-    private int _lyricsOffsetMs;
     private string _tab = "lyrics";
     private bool _narrow;
     private SpriteVisual? _glow;
@@ -32,6 +33,7 @@ public sealed partial class NowPlayingView : UserControl
     private float _pulse;
 
     public PlaybackService Player => Svc.Player;
+    public NowPlayingViewModel Vm { get; } = new(Svc.Lyrics, Svc.Library, Svc.Ui);
 
     public NowPlayingView()
     {
@@ -79,7 +81,12 @@ public sealed partial class NowPlayingView : UserControl
             }
         };
         Player.TrackChanged += t => { if (Visibility == Visibility.Visible) LoadTrack(t, animate: true); };
-        Player.Seeked += () => { _activeLine = -1; _userScrolledAt = DateTime.MinValue; };
+        Player.Seeked += () => { Vm.ResetActiveLine(); _userScrolledAt = DateTime.MinValue; };
+
+        Vm.LinesChanged += BuildLines;
+        Vm.PropertyChanged += OnVmChanged;
+        // Lyrics edited elsewhere (a song menu's Edit) show here once saved.
+        Svc.Library.Changed += () => { if (Visibility == Visibility.Visible) _ = Vm.RefreshIfChangedAsync(); };
 
         Svc.Theme.PropertyChanged += (_, e) =>
         {
@@ -209,11 +216,8 @@ public sealed partial class NowPlayingView : UserControl
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(AlbumLink, AlbumText.Text);
         Rating.Value = t?.Rating > 0 ? t.Rating : -1;
         BuildDetails(t);
-        if (animate)
-        {
-            Effects.EntranceSlide(TitleBlock, 14, 0, 420);
-        }
-        if (_lyricsFor != t) _ = LoadLyricsAsync(t);
+        if (animate) Effects.EntranceSlide(TitleBlock, 14, 0, 420);
+        _ = Vm.ShowAsync(t);
     }
 
     private void BuildDetails(Track? t)
@@ -221,25 +225,15 @@ public sealed partial class NowPlayingView : UserControl
         DetailsGrid.Children.Clear();
         DetailsGrid.RowDefinitions.Clear();
         DetailsGrid.ColumnDefinitions.Clear();
-        if (t == null) return;
+        var rows = NowPlayingViewModel.DetailsOf(t);
+        if (rows.Count == 0) return;
         DetailsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         DetailsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        var rows = new List<(string, string)>
-        {
-            ("Title", t.DisplayTitle), ("Artist", t.DisplayArtist), ("Album", t.DisplayAlbum), ("Album artist", t.DisplayAlbumArtist),
-            ("Genre", t.Genre ?? "—"), ("Year", t.Year > 0 ? t.Year.ToString() : "—"),
-            ("Track", t.TrackNumber > 0 ? (t.TrackCount > 0 ? $"{t.TrackNumber} of {t.TrackCount}" : t.TrackNumber.ToString()) : "—"),
-            ("Composer", t.Composer ?? "—"), ("Format", t.FormatText), ("Channels", t.Channels > 0 ? t.Channels.ToString() : "—"),
-            ("Duration", t.DurationText), ("Size", Format.Size(t.FileSize)), ("Plays", t.PlayCount.ToString()),
-            ("Added", DateTimeOffset.FromUnixTimeSeconds(t.AddedUtc).LocalDateTime.ToString("d")),
-            ("File", t.Path),
-        };
         for (int i = 0; i < rows.Count; i++)
         {
             DetailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var k = new TextBlock { Text = rows[i].Item1, Opacity = 0.7, Style = TextStyle };
-            var v = new TextBlock { Text = rows[i].Item2, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true, Style = TextStyle };
+            var k = new TextBlock { Text = rows[i].Label, Opacity = 0.7, Style = TextStyle };
+            var v = new TextBlock { Text = rows[i].Value, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true, Style = TextStyle };
             Grid.SetRow(k, i); Grid.SetRow(v, i); Grid.SetColumn(v, 1);
             DetailsGrid.Children.Add(k); DetailsGrid.Children.Add(v);
         }
@@ -250,71 +244,37 @@ public sealed partial class NowPlayingView : UserControl
 
     // ---------------- Lyrics ----------------
 
-    private async Task LoadLyricsAsync(Track? t, bool online = true)
+    /// <summary>One text block per line of the lyrics now in <see cref="NowPlayingViewModel.Lyrics"/>.</summary>
+    private void BuildLines()
     {
-        _lyricsCts?.Cancel();
-        var cts = _lyricsCts = new CancellationTokenSource();
-        _lyricsFor = t;
-        _lyrics = null;
-        _activeLine = -1;
         LyricsLines.Children.Clear();
         _lineBlocks.Clear();
-        LyricsSource.Text = "";
-        LyricsEmpty.Visibility = Visibility.Collapsed;
-        if (t == null) return;
+        _highlighted = -1;
+        UpdateTimingControls();
+        if (Vm.Lyrics is not { } lyrics) return;
 
-        LyricsProgress.IsActive = true;
-        LyricsResult? result = null;
-        try { result = await Svc.Lyrics.GetAsync(t, online, cts.Token); }
-        catch (OperationCanceledException) { return; }
-        catch (Exception ex) { AppPaths.Log("Lyrics: " + ex.Message); }
-        if (cts.IsCancellationRequested) return;
-        LyricsProgress.IsActive = false;
-        ShowLyrics(result);
-    }
-
-    private void ShowLyrics(LyricsResult? result)
-    {
-        _lyrics = result;
-        LyricsLines.Children.Clear();
-        _lineBlocks.Clear();
-        _activeLine = -1;
-
-        if (result == null || result.Lines.Count == 0)
+        bool synced = Vm.IsSynced;
+        for (int i = 0; i < lyrics.Lines.Count; i++)
         {
-            _lyricsSynced = false;
-            UpdateTimingButton();
-            LyricsEmpty.Visibility = Visibility.Visible;
-            LyricsEmptyText.Text = Player.CurrentTrack?.LyricsState == ItemState.Instrumental ? "Instrumental" : "Lyrics unavailable";
-            return;
-        }
-        LyricsEmpty.Visibility = Visibility.Collapsed;
-        LyricsSource.Text = (result.IsSynced ? "Synced lyrics" : "Lyrics") + (result.Source != null ? " · " + result.Source : "");
-        _lyricsOffsetMs = _lyricsFor != null ? Svc.Library.PrefsFor(_lyricsFor).LyricsOffsetMs : 0;
-        _lyricsSynced = result.IsSynced;
-        UpdateTimingButton();
-        UpdateOffsetText();
-
-        foreach (var line in result.Lines)
-        {
+            var line = lyrics.Lines[i];
             var tb = new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(line.Text) ? "♪" : line.Text,
-                FontSize = result.IsSynced ? 28 : 20,
-                FontWeight = result.IsSynced ? Microsoft.UI.Text.FontWeights.Bold : Microsoft.UI.Text.FontWeights.SemiBold,
+                FontSize = synced ? 28 : 20,
+                FontWeight = synced ? Microsoft.UI.Text.FontWeights.Bold : Microsoft.UI.Text.FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap,
-                Opacity = result.IsSynced ? 0.32 : 0.92,
+                Opacity = synced ? 0.32 : 0.92,
                 OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(350) },
                 ScaleTransition = new Vector3Transition { Duration = TimeSpan.FromMilliseconds(400) },
-                Scale = result.IsSynced ? new Vector3(0.94f, 0.94f, 1) : Vector3.One,
+                Scale = synced ? new Vector3(0.94f, 0.94f, 1) : Vector3.One,
                 Style = TextStyle,
             };
-            if (result.IsSynced)
+            if (synced)
             {
-                var time = line.Time;
-                tb.Tapped += (_, _) => { Player.Seek((time.TotalMilliseconds + _lyricsOffsetMs) / 1000.0); _userScrolledAt = DateTime.MinValue; };
-                tb.PointerEntered += (_, _) => { if (_lineBlocks.IndexOf(tb) != _activeLine) tb.Opacity = 0.6; };
-                tb.PointerExited += (_, _) => { if (_lineBlocks.IndexOf(tb) != _activeLine) tb.Opacity = 0.32; };
+                int index = i;
+                tb.Tapped += (_, _) => { Player.Seek(Vm.SeekSecondsFor(index)); _userScrolledAt = DateTime.MinValue; };
+                tb.PointerEntered += (_, _) => { if (index != _highlighted) tb.Opacity = 0.6; };
+                tb.PointerExited += (_, _) => { if (index != _highlighted) tb.Opacity = 0.32; };
             }
             LyricsLines.Children.Add(tb);
             _lineBlocks.Add(tb);
@@ -323,28 +283,20 @@ public sealed partial class NowPlayingView : UserControl
         Effects.EntranceSlide(LyricsLines, 30, 0, 600);
     }
 
+    /// <summary>Moves the highlight to the line being sung, and scrolls it into view unless the user scrolled lately.</summary>
     private void UpdateLyricsHighlight()
     {
-        if (_lyrics is not { IsSynced: true } || _lineBlocks.Count == 0) return;
-        var pos = Player.Engine.Pipeline.Position + TimeSpan.FromMilliseconds(180 - _lyricsOffsetMs);
-        int idx = -1;
-        var lines = _lyrics.Lines;
-        for (int i = 0; i < lines.Count; i++)
+        if (_lineBlocks.Count == 0 || !Vm.UpdateActiveLine(Player.Engine.Pipeline.Position)) return;
+        if (_highlighted >= 0 && _highlighted < _lineBlocks.Count)
         {
-            if (lines[i].Time <= pos) idx = i; else break;
-        }
-        if (idx == _activeLine) return;
-
-        if (_activeLine >= 0 && _activeLine < _lineBlocks.Count)
-        {
-            var old = _lineBlocks[_activeLine];
+            var old = _lineBlocks[_highlighted];
             old.Opacity = 0.32;
             old.Scale = new Vector3(0.94f, 0.94f, 1);
         }
-        _activeLine = idx;
-        if (idx < 0) return;
+        _highlighted = Vm.ActiveLine;
+        if (_highlighted < 0 || _highlighted >= _lineBlocks.Count) return;
 
-        var tb = _lineBlocks[idx];
+        var tb = _lineBlocks[_highlighted];
         tb.CenterPoint = new Vector3(0, (float)tb.ActualHeight / 2, 0);
         tb.Opacity = 1;
         tb.Scale = Vector3.One;
@@ -358,23 +310,32 @@ public sealed partial class NowPlayingView : UserControl
 
     // ---------------- Lyrics timing ----------------
 
-    private readonly Debouncer _saveOffset = new(TimeSpan.FromMilliseconds(500));
     private bool _offsetUpdating;
-    private bool _lyricsSynced;
+
+    private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NowPlayingViewModel.OffsetMs)) UpdateTimingControls();
+    }
 
     /// <summary>The timing button sits with the tabs and only shows on the Lyrics tab, for synced lyrics.</summary>
-    private void UpdateTimingButton() =>
-        LyricsTimingButton.Visibility = _lyricsSynced && _tab == "lyrics" ? Visibility.Visible : Visibility.Collapsed;
+    private void UpdateTimingControls()
+    {
+        LyricsTimingButton.Visibility = Vm.IsSynced && _tab == "lyrics" ? Visibility.Visible : Visibility.Collapsed;
+        _offsetUpdating = true;
+        LyricsTimingSlider.Value = Vm.OffsetMs / 1000.0;
+        LyricsTimingBox.Value = Math.Round(Vm.OffsetMs / 1000.0, 2);
+        _offsetUpdating = false;
+    }
 
     private void OnLyricsTimingTyped(NumberBox sender, NumberBoxValueChangedEventArgs args)
     {
         if (_offsetUpdating) return;
-        if (double.IsNaN(args.NewValue)) { UpdateOffsetText(); return; } // cleared: show the current value again
+        if (double.IsNaN(args.NewValue)) { UpdateTimingControls(); return; } // cleared: show the current value again
         SetLyricsOffset((int)Math.Round(args.NewValue * 1000));
     }
 
-    private void OnLyricsEarlier(object sender, RoutedEventArgs e) => SetLyricsOffset(_lyricsOffsetMs - 100);
-    private void OnLyricsLater(object sender, RoutedEventArgs e) => SetLyricsOffset(_lyricsOffsetMs + 100);
+    private void OnLyricsEarlier(object sender, RoutedEventArgs e) => SetLyricsOffset(Vm.OffsetMs - 100);
+    private void OnLyricsLater(object sender, RoutedEventArgs e) => SetLyricsOffset(Vm.OffsetMs + 100);
     private void OnLyricsOffsetReset(object sender, RoutedEventArgs e) => SetLyricsOffset(0);
 
     private void OnLyricsTimingSlider(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -382,53 +343,23 @@ public sealed partial class NowPlayingView : UserControl
         if (!_offsetUpdating) SetLyricsOffset((int)Math.Round(e.NewValue * 1000));
     }
 
-    /// <summary>Applies a timing offset right away (positive shows lyrics later) and saves it for the song.</summary>
     private void SetLyricsOffset(int ms)
     {
-        if (_lyricsFor is not { } t) return;
-        _lyricsOffsetMs = Math.Clamp(ms, -5000, 5000);
-        _saveOffset.Run(() => App.UI.TryEnqueue(() => Svc.Library.SaveLyricsOffset(t, _lyricsFor == t ? _lyricsOffsetMs : Svc.Library.PrefsFor(t).LyricsOffsetMs)));
-        UpdateOffsetText();
+        Vm.SetOffset(ms);
         _userScrolledAt = DateTime.MinValue;
         UpdateLyricsHighlight();
     }
 
-    private void UpdateOffsetText()
-    {
-        var text = $"{_lyricsOffsetMs / 1000.0:+0.00;-0.00;0.00} s";
-        LyricsTimingText.Text = _lyricsOffsetMs == 0 ? "Timing" : $"Timing {text}";
-        _offsetUpdating = true;
-        LyricsTimingSlider.Value = _lyricsOffsetMs / 1000.0;
-        LyricsTimingBox.Value = Math.Round(_lyricsOffsetMs / 1000.0, 2);
-        _offsetUpdating = false;
-    }
-
     private async void OnFetchLyrics(object sender, RoutedEventArgs e)
     {
-        if (Player.CurrentTrack is not { } t) return;
-        LyricsProgress.IsActive = true;
-        LyricsEmptyText.Text = "Searching for lyrics…";
-        try
-        {
-            var r = await Svc.Lyrics.DownloadAsync(t);
-            LyricsProgress.IsActive = false;
-            if (r != null) { ShowLyrics(r); Notifier.Success("Lyrics downloaded", "Saved for offline use."); }
-            else LyricsEmptyText.Text = t.LyricsState == ItemState.Instrumental ? "Instrumental: this song has no lyrics" : "No lyrics were found for this song";
-        }
-        catch (Exception ex)
-        {
-            LyricsProgress.IsActive = false;
-            LyricsEmptyText.Text = "Unable to reach the lyrics service";
-            AppPaths.Log("Lyrics download: " + ex.Message);
-        }
+        if (await Vm.DownloadAsync()) Notifier.Success("Lyrics downloaded", "Saved for offline use.");
     }
 
     private async void OnEditLyrics(object sender, RoutedEventArgs e)
     {
         if (Player.CurrentTrack is not { } t) return;
         await MetadataEditorDialog.ShowAsync(new[] { t }, startOnLyrics: true);
-        _lyricsFor = null;
-        await LoadLyricsAsync(t, online: false);
+        await Vm.ReloadAsync();
     }
 
     // ---------------- Per-frame ----------------
@@ -456,7 +387,7 @@ public sealed partial class NowPlayingView : UserControl
         QueuePanel.Visibility = _tab == "queue" ? Visibility.Visible : Visibility.Collapsed;
         DetailsPanel.Visibility = _tab == "details" ? Visibility.Visible : Visibility.Collapsed;
         if (_tab == "queue") QueueList.ScrollToPlaying();
-        UpdateTimingButton();
+        UpdateTimingControls();
         ApplyLayout();
         if (_tab != "art") Effects.EntranceSlide(RightPanel, 16, 0, 360);
     }
@@ -498,7 +429,7 @@ public sealed partial class NowPlayingView : UserControl
     private void OnMore(object sender, RoutedEventArgs e)
     {
         if (Player.CurrentTrack is not { } t) return;
-        var extra = new[] { new MenuAction("Mini player", "", () => App.MainWindow.OpenMiniPlayer()) };
+        var extra = new[] { new MenuAction("Mini player", "\uEE49", () => App.MainWindow.OpenMiniPlayer()) };
         TrackActions.BuildMenu(new[] { t }, extra).ShowAt((FrameworkElement)sender);
     }
 

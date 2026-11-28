@@ -8,14 +8,16 @@ namespace WinMuse.Services;
 /// <summary>SQLite persistence for tracks and playlists.</summary>
 public sealed class LibraryDatabase
 {
-    private readonly string _cs = new SqliteConnectionStringBuilder { DataSource = AppPaths.DatabasePath, Cache = SqliteCacheMode.Shared }.ToString();
+    private readonly string _cs;
 
     private const string TrackColumns =
         "Path, Title, Artist, AlbumArtist, Album, Genre, Year, TrackNumber, TrackCount, DiscNumber, Composer, Comment, Lyrics, Bpm, " +
         "DurationMs, Bitrate, SampleRate, Channels, BitsPerSample, Codec, FileSize, ModifiedUtc, AddedUtc, PlayCount, LastPlayedUtc, Rating, ArtPath, EditedLocally, AutoFixed, MetaState, ArtState, LyricsState, MissingSince";
 
-    public LibraryDatabase()
+    /// <summary>Opens (creating if needed) the library at <paramref name="path"/>; by default library.db in the data folder.</summary>
+    public LibraryDatabase(string? path = null)
     {
+        _cs = new SqliteConnectionStringBuilder { DataSource = path ?? AppPaths.DatabasePath, Cache = SqliteCacheMode.Shared }.ToString();
         using var c = Open();
         c.Execute("""
             PRAGMA journal_mode=WAL;

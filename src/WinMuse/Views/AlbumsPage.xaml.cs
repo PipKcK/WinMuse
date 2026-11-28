@@ -52,7 +52,7 @@ public sealed partial class AlbumsPage : Page
         var list = albums.ToList();
         var bound = CollectionSync.SyncOrReplace(_items, list, a => a.Key, (a, b) => a.Title == b.Title && a.Artist == b.Artist && a.Year == b.Year && a.ArtPath == b.ArtPath && a.TrackCount == b.TrackCount);
         if (!ReferenceEquals(bound, _items)) { _items = bound; Grid.ItemsSource = _items; }
-        CountText.Text = $"{Svc.Library.Albums.Count:N0} albums";
+        CountText.Text = Format.Count(Svc.Library.Albums.Count, "album", "albums");
     }
 
     private void OnSortChanged(object sender, SelectionChangedEventArgs e) { if (IsLoaded) Load(); }

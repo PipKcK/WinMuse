@@ -65,7 +65,7 @@
 
         <!-- Candidates -->
         <Grid Grid.Row="3">
-            <ListView x:Name="Candidates" SelectionMode="Single" SelectionChanged="OnCandidateChanged" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8">
+            <ListView x:Name="Candidates" AutomationProperties.Name="Matches found" SelectionMode="Single" SelectionChanged="OnCandidateChanged" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:MetadataCandidate">
                         <Grid Padding="0,8" ColumnSpacing="12">

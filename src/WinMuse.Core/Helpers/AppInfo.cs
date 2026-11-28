@@ -8,9 +8,12 @@ namespace WinMuse.Helpers;
 /// </summary>
 public static class AppInfo
 {
+    // The exe's stamp (this class lives in WinMuse.Core, whose own version is not the app's).
+    private static readonly Assembly App = Assembly.GetEntryAssembly() ?? typeof(AppInfo).Assembly;
+
     private static readonly string Informational =
-        typeof(AppInfo).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-        ?? typeof(AppInfo).Assembly.GetName().Version?.ToString(3)
+        App.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? App.GetName().Version?.ToString(3)
         ?? "0.0.0";
 
     /// <summary>The release version, e.g. "1.0.0".</summary>

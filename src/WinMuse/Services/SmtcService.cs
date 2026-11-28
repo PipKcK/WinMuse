@@ -8,7 +8,7 @@ using WinMuse.Models;
 namespace WinMuse.Services;
 
 /// <summary>Hooks the Windows media overlay / media keys (System Media Transport Controls).</summary>
-public sealed class SmtcService
+public sealed class SmtcService : IDisposable
 {
     private readonly PlaybackService _player;
     private SystemMediaTransportControls? _smtc;
@@ -118,5 +118,13 @@ public sealed class SmtcService
             UpdateStatus();
         }
         catch (Exception ex) { AppPaths.Log("SMTC update failed: " + ex.Message); }
+    }
+
+    /// <summary>Removes the app from the Windows media controls.</summary>
+    public void Dispose()
+    {
+        _host?.Dispose();
+        _host = null;
+        _smtc = null;
     }
 }

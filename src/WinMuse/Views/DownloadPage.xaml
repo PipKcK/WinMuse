@@ -124,7 +124,7 @@
                         <Button Grid.Column="3" Style="{StaticResource IconButtonStyle}" Width="32" Height="32" Content="&#xE711;" FontSize="12" Click="OnDismissError"
                                 ToolTipService.ToolTip="Dismiss" AutomationProperties.Name="Dismiss" />
                     </Grid>
-                    <TextBox x:Name="ErrorBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="240"
+                    <TextBox x:Name="ErrorBox" AutomationProperties.Name="Error details" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="240"
                              FontFamily="Cascadia Mono, Consolas" FontSize="12" ScrollViewer.VerticalScrollBarVisibility="Auto" />
                 </StackPanel>
             </Grid>

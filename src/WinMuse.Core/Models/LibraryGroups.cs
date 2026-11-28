@@ -33,7 +33,9 @@ public sealed class Artist
     public string? ArtPath => ImagePath ?? Albums.FirstOrDefault(a => a.ArtPath != null)?.ArtPath;
     public string Summary => $"{Albums.Count} {(Albums.Count == 1 ? "album" : "albums")} · {Tracks.Count} {(Tracks.Count == 1 ? "song" : "songs")}";
     public string Initials => string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
-    public bool IsFavorite => Services.Svc.Favorites.IsFavoriteArtist(Name);
+    /// <summary>Whether a name is a favorite artist; given by the library that groups the songs into artists.</summary>
+    public Func<string, bool>? FavoriteCheck { get; init; }
+    public bool IsFavorite => FavoriteCheck?.Invoke(Name) ?? false;
 
     /// <summary>What screen readers announce for the artist tile (WinUI names list items from ToString).</summary>
     public override string ToString() => $"{Name}, {Summary}";
@@ -55,8 +57,9 @@ public sealed class Genre
     /// the tile color behind the text (the start of its gradient) for the higher contrast.
     /// </summary>
     private bool DarkText => Helpers.ColorKit.PrefersDarkText(Helpers.ColorKit.GradientFor(Name).a);
-    public Microsoft.UI.Xaml.Media.Brush TitleBrush => new Microsoft.UI.Xaml.Media.SolidColorBrush(DarkText ? Helpers.ColorKit.DarkText : Microsoft.UI.Colors.White);
-    public Microsoft.UI.Xaml.Media.Brush SubtitleBrush => new Microsoft.UI.Xaml.Media.SolidColorBrush(DarkText ? Helpers.ColorKit.WithAlpha(Helpers.ColorKit.DarkText, 0xD0) : Helpers.ColorKit.WithAlpha(Microsoft.UI.Colors.White, 0xE0));
+    private static readonly Windows.UI.Color White = Windows.UI.Color.FromArgb(255, 255, 255, 255);
+    public Windows.UI.Color TitleColor => DarkText ? Helpers.ColorKit.DarkText : White;
+    public Windows.UI.Color SubtitleColor => Helpers.ColorKit.WithAlpha(DarkText ? Helpers.ColorKit.DarkText : White, DarkText ? (byte)0xD0 : (byte)0xE0);
 
     /// <summary>What screen readers announce for the genre tile (WinUI names list items from ToString).</summary>
     public override string ToString() => $"{Name}, {Summary}";

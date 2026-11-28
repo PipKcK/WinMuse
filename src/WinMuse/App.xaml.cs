@@ -24,10 +24,10 @@ public partial class App : Application
             AppPaths.Log("Unhandled: " + e.Exception);
             e.Handled = true;
             if (ErrorText.IsRecoverable(e.Exception))
-                Notifier.Show("Something went wrong", ErrorText.Describe(e.Exception), Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, Notifier.OpenLog);
+                Notifier.Show("Something went wrong", ErrorText.Describe(e.Exception), NoticeSeverity.Error, Notifier.OpenLog);
             else
                 Notifier.Show("Something went wrong", "If something doesn't work as expected, restart the app. Details were saved to the log.",
-                    Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, new Notifier.ToastAction("Restart", Restart));
+                    NoticeSeverity.Error, new NoticeAction("Restart", Restart));
         };
         TaskScheduler.UnobservedTaskException += (_, e) => { AppPaths.Log("Unobserved: " + e.Exception); e.SetObserved(); };
     }
@@ -36,7 +36,7 @@ public partial class App : Application
     {
         UI = DispatcherQueue.GetForCurrentThread();
         AppPaths.Log($"{AppInfo.DisplayVersion} started (Windows {Environment.OSVersion.Version}, .NET {Environment.Version})");
-        Svc.Create();
+        Svc.Create(new UiDispatcher(UI), Notifier.Instance);
         MainWindow = new MainWindow();
         MainWindow.Activate();
         _ = MainWindow.InitializeAsync(_startupFiles);

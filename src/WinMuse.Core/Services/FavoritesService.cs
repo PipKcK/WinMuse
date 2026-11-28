@@ -15,13 +15,14 @@ public sealed class FavoritesService
     public const int MaxQuickAccess = 10;
     private readonly SettingsService _settings;
     private readonly LibraryService _library;
+    private readonly INotifier _notifier;
 
     /// <summary>Raised after any favorite or pin changes.</summary>
     public event Action? Changed;
 
-    public FavoritesService(SettingsService settings, LibraryService library)
+    public FavoritesService(SettingsService settings, LibraryService library, INotifier notifier)
     {
-        _settings = settings; _library = library;
+        _settings = settings; _library = library; _notifier = notifier;
         // The playlist can be edited like any other: song flags follow it.
         _library.PlaylistsChanged += RefreshFlags;
         _library.Changed += RefreshFlags;
@@ -74,7 +75,7 @@ public sealed class FavoritesService
 
     // ---------------- Artists ----------------
 
-    public bool IsFavoriteArtist(string name) => _settings.Current.FavoriteArtists.Contains(name, StringComparer.OrdinalIgnoreCase);
+    public bool IsFavoriteArtist(string name) => _settings.Current.IsFavoriteArtist(name);
 
     public void SetFavoriteArtist(string name, bool favorite)
     {
@@ -127,7 +128,7 @@ public sealed class FavoritesService
         // Quick access holds 10 tiles: at most 10 pins (favorites fill the rest).
         if (pinned && _settings.Current.QuickAccessPins.Count >= MaxQuickAccess)
         {
-            Notifier.Show("Quick access is full", $"Up to {MaxQuickAccess} items can be pinned. Unpin one first.");
+            _notifier.Show("Quick access is full", $"Up to {MaxQuickAccess} items can be pinned. Unpin one first.");
             return;
         }
         _settings.Set(nameof(AppSettings.QuickAccessPins), s =>

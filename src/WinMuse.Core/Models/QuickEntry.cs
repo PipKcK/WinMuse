@@ -1,5 +1,3 @@
-using Microsoft.UI.Xaml;
-
 namespace WinMuse.Models;
 
 /// <summary>A Quick access tile on Home: a song or an artist, possibly pinned or a favorite.</summary>
@@ -20,12 +18,8 @@ public sealed class QuickEntry
     public string KindGlyph => IsArtist ? "" : "";
     public string KindName => IsArtist ? "Artist" : "Song";
 
-    // Artists get a round photo inset in the tile; song art fills the tile's left end, rounded like the tile.
-    public CornerRadius ArtCorner => IsArtist ? new CornerRadius(26) : new CornerRadius(7, 0, 0, 7);
-    public Thickness ArtMargin => IsArtist ? new Thickness(6) : new Thickness(0);
-
     public string BadgeGlyph => IsPinned ? "" : IsFavorite ? "" : "";
-    public Visibility BadgeVisibility => IsPinned || IsFavorite ? Visibility.Visible : Visibility.Collapsed;
+    public bool HasBadge => IsPinned || IsFavorite;
     public string BadgeTip => IsPinned ? "Pinned to Quick access" : "In Favorites";
 
     /// <summary>What screen readers announce for the tile (WinUI names list items from ToString).</summary>

@@ -20,13 +20,13 @@
         <StackPanel Grid.Row="1" Padding="36,8,36,0" Spacing="16">
             <StackPanel x:Name="ArtistsSection">
                 <TextBlock Text="Artists" Style="{StaticResource SectionTitleStyle}" />
-                <ListView x:Name="ArtistsList" ItemsPanel="{StaticResource ShelfPanel}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnArtistClick"
+                <ListView x:Name="ArtistsList" AutomationProperties.Name="Artists" ItemsPanel="{StaticResource ShelfPanel}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnArtistClick"
                           ItemTemplate="{StaticResource ArtistCardTemplate}" ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                           ScrollViewer.VerticalScrollMode="Disabled" Margin="-12,0,0,0" />
             </StackPanel>
             <StackPanel x:Name="AlbumsSection">
                 <TextBlock Text="Albums" Style="{StaticResource SectionTitleStyle}" />
-                <ListView x:Name="AlbumsList" ItemsPanel="{StaticResource ShelfPanel}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnAlbumClick"
+                <ListView x:Name="AlbumsList" AutomationProperties.Name="Albums" ItemsPanel="{StaticResource ShelfPanel}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnAlbumClick"
                           ItemTemplate="{StaticResource AlbumCardTemplate}" ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                           ScrollViewer.VerticalScrollMode="Disabled" Margin="-12,0,0,0" />
             </StackPanel>

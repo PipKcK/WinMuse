@@ -56,6 +56,8 @@ public sealed class SourceRow
     public Brush StatusForeground { get; }
     public bool CanSync => Track.IsCheckable;
     public string SyncTooltip => Track.IsCheckable ? "Fetch this song" : "Songs shorter than 30 seconds or longer than 15 minutes aren't checked online";
+    /// <summary>The row's Fetch button for screen readers: which song it fetches (every row's button looks the same).</summary>
+    public string FetchButtonName => $"Fetch {Track.DisplayTitle} by {Track.DisplayArtist}";
 
     public SourceRow(Track t)
     {
@@ -136,7 +138,7 @@ public sealed partial class FetchPage : Page
             .Select(t => new SourceRow(t)).ToList();
 
         int Count(FetchStatus s) => all.Count(r => r.Status == s);
-        var parts = new List<string> { $"{all.Count:N0} songs", $"{Count(FetchStatus.Complete):N0} complete" };
+        var parts = new List<string> { Format.Count(all.Count, "song", "songs"), $"{Count(FetchStatus.Complete):N0} complete" };
         if (Count(FetchStatus.Pending) is > 0 and var pending) parts.Add($"{pending:N0} pending");
         if (Count(FetchStatus.NotFound) is > 0 and var notFound) parts.Add($"{notFound:N0} with items not found online");
         if (Count(FetchStatus.Edited) is > 0 and var edited) parts.Add($"{edited:N0} edited by hand");
