@@ -40,7 +40,7 @@ public sealed class ApiKeysDialog : ContentDialog
         var intro = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Text = "These keys are free and optional. They help Music identify your songs and find album art, artist photos and genres. " +
+            Text = "These free, optional keys improve song identification and help find album art, artist photos and genres. " +
                    "Each key is verified as you paste it. You can add or change them later in Settings > API keys.",
         };
 

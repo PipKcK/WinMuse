@@ -70,7 +70,7 @@ public static class TrackActions
         menu.SecondaryCommands.Add(Row(new MenuAction("Remove from library", "\uE738", async () =>
         {
             if (await Confirm($"Remove from library: {Count(tracks)}?",
-                    "The songs are hidden from Music only. The files stay on your PC. You can bring them back in Settings > Library > Removed songs."))
+                    "Your files stay on your PC. You can restore removed songs in Settings > Library > Removed songs."))
                 Svc.Library.RemoveTracks(tracks);
         })));
         // Deleting files is opt-in (Settings > Your music files > Allow deleting files).

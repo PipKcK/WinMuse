@@ -35,7 +35,7 @@ public sealed class LyricsService
         try
         {
             var app = AppDataLrc(t);
-            if (File.Exists(app)) return LrcParser.Parse(File.ReadAllText(app), "Saved in Music");
+            if (File.Exists(app)) return LrcParser.Parse(File.ReadAllText(app), "Saved in your library");
             var side = Path.ChangeExtension(t.Path, ".lrc");
             if (File.Exists(side)) return LrcParser.Parse(File.ReadAllText(side), "Lyrics file");
             if (!string.IsNullOrWhiteSpace(t.Lyrics)) return LrcParser.Parse(t.Lyrics!, "Embedded");

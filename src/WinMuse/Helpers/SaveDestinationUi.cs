@@ -47,16 +47,16 @@ public static class SaveDestinationUi
 
     /// <summary>The second line of the "saved" notification.</summary>
     public static string SavedText(EditDestination? destination) =>
-        Resolve(destination) == EditDestination.Files ? "Written into the files' tags." : "Kept in Music's library. Your files weren't changed.";
+        Resolve(destination) == EditDestination.Files ? "Written into the files' tags." : "Saved in your library. Your music files weren't changed.";
 
     /// <summary>The note shown in edit dialogs: where edits will go.</summary>
     public static FrameworkElement CreateNote()
     {
         var (glyph, text) = Svc.Metadata.AsksForDestination
-            ? ("", "Choose where to save: Music's library, or the files' own tags.")
+            ? ("", "Choose where to save: your library, or the files' own tags.")
             : Svc.Metadata.DefaultDestination == EditDestination.Files
                 ? ("", "Edits are written into the files' tags.")
-                : ("", "Edits are kept in Music's library. Your music files aren't changed.");
+                : ("", "Edits are saved in your library. Your music files aren't changed.");
         // The dialog's own text color, softened: follows light/dark like everything else in the dialog.
         var icon = new FontIcon { Glyph = glyph, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
         var label = new TextBlock

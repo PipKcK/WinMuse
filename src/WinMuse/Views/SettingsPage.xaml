@@ -200,7 +200,7 @@
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE945;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoFixToggle" Toggled="OnAutoFixToggled" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB. They're saved in Music's data folder, never next to your songs.">
+            <tk:SettingsCard Header="Automatic lyrics" Description="Download synchronized lyrics from LRCLIB. They're stored with your library, never next to your songs.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8BD;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
             </tk:SettingsCard>
@@ -218,10 +218,10 @@
             <!-- ================= Your music files ================= -->
             <!-- Music never changes music files unless allowed here (enforced in MetadataEditService and LibraryService). -->
             <TextBlock Text="Your music files" Style="{StaticResource GroupHeader}" />
-            <TextBlock Text="Music never changes your music files unless you allow it here. Your edits, downloaded album art and lyrics are kept in Music's own library."
+            <TextBlock Text="Your music files stay unchanged unless you allow it here. Edits, downloaded album art and lyrics are kept in your library."
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="2,0,0,8" />
             <tk:SettingsExpander x:Name="FileChangesCard" Header="Change music files"
-                                 Description="Let Music write your edits (titles, artists, albums, album art, lyrics) into the songs' tags, so other apps and devices see them too.">
+                                 Description="Write your edits (titles, artists, albums, album art, lyrics) into the songs' tags, so other apps and devices see them too.">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE8A5;" /></tk:SettingsExpander.HeaderIcon>
                 <ToggleSwitch x:Name="FileChangesToggle" Toggled="OnFileChangesToggled" />
                 <tk:SettingsExpander.Items>
@@ -252,7 +252,7 @@
                             <StackPanel Spacing="6">
                                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                     1. Open the AcoustID application page and sign in (a free account).<LineBreak />
-                                    2. Enter an application name, for example "Music", and version "1.0", then select Register.<LineBreak />
+                                    2. Enter an application name, for example "Music Player", and version "1.0", then select Register.<LineBreak />
                                     3. Copy the API key that is shown and paste it above.
                                 </TextBlock>
                                 <HyperlinkButton Content="Open acoustid.org/new-application" NavigateUri="https://acoustid.org/new-application" Padding="0" />
@@ -269,7 +269,7 @@
                             <StackPanel Spacing="6">
                                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                     1. Open the Google Cloud Console and sign in with a Google account.<LineBreak />
-                                    2. Create a project, for example "Music".<LineBreak />
+                                    2. Create a project, for example "Music Player".<LineBreak />
                                     3. Go to APIs and Services &gt; Library, search for "YouTube Data API v3" and select Enable.<LineBreak />
                                     4. Go to APIs and Services &gt; Credentials and select Create credentials &gt; API key.<LineBreak />
                                     5. Copy the key and paste it above. No billing account is required.
@@ -288,7 +288,7 @@
                             <StackPanel Spacing="6">
                                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                     1. Open the Last.fm API account page and sign in (or create a free Last.fm account).<LineBreak />
-                                    2. Enter an application name, for example "Music", and a short description. The callback URL can be left empty.<LineBreak />
+                                    2. Enter an application name, for example "Music Player", and a short description. The callback URL can be left empty.<LineBreak />
                                     3. Select Submit, then copy the API key (not the shared secret) and paste it above.
                                 </TextBlock>
                                 <HyperlinkButton Content="Open last.fm/api/account/create" NavigateUri="https://www.last.fm/api/account/create" Padding="0" />
@@ -322,7 +322,7 @@
                             <StackPanel Spacing="6">
                                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                     1. Open the Spotify Developer Dashboard and sign in with a free Spotify account.<LineBreak />
-                                    2. Select Create app. Enter a name, for example "Music", and a short description.<LineBreak />
+                                    2. Select Create app. Enter a name, for example "Music Player", and a short description.<LineBreak />
                                     3. For Redirect URI enter http://127.0.0.1:8888/callback (required by the form, not used by Music), tick Web API, accept the terms and select Save.<LineBreak />
                                     4. Open the app's Settings, copy the Client ID, select View client secret and copy it.<LineBreak />
                                     5. Paste both above. No Spotify Premium is needed.
@@ -358,7 +358,7 @@
 
             <!-- ================= About ================= -->
             <TextBlock Text="About" Style="{StaticResource GroupHeader}" />
-            <tk:SettingsExpander Header="Music" x:Name="AboutCard">
+            <tk:SettingsExpander Header="Music Player" x:Name="AboutCard">
                 <tk:SettingsExpander.HeaderIcon>
                     <BitmapIcon UriSource="ms-appx:///Assets/AppIcon.png" ShowAsMonochrome="False" />
                 </tk:SettingsExpander.HeaderIcon>
@@ -374,8 +374,12 @@
                             <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="Space or Ctrl+P: Play/Pause · Ctrl+Right: Next · Ctrl+Left: Previous · Ctrl+Up/Down: Volume · Ctrl+S: Shuffle · Ctrl+R: Repeat · Ctrl+F: Search · Ctrl+M: Mini player · F11: Now Playing · Esc: Close Now Playing or end a selection" />
                         </tk:SettingsCard>
-                        <tk:SettingsCard Header="License" Description="No license has been chosen for Music yet. Until one is added, all rights are reserved. The components below keep their own licenses.">
+                        <tk:SettingsCard Header="License" Description="Free and open-source software under the GNU General Public License, version 3 (GPL-3.0). The components in Credits keep their own licenses.">
                             <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8D7;" /></tk:SettingsCard.HeaderIcon>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Third-party notices" Click="OnOpenNotices" />
+                                <HyperlinkButton x:Name="LicenseLink" Content="Read the license" />
+                            </StackPanel>
                         </tk:SettingsCard>
                         <tk:SettingsCard Header="Source code" Description="The project on GitHub.">
                             <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE943;" /></tk:SettingsCard.HeaderIcon>
@@ -390,7 +394,7 @@
                         </tk:SettingsCard>
                 </tk:SettingsExpander.Items>
             </tk:SettingsExpander>
-            <tk:SettingsExpander Header="Credits" Description="The open-source components Music is built with, and the online services it gets song details, covers, photos and lyrics from.">
+            <tk:SettingsExpander Header="Credits" Description="The open-source components this app is built with, and the online services it gets song details, covers, photos and lyrics from.">
                 <tk:SettingsExpander.HeaderIcon><FontIcon Glyph="&#xE716;" /></tk:SettingsExpander.HeaderIcon>
                 <tk:SettingsExpander.Items>
                     <tk:SettingsCard Header="Built with" ContentAlignment="Vertical" HorizontalContentAlignment="Stretch">

@@ -26,6 +26,7 @@ public sealed partial class SettingsPage : Page
         ComponentCredits.ItemsSource = Credits.Components;
         ServiceCredits.ItemsSource = Credits.Services;
         SourceLink.NavigateUri = new Uri(Credits.SourceUrl);
+        LicenseLink.NavigateUri = new Uri(Credits.LicenseUrl);
         IssuesLink.NavigateUri = new Uri(Credits.IssuesUrl);
         UpdateLogoButtons();
         foreach (var hex in Swatches)
@@ -103,6 +104,7 @@ public sealed partial class SettingsPage : Page
         DeviceBox.ItemsSource = devices;
         DeviceBox.SelectedItem = devices.FirstOrDefault(d => d.Id == S.OutputDeviceId) ?? devices[0];
 
+        AboutCard.Header = Branding.Name;
         AboutCard.Description = $"{AppInfo.DisplayVersion} · FFmpeg {FFmpegLoader.Version} · {Svc.Library.Tracks.Count:N0} songs";
         _loading = false;
 
@@ -400,9 +402,9 @@ public sealed partial class SettingsPage : Page
         if (!on) FileChangesCard.IsExpanded = false;
         WriteModeCard.Description = (WriteModeBox.SelectedItem as ComboBoxItem)?.Tag switch
         {
-            "WriteToFiles" => "Edits are written into the files' tags. Album art Music downloads is embedded in the files too.",
-            "Ask" => "Edit windows offer Save to library and Save to files. Automatic updates stay in Music's library.",
-            _ => "Edits stay in Music's library. Your files aren't changed until you pick another option.",
+            "WriteToFiles" => "Edits are written into the files' tags. Downloaded album art is embedded in the files too.",
+            "Ask" => "Edit windows offer Save to library and Save to files. Automatic updates stay in your library.",
+            _ => "Edits stay in your library. Your files aren't changed until you pick another option.",
         };
     }
 
@@ -454,6 +456,13 @@ public sealed partial class SettingsPage : Page
 
 
     private void OnOpenLog(object sender, RoutedEventArgs e) => Notifier.OpenLog.Run();
+
+    /// <summary>Opens THIRD-PARTY-NOTICES.txt (installed next to the app) in the default text editor.</summary>
+    private void OnOpenNotices(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(Credits.NoticesPath) { UseShellExecute = true }); }
+        catch (Exception ex) { AppPaths.Log("Open third-party notices: " + ex.Message); }
+    }
 
     private void OnOpenData(object sender, RoutedEventArgs e)
     {
