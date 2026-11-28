@@ -278,7 +278,7 @@ public sealed partial class MainWindow : Window
 
     /// <summary>
     /// The page and the player bar under Now Playing. Collapsed while it covers them, so screen readers and Tab can't
-    /// land on buttons that can't be seen (and the bar's spectrum stops drawing out of sight).
+    /// land on buttons that can't be seen.
     /// </summary>
     private void SetCoveredLayersShown(bool shown)
     {
