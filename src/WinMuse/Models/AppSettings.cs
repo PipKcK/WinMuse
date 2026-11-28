@@ -98,6 +98,7 @@ public sealed class AppSettings
 
     // Metadata
     public bool AutoFixMetadata { get; set; } = true;
+    /// <summary>Settings › Download media: missing album art and artist photos (one switch for both).</summary>
     public bool AutoFetchArt { get; set; } = true;
     public bool AutoFetchLyrics { get; set; } = true;
     /// <summary>Songs of one album (same folder and album label) are matched to the same release. Debug option, so the

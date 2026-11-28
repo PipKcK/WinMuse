@@ -204,7 +204,7 @@
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8BD;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoLyricsToggle" Toggled="OnAutoLyricsToggled" />
             </tk:SettingsCard>
-            <tk:SettingsCard Header="Automatic album art" Description="Download missing album art from Cover Art Archive.">
+            <tk:SettingsCard Header="Download media" Description="Download missing album art and artist photos.">
                 <tk:SettingsCard.HeaderIcon><FontIcon Glyph="&#xEB9F;" /></tk:SettingsCard.HeaderIcon>
                 <ToggleSwitch x:Name="AutoArtToggle" Toggled="OnAutoArtToggled" />
             </tk:SettingsCard>
