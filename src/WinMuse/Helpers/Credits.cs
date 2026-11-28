@@ -7,13 +7,18 @@ public sealed record Credit(string Name, string Use, string? License, string Url
 }
 
 /// <summary>
-/// Everything the app is built on or gets data from, shown in Settings &gt; About. Licenses are the ones the packages
-/// declare (their NuGet metadata or license file). Keep this list in step with WinMuse.csproj and the online services.
+/// Everything the app is built on or gets data from, shown in Settings &gt; Credits. Licenses are the ones the packages
+/// declare (their NuGet metadata or license file). Keep this list in step with WinMuse.csproj, the online services and
+/// THIRD-PARTY-NOTICES.txt in the repository root.
 /// </summary>
 public static class Credits
 {
     public const string SourceUrl = "https://github.com/PipKcK/WinMuse";
     public const string IssuesUrl = "https://github.com/PipKcK/WinMuse/issues";
+    public const string LicenseUrl = "https://github.com/PipKcK/WinMuse/blob/main/LICENSE";
+
+    /// <summary>The license texts of every component below, installed next to the app.</summary>
+    public static string NoticesPath => Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.txt");
 
     public static readonly IReadOnlyList<Credit> Components = new Credit[]
     {
@@ -28,6 +33,8 @@ public static class Credits
         new("Windows App SDK and WinUI 3", "The app's windows and controls", "Microsoft Software License", "https://github.com/microsoft/WindowsAppSDK"),
         new("Windows Community Toolkit", "Settings cards", "MIT", "https://github.com/CommunityToolkit/Windows"),
         new(".NET Community Toolkit", "App structure (MVVM)", "MIT", "https://github.com/CommunityToolkit/dotnet"),
+        new(".NET", "Runs the app (included in the setup files)", "MIT", "https://github.com/dotnet/runtime"),
+        new("WiX Toolset", "Builds the Windows Installer setup (.msi)", "MS-RL", "https://wixtoolset.org"),
     };
 
     /// <summary>Online services the app asks for song details, covers, photos and lyrics.</summary>

@@ -14,6 +14,7 @@ colors of whatever is playing.
 ![WinUI 3](https://img.shields.io/badge/WinUI-3-6E4AFF)
 ![FFmpeg](https://img.shields.io/badge/decoding-FFmpeg_8-007808?logo=ffmpeg&logoColor=white)
 ![x64 and ARM64](https://img.shields.io/badge/arch-x64%20%7C%20ARM64-555)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 <img src="docs/screenshots/home.jpg" alt="Home: greeting, Quick Access, Fresh in Your Library and the Up next panel, tinted by the album that is playing" />
 
@@ -364,18 +365,39 @@ automatically; a Release build has no warnings, and it should stay that way.
 
 ## Credits
 
-- Decoding by [FFmpeg](https://ffmpeg.org) (LGPL, shared libraries), tags by [TagLib#](https://github.com/mono/taglib-sharp),
-  audio output by [NAudio](https://github.com/naudio/NAudio), fingerprints with [AcoustID.NET](https://github.com/wo80/AcoustID.NET),
-  storage by [Microsoft.Data.Sqlite](https://learn.microsoft.com/dotnet/standard/data/sqlite/) and [Dapper](https://github.com/DapperLib/Dapper),
-  UI by the [Windows App SDK](https://github.com/microsoft/WindowsAppSDK) and the [Windows Community Toolkit](https://github.com/CommunityToolkit/Windows).
-- Song data from [MusicBrainz](https://musicbrainz.org), [Cover Art Archive](https://coverartarchive.org),
-  [AcoustID](https://acoustid.org) and [LRCLIB](https://lrclib.net).
-- **Music in the screenshots** is Creative Commons–licensed, from the [Internet Archive netlabels collection](https://archive.org/details/netlabels):
-  ProleteR · Boogie Belgique · Riding Alone for Thousands of Miles · Miranda Shvangiradze · Candlegravity · mccandless ·
-  Echo Lali · The Underscore Orkestra · Poodleplay Arkestra · Intoxicated Piano · The Transisters · Kova
-  (CC BY-NC-ND / BY-NC-SA / BY-NC). Thank you for sharing your music.
+WinMuse is built with these open-source components. Each keeps its own license; the full texts are in
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), which is also installed with the app (**Settings → About →
+License → Third-party notices**).
+
+| Component | Used for | License |
+|---|---|---|
+| [FFmpeg](https://ffmpeg.org) 8.1 | Decoding almost every audio format (unmodified shared libraries) | LGPL-3.0 |
+| [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen) | Connecting .NET to FFmpeg | MIT |
+| [NAudio](https://github.com/naudio/NAudio) | Audio output through WASAPI | MIT |
+| [TagLib#](https://github.com/mono/taglib-sharp) | Reading and writing tags | LGPL-2.1 |
+| [AcoustID.NET](https://github.com/wo80/AcoustID.NET) | Audio fingerprints (a port of Chromaprint) | LGPL-2.1 |
+| [SQLite](https://sqlite.org) and [Microsoft.Data.Sqlite](https://github.com/dotnet/efcore) | The library database | Public domain, MIT |
+| [Dapper](https://github.com/DapperLib/Dapper) | Database queries | Apache-2.0 |
+| [Windows App SDK and WinUI 3](https://github.com/microsoft/WindowsAppSDK) | Windows and controls | Microsoft Software License |
+| [Windows Community Toolkit](https://github.com/CommunityToolkit/Windows) | Settings cards | MIT |
+| [.NET Community Toolkit](https://github.com/CommunityToolkit/dotnet) | App structure (MVVM) | MIT |
+| [.NET](https://github.com/dotnet/runtime) | The runtime, included in the setup files | MIT |
+| [WiX Toolset](https://wixtoolset.org) 5 | Building the .msi setup | MS-RL |
+
+**Online services.** Song details, covers, artist photos and lyrics come from [MusicBrainz](https://musicbrainz.org),
+[Cover Art Archive](https://coverartarchive.org), [AcoustID](https://acoustid.org), [LRCLIB](https://lrclib.net),
+[iTunes Search](https://performance-partners.apple.com/search-api), [Deezer](https://www.deezer.com),
+[Wikipedia, Wikidata and Wikimedia Commons](https://www.wikidata.org) and [TheAudioDB](https://www.theaudiodb.com), and,
+with your own free API keys, [Fanart.tv](https://fanart.tv), [Last.fm](https://www.last.fm),
+[Spotify](https://developer.spotify.com) and [YouTube](https://www.youtube.com). Their data stays under their own terms.
+
+**Music in the screenshots** is Creative Commons–licensed, from the [Internet Archive netlabels collection](https://archive.org/details/netlabels):
+ProleteR · Boogie Belgique · Riding Alone for Thousands of Miles · Miranda Shvangiradze · Candlegravity · mccandless ·
+Echo Lali · The Underscore Orkestra · Poodleplay Arkestra · Intoxicated Piano · The Transisters · Kova
+(CC BY-NC-ND / BY-NC-SA / BY-NC). Thank you for sharing your music.
 
 ## License
 
-No license has been chosen yet. Until one is added, all rights are reserved by the author. FFmpeg is distributed under
-the LGPL. See `external/ffmpeg/LICENSE.txt`.
+WinMuse is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License, version 3](LICENSE) (GPL-3.0). It is distributed in the hope that it will be useful, but
+without any warranty. The components above keep their own licenses (see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt)).

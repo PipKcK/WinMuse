@@ -57,6 +57,9 @@
 
   <ItemGroup>
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- License texts travel with the app (Settings > About > License opens the notices). -->
+    <Content Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- Downloader: put mdown.exe in src\WinMuse\Tools; it is copied next to WinMuse.exe (Tools\mdown.exe). -->
     <None Include="Tools\**\*" Exclude="Tools\README.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(FFmpegFiles)" Link="ffmpeg\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
