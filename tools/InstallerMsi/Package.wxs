@@ -18,6 +18,14 @@
     <!-- The install folder, as Settings > Apps and tools\Build-App.ps1 (Uninstall) read it. -->
     <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" />
 
+    <!-- The setup program (.exe) or the build tool already installed an app of this name: both lists it in Settings > Apps
+         under the same key, in the same folder. Installing over it would leave two installers owning one folder. -->
+    <Property Id="SETUPEXEINSTALLED">
+      <RegistrySearch Id="SetupExeInstalled" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\$(var.RegKey)" Name="UninstallString" Type="raw" />
+    </Property>
+    <Launch Condition="Installed OR NOT SETUPEXEINSTALLED"
+            Message="[ProductName] is already installed by its setup program (.exe). Uninstall it in Settings &gt; Apps, then run this installer again. Your library and settings are kept." />
+
     <!-- Options (also for msiexec /qn: DESKTOPSHORTCUT=1, OPENWITH=""). -->
     <Property Id="DESKTOPSHORTCUT" Secure="yes" />
     <Property Id="OPENWITH" Value="1" Secure="yes" />

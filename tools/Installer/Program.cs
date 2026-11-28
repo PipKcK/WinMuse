@@ -70,6 +70,7 @@ internal static class Program
             size = zip.Entries.Sum(e => e.Length);
         }
         if (setup.ArchProblem() is { } problem) { Fail(problem, silent); return 4; }
+        if (setup.MsiConflict() is { } conflict) { Fail(conflict, silent, $"{setup.Name} Setup", MessageBoxIcon.Warning); return 5; }
 
         if (silent)
         {
@@ -95,9 +96,9 @@ internal static class Program
         return 0;
     }
 
-    private static void Fail(string message, bool silent)
+    private static void Fail(string message, bool silent, string title = "Setup", MessageBoxIcon icon = MessageBoxIcon.Error)
     {
         if (silent) Console.Error.WriteLine(message);
-        else MessageBox.Show(message, "Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        else MessageBox.Show(message, title, MessageBoxButtons.OK, icon);
     }
 }

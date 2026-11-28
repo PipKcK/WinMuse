@@ -45,6 +45,15 @@ internal sealed class Setup
             : $"This installer is for ARM PCs (Snapdragon and similar). Ask for the x64 version of {Name}.";
     }
 
+    /// <summary>The Windows Installer package (.msi) of the same name is installed: installing this copy over it would
+    /// leave two installers owning one folder. The .msi marks its install under Software\WinMuse\Setup.</summary>
+    public string MsiConflict()
+    {
+        using var k = Registry.CurrentUser.OpenSubKey(@"Software\WinMuse\Setup\" + RegKey);
+        return k?.GetValue("StartMenuShortcut") == null ? null
+            : $"{Name} is already installed by its Windows Installer package (.msi). Uninstall it in Settings > Apps, then run this setup again. Your library and settings are kept.";
+    }
+
     /// <summary>Copies of the app running from <paramref name="dir"/>.</summary>
     public static List<Process> RunningFrom(string dir)
     {
